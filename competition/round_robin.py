@@ -1,46 +1,49 @@
 import numpy as np
+from abc import ABCMeta, abstractmethod
 
-from match import FootballMatch
+from competition.competition import Competition
+from match.footballmatch import FootballMatch
 
 
-def football_ordering(teams_and_scores):
-    """
-    Arguments:
-        teams_and_scores ([(str, dict)]): list of team names and score dictionaries.
+class RoundRobin(Competition):
     
-    Returns:
-        ordering ([tuple]): tuple of things to order by per team.
-    """
-    return teams_and_scores[1]['points'], teams_and_scores[1]['goals']
-
-class Competition(object):
-    teams = []
-    matches = []
-    scores = []
-    planned = False
-
-    def __init__(self, teams, comp_type='round robin'):
-        self.teams = {team.name: team for team in teams}
-        self.plan(comp_type)
+    def __init__(self, teams, load_from_file=None):
+        super(RoundRobin, self).__init__(teams, load_from_file=load_from_file)
     
-    def plan(self, comp_type, ignore_planned=False):
+    def plan(self, ignore_planned=False):
         if self.planned and not ignore_planned:
             raise ValueError("Competition already planned!")
-        if comp_type == 'round robin':
-            for home in self.teams.values():
-                for away in self.teams.values():
-                    if home == away:
-                        continue
-                    self.matches.append(FootballMatch([home, away]))
-        else:
-            raise NotImplementedError("comp type != round robin")
+        
+        already_planned = np.zeros((len(self.teams), len(self.teams)), dtype='bool')
+        home_teams = list(self.teams.values())
+        away_teams = list(self.teams.values())
+        # Find matches already planned
+        for match in self.matches:
+            home_index = home_teams.index(match.teams[0])
+            away_index = home_teams.index(match.teams[1])
+            already_planned[home_index, away_index] = True
+        
+        # Iterate over all possible matches
+        for home in home_teams:
+            for away in away_teams:
+                # Skip if home team is the same as away team
+                if home == away:
+                    continue
+                # Skip if match is already planned
+                home_index = home_teams.index(home)
+                away_index = home_teams.index(away)
+                if already_planned[home_index, away_index]:
+                    continue
+                # Plan match
+                self.matches.append(self.match_type([home, away]))
+                already_planned[home_index, away_index] = True
         self.planned = True
     
     def simulate(self, method='uniform'):
         for match in self.matches:
             match.simulate(method=method)
 
-    def standings(self, ordering=football_ordering):
+    def standings(self):
         # Aggregate scores
         total_scores = {team: {} for team in self.teams}
         for match in self.matches:
@@ -56,17 +59,10 @@ class Competition(object):
                 total_scores[away][score_name] += match.scores[score_name][1]
         
         # Order standings
+        ordering = get_ordering(self.comp_type, self.match_type)
         scores_tuples = total_scores.items()
         standings = sorted(scores_tuples, key=ordering, reverse=True)
         return standings
-
-    def show_matches(self):
-        strs = ["Competition:"]
-        for i, match in enumerate(self.matches):
-            strs.append("{:d}. {:s}".format(
-                i, str(match)
-            ))
-        return "\n".join(strs)
 
     def __str__(self):
         standings = self.standings()

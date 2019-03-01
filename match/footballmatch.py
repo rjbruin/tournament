@@ -1,16 +1,15 @@
 import numpy as np
 
+from match.match import Match
+
 
 SIM_UNIF_MAX_SCORE = 3
 
-class FootballMatch(object):
+class FootballMatch(Match):
+    
 
     def __init__(self, teams, score_names=['goals', 'points']):
-        self.teams = teams
-        self.scores = {}
-        self.completed = False
-        for score_name in score_names:
-            self.scores[score_name] = [0 for t in self.teams]
+        super(FootballMatch, self).__init__(teams, score_names)
     
     def simulate(self, method='uniform', ignore_completed=False):
         if self.completed and not ignore_completed:

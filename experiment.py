@@ -28,7 +28,6 @@ if __name__ == '__main__':
         teams,
         load_from_file='input_competitions/test.txt'
     )
-    print(competition.show_matches())
     competition.simulate(method=sim_method)
     print(competition.show_matches())
     print(competition)

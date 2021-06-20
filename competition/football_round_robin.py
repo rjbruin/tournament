@@ -14,7 +14,7 @@ def football_ordering(scores):
     Returns:
         ordering ([tuple]): tuple of things to order by per team.
     """
-    return scores[1]['points'], scores[1]['goals']
+    return scores[1]['points'], scores[1]['goals_for']
 
 class FootballRoundRobin(RoundRobin):
     
@@ -25,15 +25,23 @@ class FootballRoundRobin(RoundRobin):
 
     def load_match(self, home, away, home_score, away_score):
         match = FootballMatch([home, away])
-        match.scores['goals'][0] = home_score
-        match.scores['goals'][1] = away_score
+        match.scores['goals_for'][0] = home_score
+        match.scores['goals_for'][1] = away_score
         match.completed = True
+
+        # TODO: make the code below reuse the code from footballmatch's simulate() function (or the other way around)
+
+        # Add goals against
+        match.scores['goals_against'][0] = match.scores['goals_for'][1]
+        match.scores['goals_against'][1] = match.scores['goals_for'][0]
+        match.scores['goal_difference'][0] = match.scores['goals_for'][0] - match.scores['goals_against'][0]
+        match.scores['goal_difference'][1] = match.scores['goals_for'][1] - match.scores['goals_against'][1]
         
         # Points
-        if match.scores['goals'][0] > match.scores['goals'][1]:
+        if match.scores['goals_for'][0] > match.scores['goals_for'][1]:
             match.scores['points'][0] = 3
             match.scores['points'][1] = 0
-        elif match.scores['goals'][0] < match.scores['goals'][1]:
+        elif match.scores['goals_for'][0] < match.scores['goals_for'][1]:
             match.scores['points'][0] = 0
             match.scores['points'][1] = 3
         else:
@@ -53,8 +61,10 @@ class FootballRoundRobin(RoundRobin):
 
     def __str__(self):
         metrics_format = [
-            ("points", "{:3d}   ", "PTS  "),
-            ("goals", "{:2d}    ", "G    ")
+            ("points", "{:3d}   ",           "PTS  "),
+            ("goals_for", "{:2d}    ",       "GF    "),
+            ("goals_against", "{:2d}    ",   "GA    "),
+            ("goal_difference", "{:2d}    ", "GD    "),
         ]
 
         return standings_table(metrics_format, self.standings(), self.teams)

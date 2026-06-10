@@ -264,7 +264,13 @@ knockout). Group stage: 12 groups of 4, top 2 plus the 8 best third-placed teams
 Knockout stage uses the official FIFA bracket. Draws in knockout rounds go to penalties."""
 
 
-def answer_question(question: str, engine: Any, results: dict | None, user_settings: dict | None = None) -> str:
+def answer_question(
+    question: str,
+    engine: Any,
+    results: dict | None,
+    user_settings: dict | None = None,
+    history: list[dict] | None = None,
+) -> str:
     if results is None:
         return "No simulation results are available yet. Please run a simulation first (see the Simulations page)."
 
@@ -278,10 +284,19 @@ def answer_question(question: str, engine: Any, results: dict | None, user_setti
         "Content-Type": "application/json",
     }
 
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": question},
-    ]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    # Prior turns of the conversation, so follow-up questions ("what about
+    # for Brazil instead?") have context. Only plain user/assistant text
+    # turns are accepted — tool-call messages from earlier turns aren't
+    # replayed.
+    for msg in (history or []):
+        role = msg.get("role")
+        content = msg.get("content")
+        if role in ("user", "assistant") and isinstance(content, str) and content:
+            messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": question})
 
     # Agentic loop: let the model call tools until it produces a final answer
     for _ in range(5):

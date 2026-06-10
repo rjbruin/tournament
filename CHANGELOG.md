@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.5
+
+- Ask AI now remembers the conversation: the chat page sends recent message
+  history along with each new question, so follow-up questions ("what about
+  for Brazil?") have context from earlier turns.
+
 ## v0.3.4
 
 - Fixed account data (`data/users.json`) being silently lost on every

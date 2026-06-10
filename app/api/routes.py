@@ -230,7 +230,8 @@ def query():
         return jsonify({"error": "Missing 'question' field"}), 400
     results = app_module.get_simulation_results(g.user.username)
     engine = app_module.get_engine()
-    answer = answer_question(data["question"], engine, results, user_settings=g.user.settings)
+    history = data.get("history") if isinstance(data.get("history"), list) else None
+    answer = answer_question(data["question"], engine, results, user_settings=g.user.settings, history=history)
     return jsonify({"question": data["question"], "answer": answer})
 
 

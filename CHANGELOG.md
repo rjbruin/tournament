@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.3
+
+- Ask AI can now answer questions about fixtures: a new `get_fixtures` tool
+  returns match details (teams, group, kickoff date/time/venue, and either
+  the actual result or simulated win/draw/loss probabilities), with optional
+  filters by group, team, or group-stage vs. knockout.
+
 ## v0.3.0
 
 - Added user accounts (register/login/logout) with PBKDF2 password hashing,

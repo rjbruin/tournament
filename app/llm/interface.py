@@ -17,6 +17,8 @@ from typing import Any
 
 import requests
 
+from app.web.view_helpers import normalize_group_match, normalize_bracket_match, utc_sort_key
+
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
@@ -86,6 +88,35 @@ TOOLS = [
                     }
                 },
                 "required": ["team_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_fixtures",
+            "description": (
+                "Returns fixture details (teams, kickoff date/time/venue, and either the "
+                "actual result if played or the simulated win/draw/loss probabilities). "
+                "Optionally filter by group, by team, or to only the knockout bracket."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "group_name": {
+                        "type": "string",
+                        "description": "Optional group letter (e.g. 'A') to restrict to that group's fixtures."
+                    },
+                    "team_name": {
+                        "type": "string",
+                        "description": "Optional exact team name to restrict to fixtures involving that team (group stage and/or knockout)."
+                    },
+                    "round": {
+                        "type": "string",
+                        "description": "Optional: 'group' for group-stage fixtures only, or 'knockout' for bracket fixtures only. Omit for both."
+                    },
+                },
+                "required": [],
             },
         },
     },
@@ -163,6 +194,42 @@ def _execute_tool(name: str, inputs: dict, engine, results: dict) -> str:
             "winner_prob": results["winner_prob"].get(team_name, 0),
         })
 
+    if name == "get_fixtures":
+        group_filter = (inputs.get("group_name") or "").upper().strip()
+        team_filter = inputs.get("team_name") or ""
+        round_filter = (inputs.get("round") or "").lower().strip()
+
+        out = []
+
+        if round_filter != "knockout":
+            fixtures_by_group = results.get("fixtures", {})
+            for g in engine.groups:
+                if group_filter and g["name"] != group_filter:
+                    continue
+                for m in fixtures_by_group.get(g["name"], []):
+                    if team_filter and team_filter not in (m.get("home"), m.get("away")):
+                        continue
+                    nm = normalize_group_match(m)
+                    nm["group"] = g["name"]
+                    nm["sort_key"] = utc_sort_key(m).isoformat()
+                    out.append(nm)
+
+        if round_filter != "group" and not group_filter:
+            bm = results.get("bracket_matches", {})
+            for mdef in engine.all_knockout_defs:
+                match = bm[mdef["match"]]
+                if team_filter:
+                    home, away = match.get("home", {}), match.get("away", {})
+                    teams = {home.get("team"), away.get("team")}
+                    if team_filter not in teams:
+                        continue
+                nm = normalize_bracket_match(match)
+                nm["sort_key"] = utc_sort_key(match).isoformat()
+                out.append(nm)
+
+        out.sort(key=lambda f: f["sort_key"])
+        return json.dumps(out)
+
     if name == "get_group_stats":
         group_name = inputs.get("group_name", "").upper()
         group = next((g for g in engine.groups if g["name"] == group_name), None)
@@ -190,6 +257,7 @@ def _execute_tool(name: str, inputs: dict, engine, results: dict) -> str:
 SYSTEM_PROMPT = """You are a football analytics assistant for the 2026 FIFA World Cup.
 You have access to Monte Carlo simulation results (tens of thousands of simulated tournaments).
 Use the available tools to fetch the statistics needed to answer the user's question accurately.
+Use get_fixtures for questions about specific matches, schedules, kickoff times, venues, or results.
 Be concise, cite specific probabilities, and express them as percentages.
 The simulation uses Elo-based Poisson goal models for every individual match (group stage and
 knockout). Group stage: 12 groups of 4, top 2 plus the 8 best third-placed teams advance.

@@ -21,6 +21,9 @@
 # Environment variables:
 #   REPO              GitHub "owner/repo" slug (default: shown below)
 #   SERVICE_NAME      systemd service to restart after deploy (optional)
+#   SERVICE_USER      user the service runs as; the data directory is
+#                      chowned to this user so it can write
+#                      settings/users/snapshots (default: www-data)
 #   PORT              port the app should run on (default: 5001)
 
 set -euo pipefail
@@ -55,6 +58,7 @@ done
 REPO="${REPO:-rjbruin/tournament}"
 PORT="${PORT:-5001}"
 SERVICE_NAME="${SERVICE_NAME:-}"
+SERVICE_USER="${SERVICE_USER:-www-data}"
 
 RELEASES_DIR="${INSTALL_DIR}/releases"
 RELEASE_DIR="${RELEASES_DIR}/${VERSION}"
@@ -114,6 +118,13 @@ dst_dir="${RELEASE_DIR}/data/users"
 mkdir -p "$src_dir"
 rm -rf "$dst_dir"
 ln -s "$src_dir" "$dst_dir"
+
+# The service user (e.g. www-data) needs to write to the shared data
+# directory and to the release's data/ directory itself (which holds the
+# symlinks — atomic writes create a temp file alongside the symlink before
+# renaming over it).
+echo "==> Setting data ownership to ${SERVICE_USER}"
+sudo chown -R "${SERVICE_USER}:${SERVICE_USER}" "${SHARED_DIR}/data" "${RELEASE_DIR}/data"
 
 echo "==> Linking ${CURRENT_LINK} -> ${RELEASE_DIR}"
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"

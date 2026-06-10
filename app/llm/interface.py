@@ -17,13 +17,11 @@ from typing import Any
 
 import requests
 
-from app import data_store
-
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
-def _get_config() -> tuple[str, str]:
-    settings = data_store.load_settings()
+def _get_config(user_settings: dict | None) -> tuple[str, str]:
+    settings = user_settings or {}
     api_key = settings.get("openrouter_api_key") or os.environ.get("OPENROUTER_API_KEY", "")
     model = settings.get("openrouter_model") or os.environ.get("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
     return api_key, model
@@ -198,11 +196,11 @@ knockout). Group stage: 12 groups of 4, top 2 plus the 8 best third-placed teams
 Knockout stage uses the official FIFA bracket. Draws in knockout rounds go to penalties."""
 
 
-def answer_question(question: str, engine: Any, results: dict | None) -> str:
+def answer_question(question: str, engine: Any, results: dict | None, user_settings: dict | None = None) -> str:
     if results is None:
         return "No simulation results are available yet. Please run a simulation first (see the Simulations page)."
 
-    api_key, model = _get_config()
+    api_key, model = _get_config(user_settings)
     if not api_key:
         return ("No OpenRouter API key configured. Add one on the Settings page "
                 "(or set the OPENROUTER_API_KEY environment variable).")

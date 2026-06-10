@@ -17,6 +17,7 @@
       </button>
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav me-auto">
+          {% if current_user.is_authenticated %}
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.index') }}">Groups</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.fixtures') }}">Fixtures</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.bracket') }}">Bracket</a></li>
@@ -25,6 +26,23 @@
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.chat') }}">Ask AI</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.simulations') }}">Simulations</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.settings') }}">Settings</a></li>
+          {% endif %}
+        </ul>
+        <ul class="navbar-nav">
+          {% if current_user.is_authenticated %}
+          <li class="nav-item d-flex align-items-center">
+            <span class="nav-link disabled text-white-50 py-2">Signed in as <strong class="text-white">{{ current_user.username }}</strong></span>
+          </li>
+          <li class="nav-item">
+            <form method="post" action="{{ url_for('auth.logout') }}" class="px-2 py-1">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="btn btn-outline-light btn-sm">Log out</button>
+            </form>
+          </li>
+          {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Log in</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">Register</a></li>
+          {% endif %}
         </ul>
       </div>
     </div>

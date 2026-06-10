@@ -1,5 +1,3 @@
 {
-  "openrouter_api_key": "",
-  "openrouter_model": "anthropic/claude-sonnet-4.5",
-  "display_timezone": "Europe/Amsterdam"
+  "football_data_api_key": ""
 }

@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash
+from flask_login import current_user, login_required
+
 import app as app_module
-from app import data_store
+from app import auth, data_store
 from app.web.view_helpers import normalize_group_match, normalize_bracket_match, compute_group_table, utc_sort_key as _utc_sort_key
 
 web_bp = Blueprint("web", __name__)
@@ -9,7 +11,7 @@ web_bp = Blueprint("web", __name__)
 @web_bp.get("/")
 def index():
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(current_user.username)
     groups = engine.groups
     groups_by_name = {g["name"]: g for g in engine.groups}
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
@@ -36,7 +38,7 @@ def index():
 @web_bp.get("/group/<name>")
 def group(name: str):
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(current_user.username)
     group = next((g for g in engine.groups if g["name"] == name.upper()), None)
     if group is None:
         return redirect(url_for("web.index"))
@@ -57,7 +59,7 @@ def team_default():
 @web_bp.get("/team/<name>")
 def team(name: str):
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(current_user.username)
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
     if name not in teams_by_name:
         return redirect(url_for("web.team", name="Netherlands"))
@@ -95,7 +97,7 @@ def team(name: str):
 @web_bp.get("/bracket")
 def bracket():
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(current_user.username)
     if results is None or "bracket_matches" not in results:
         return render_template("bracket.html", results=results, rounds=None)
 
@@ -113,7 +115,7 @@ def bracket():
 @web_bp.get("/fixtures")
 def fixtures():
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(current_user.username)
     groups = engine.groups
     all_fixtures = []
     if results is not None:
@@ -149,30 +151,80 @@ def simulation_logic():
 
 @web_bp.get("/chat")
 def chat():
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(current_user.username)
     return render_template("chat.html", results=results)
 
 
 @web_bp.get("/settings")
 def settings():
-    return render_template("settings.html", settings=data_store.load_settings())
+    return render_template(
+        "settings.html",
+        settings=current_user.settings,
+        global_settings=data_store.load_global_settings(),
+    )
 
 
 @web_bp.post("/settings")
 def settings_save():
-    data_store.save_settings({
-        "openrouter_api_key": request.form.get("openrouter_api_key", "").strip(),
-        "openrouter_model": request.form.get("openrouter_model", "").strip() or data_store.DEFAULT_SETTINGS["openrouter_model"],
-        "display_timezone": request.form.get("display_timezone", "").strip() or data_store.DEFAULT_SETTINGS["display_timezone"],
-    })
+    n_simulations = request.form.get("n_simulations", "").strip()
+    try:
+        n_simulations = max(100, min(int(n_simulations), 500_000))
+    except ValueError:
+        n_simulations = auth.DEFAULT_USER_SETTINGS["n_simulations"]
+
+    auth.update_settings(
+        current_user.username,
+        openrouter_api_key=request.form.get("openrouter_api_key", "").strip(),
+        openrouter_model=request.form.get("openrouter_model", "").strip() or auth.DEFAULT_USER_SETTINGS["openrouter_model"],
+        display_timezone=request.form.get("display_timezone", "").strip() or auth.DEFAULT_USER_SETTINGS["display_timezone"],
+        n_simulations=n_simulations,
+    )
+
+    # The official-results API key is a shared/global setting (it's not tied
+    # to any one account), so only an authenticated user can change it but
+    # it applies to everyone.
+    if "football_data_api_key" in request.form:
+        data_store.save_global_settings({
+            "football_data_api_key": request.form.get("football_data_api_key", "").strip(),
+        })
+
     flash("Settings saved.", "success")
+    return redirect(url_for("web.settings"))
+
+
+@web_bp.post("/account/regenerate-api-slug")
+def regenerate_api_slug():
+    auth.regenerate_api_slug(current_user.username)
+    flash("API slug regenerated. Update any scripts using the old one.", "success")
+    return redirect(url_for("web.settings"))
+
+
+@web_bp.post("/account/password")
+def change_password():
+    current_password = request.form.get("current_password") or ""
+    new_password = request.form.get("new_password") or ""
+    new_password_confirm = request.form.get("new_password_confirm") or ""
+
+    if not current_user.check_password(current_password):
+        flash("Current password is incorrect.", "danger")
+        return redirect(url_for("web.settings"))
+
+    error = auth.validate_password(new_password)
+    if not error and new_password != new_password_confirm:
+        error = "New passwords do not match."
+    if error:
+        flash(error, "danger")
+        return redirect(url_for("web.settings"))
+
+    auth.set_password(current_user.username, new_password)
+    flash("Password updated.", "success")
     return redirect(url_for("web.settings"))
 
 
 @web_bp.get("/simulations")
 def simulations():
-    results = app_module.get_simulation_results()
-    snapshots = list(enumerate(data_store.load_snapshots()))
+    results = app_module.get_simulation_results(current_user.username)
+    snapshots = list(enumerate(data_store.load_snapshots(current_user.username)))
     snapshots.reverse()  # most recent first
     return render_template("simulations.html", results=results, snapshots=snapshots)
 
@@ -180,7 +232,7 @@ def simulations():
 @web_bp.get("/simulations/<int:index>")
 def simulation_detail(index: int):
     engine = app_module.get_engine()
-    snapshot = data_store.get_snapshot(index)
+    snapshot = data_store.get_snapshot(current_user.username, index)
     if snapshot is None:
         return redirect(url_for("web.simulations"))
     return render_template("simulation_detail.html", snapshot=snapshot, index=index, engine=engine)

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Log in — WC 2026{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+    <h2 class="mb-4 text-center">Log in</h2>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post" action="{{ url_for('auth.login') }}">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="next" value="{{ next }}">
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" value="{{ username or '' }}"
+                   autocomplete="username" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password"
+                   autocomplete="current-password" required>
+          </div>
+          <button type="submit" class="btn btn-success w-100">Log in</button>
+        </form>
+      </div>
+    </div>
+    <p class="text-center text-muted small mt-3">
+      No account yet? <a href="{{ url_for('auth.register') }}">Register</a>
+    </p>
+  </div>
+</div>
+
+{% endblock %}

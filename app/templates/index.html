@@ -10,10 +10,35 @@
   </div>
   {% if results %}
   <span class="badge bg-light text-success fw-bold px-3 py-2">{{ "{:,}".format(results.n_simulations) }} simulations run</span>
+  <button id="sync-results-btn" class="btn btn-outline-light btn-sm">Update Results &amp; Re-simulate</button>
   {% else %}
-  <span class="badge bg-light text-secondary fw-bold px-3 py-2">No simulation yet — click Run Simulation</span>
+  <a href="{{ url_for('web.simulations') }}" class="badge bg-light text-secondary fw-bold px-3 py-2 text-decoration-none">No simulation yet — click here to run one</a>
   {% endif %}
 </div>
+
+<script>
+document.getElementById('sync-results-btn')?.addEventListener('click', async function () {
+  const btn = this;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Updating…';
+  try {
+    const resp = await fetch(window.API_ROOT + '/results/sync', { method: 'POST' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      alert(data.error || 'Failed to update results.');
+      btn.disabled = false;
+      btn.textContent = original;
+      return;
+    }
+    location.reload();
+  } catch (e) {
+    alert('Failed to update results: ' + e);
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+</script>
 
 {% if results %}
 {% set top10 = results.winner_prob.items() | sort(attribute=1, reverse=True) | list %}

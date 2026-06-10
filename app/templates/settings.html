@@ -6,16 +6,17 @@
   <div class="col-12 col-lg-7">
     <h2 class="mb-4">Settings</h2>
 
-    <div class="card shadow-sm">
-      <div class="card-header fw-bold">OpenRouter (Ask AI)</div>
-      <div class="card-body">
-        <p class="text-muted small">
-          The "Ask AI" chat page uses <a href="https://openrouter.ai" target="_blank" rel="noopener">OpenRouter</a>
-          to query a language model with tool access to the simulation results.
-          Your API key is stored locally in <code>data/settings.json</code> and never sent anywhere
-          except to OpenRouter.
-        </p>
-        <form method="post" action="{{ url_for('web.settings_save') }}">
+    <form method="post" action="{{ url_for('web.settings_save') }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold">OpenRouter (Ask AI)</div>
+        <div class="card-body">
+          <p class="text-muted small">
+            The "Ask AI" chat page uses <a href="https://openrouter.ai" target="_blank" rel="noopener">OpenRouter</a>
+            to query a language model with tool access to your simulation results.
+            Your API key is stored with your account and never sent anywhere except to OpenRouter.
+          </p>
           <div class="mb-3">
             <label for="openrouter_api_key" class="form-label">OpenRouter API key</label>
             <input type="password" class="form-control" id="openrouter_api_key" name="openrouter_api_key"
@@ -27,17 +28,24 @@
                    value="{{ settings.openrouter_model }}">
             <div class="form-text">Any model slug available on OpenRouter, e.g. <code>anthropic/claude-sonnet-4.5</code>, <code>openai/gpt-4o</code>.</div>
           </div>
-          <button type="submit" class="btn btn-success">Save Settings</button>
-        </form>
+        </div>
       </div>
-    </div>
 
-    <div class="card shadow-sm mt-4">
-      <div class="card-header fw-bold">Display</div>
-      <div class="card-body">
-        <form method="post" action="{{ url_for('web.settings_save') }}">
-          <input type="hidden" name="openrouter_api_key" value="{{ settings.openrouter_api_key }}">
-          <input type="hidden" name="openrouter_model" value="{{ settings.openrouter_model }}">
+      <div class="card shadow-sm mt-4">
+        <div class="card-header fw-bold">Simulation</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="n_simulations" class="form-label">Number of simulations</label>
+            <input type="number" class="form-control" id="n_simulations" name="n_simulations"
+                   min="100" max="500000" step="100" value="{{ settings.n_simulations }}">
+            <div class="form-text">Used as the default for new runs (100 - 500,000). Higher values take longer to compute.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mt-4">
+        <div class="card-header fw-bold">Display</div>
+        <div class="card-body">
           <div class="mb-3">
             <label for="display_timezone" class="form-label">Timezone for fixture times</label>
             <select class="form-select" id="display_timezone" name="display_timezone">
@@ -46,7 +54,66 @@
               {% endfor %}
             </select>
           </div>
-          <button type="submit" class="btn btn-success">Save Settings</button>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mt-4">
+        <div class="card-header fw-bold">Official results API</div>
+        <div class="card-body">
+          <p class="text-muted small">
+            Used by the "Update Results &amp; Re-simulate" button to fetch official World Cup results from
+            <a href="https://www.football-data.org" target="_blank" rel="noopener">football-data.org</a>.
+            This setting is shared across all accounts.
+          </p>
+          <div class="mb-3">
+            <label for="football_data_api_key" class="form-label">football-data.org API key</label>
+            <input type="password" class="form-control" id="football_data_api_key" name="football_data_api_key"
+                   placeholder="API key" value="{{ global_settings.football_data_api_key }}" autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-success mt-4">Save Settings</button>
+    </form>
+
+    <div class="card shadow-sm mt-4">
+      <div class="card-header fw-bold">Account</div>
+      <div class="card-body">
+        <p class="mb-2"><strong>Username:</strong> {{ current_user.username }}</p>
+
+        <div class="mb-3">
+          <label class="form-label">API key (for headless API access)</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="api_slug" value="{{ current_user.api_slug }}" readonly>
+            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('api_slug').value)">Copy</button>
+          </div>
+          <div class="form-text">
+            Pass this as <code>Authorization: Bearer &lt;key&gt;</code> or <code>?api_key=&lt;key&gt;</code> when calling the API.
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('web.regenerate_api_slug') }}" onsubmit="return confirm('Regenerate API key? Any scripts using the old key will stop working.');">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn-outline-danger btn-sm">Regenerate API key</button>
+        </form>
+
+        <hr>
+
+        <h6 class="mb-3">Change password</h6>
+        <form method="post" action="{{ url_for('web.change_password') }}">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <div class="mb-3">
+            <label for="current_password" class="form-label">Current password</label>
+            <input type="password" class="form-control" id="current_password" name="current_password" autocomplete="current-password" required>
+          </div>
+          <div class="mb-3">
+            <label for="new_password" class="form-label">New password</label>
+            <input type="password" class="form-control" id="new_password" name="new_password" autocomplete="new-password" minlength="8" required>
+          </div>
+          <div class="mb-3">
+            <label for="new_password_confirm" class="form-label">Confirm new password</label>
+            <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" autocomplete="new-password" minlength="8" required>
+          </div>
+          <button type="submit" class="btn btn-success">Update password</button>
         </form>
       </div>
     </div>

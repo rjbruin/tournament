@@ -1,13 +1,44 @@
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, g
+from flask_login import current_user
+
 import app as app_module
-from app import data_store
+from app import auth, data_store
 from app.llm.interface import answer_question
+from app.results_source import fetch_and_apply_official_results
 
 api_bp = Blueprint("api", __name__)
 
 
+@api_bp.before_request
+def _authenticate():
+    """Allow API access either via the normal session cookie (used by the
+    web UI's own JS) or via a per-account API slug, so accounts can be used
+    headlessly:
+
+        curl -H "Authorization: Bearer <api_slug>" .../api/stats
+        curl ".../api/stats?api_key=<api_slug>"
+    """
+    if request.endpoint == "api.health":
+        return
+
+    if current_user.is_authenticated:
+        g.user = current_user._get_current_object()
+        return
+
+    slug = request.args.get("api_key", "")
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        slug = auth_header[len("Bearer "):].strip()
+
+    user = auth.get_user_by_api_slug(slug) if slug else None
+    if user is None:
+        return jsonify({"error": "Unauthorized. Provide a session cookie or an API key "
+                                  "(Authorization: Bearer <api_slug>, or ?api_key=<api_slug>)."}), 401
+    g.user = user
+
+
 def _require_results():
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(g.user.username)
     if results is None:
         return None, (jsonify({"error": "No simulation results. Run /api/simulate first."}), 400)
     return results, None
@@ -20,7 +51,8 @@ def health():
 
 @api_bp.post("/simulate")
 def simulate():
-    n = request.json.get("n", 10_000) if request.is_json else 10_000
+    default_n = g.user.settings.get("n_simulations", auth.DEFAULT_USER_SETTINGS["n_simulations"])
+    n = request.json.get("n", default_n) if request.is_json else default_n
     n = max(100, min(int(n), 500_000))
     save_label = request.json.get("label") if request.is_json else None
 
@@ -28,15 +60,45 @@ def simulate():
 
     # Save the previous results as a snapshot before overwriting, so the new
     # run can be compared against it.
-    previous = app_module.get_simulation_results()
+    previous = app_module.get_simulation_results(g.user.username)
     if previous is not None:
-        data_store.save_snapshot(previous, label=save_label)
+        data_store.save_snapshot(g.user.username, previous, label=save_label)
 
     actuals = data_store.load_actuals()
     results = engine.run(n, actuals=actuals)
-    app_module.set_simulation_results(results)
+    app_module.set_simulation_results(g.user.username, results)
     return jsonify({
         "ok": True,
+        "n_simulations": results["n_simulations"],
+        "elapsed_seconds": results["elapsed_seconds"],
+    })
+
+
+@api_bp.post("/results/sync")
+def sync_results():
+    """Fetch official World Cup results from football-data.org, merge any
+    newly-completed group-stage matches into data/actuals.json, and re-run
+    the simulation for the current account using those updated actuals."""
+    engine = app_module.get_engine()
+    sync_info = fetch_and_apply_official_results(engine)
+    if "error" in sync_info:
+        return jsonify(sync_info), 400
+
+    default_n = g.user.settings.get("n_simulations", auth.DEFAULT_USER_SETTINGS["n_simulations"])
+    n = request.json.get("n", default_n) if request.is_json else default_n
+    n = max(100, min(int(n), 500_000))
+
+    previous = app_module.get_simulation_results(g.user.username)
+    if previous is not None:
+        data_store.save_snapshot(g.user.username, previous, label="Before results sync")
+
+    actuals = data_store.load_actuals()
+    results = engine.run(n, actuals=actuals)
+    app_module.set_simulation_results(g.user.username, results)
+
+    return jsonify({
+        "ok": True,
+        "sync": sync_info,
         "n_simulations": results["n_simulations"],
         "elapsed_seconds": results["elapsed_seconds"],
     })
@@ -166,9 +228,9 @@ def query():
     data = request.get_json()
     if not data or "question" not in data:
         return jsonify({"error": "Missing 'question' field"}), 400
-    results = app_module.get_simulation_results()
+    results = app_module.get_simulation_results(g.user.username)
     engine = app_module.get_engine()
-    answer = answer_question(data["question"], engine, results)
+    answer = answer_question(data["question"], engine, results, user_settings=g.user.settings)
     return jsonify({"question": data["question"], "answer": answer})
 
 
@@ -244,12 +306,12 @@ def reset_actuals():
 
 @api_bp.get("/snapshots")
 def list_snapshots():
-    return jsonify(data_store.load_snapshots())
+    return jsonify(data_store.load_snapshots(g.user.username))
 
 
 @api_bp.delete("/snapshots/<int:index>")
 def delete_snapshot(index: int):
-    if not data_store.delete_snapshot(index):
+    if not data_store.delete_snapshot(g.user.username, index):
         return jsonify({"error": "Snapshot not found"}), 404
     return jsonify({"ok": True})
 
@@ -260,7 +322,7 @@ def compare():
     results, err = _require_results()
     if err:
         return err
-    previous = data_store.get_previous_snapshot()
+    previous = data_store.get_previous_snapshot(g.user.username)
     if previous is None:
         return jsonify({"error": "No previous snapshot to compare against."}), 404
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.3.0
+
+- Added user accounts (register/login/logout) with PBKDF2 password hashing,
+  CSRF protection, secure session cookies, and login throttling. Each
+  account has its own simulation results, snapshot history, settings,
+  timezone, and a per-account API key (slug) for headless API access.
+- Added a configurable "number of simulations" setting (per account,
+  default 100,000), used as the default for new runs.
+- The homepage hero now links to the Simulations page when no simulation
+  has been run yet.
+- Added integration with football-data.org to fetch official World Cup
+  results: a new "Update Results & Re-simulate" button on the homepage
+  fetches finished group-stage results, updates `data/actuals.json`, and
+  re-runs the simulation. The football-data.org API key is configured on
+  the Settings page.
+- Added `scripts/start.sh` (systemd-friendly start script with the VPS
+  configuration) and `scripts/update.sh` (update an existing VPS install to
+  the latest or a specified release).
+- `scripts/deploy.sh` now persists per-account data (`data/users.json`,
+  `data/users/`) across releases.
+
 ## v0.2.0
 
 - The app now reads `PORT` and `HOST` environment variables, so it can run

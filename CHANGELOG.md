@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3.4
+
+- Fixed account data (`data/users.json`) being silently lost on every
+  deploy: the atomic save in `app/auth.py` used `os.replace()` directly on
+  `USERS_PATH`, which is a symlink into the persistent shared directory on
+  the VPS. `os.replace()` doesn't follow a symlink for its destination — it
+  deleted the symlink and wrote the new file into the (ephemeral) release
+  directory instead, so registered accounts disappeared after the next
+  update. The save now resolves the symlink first and writes through to the
+  real shared file.
+
 ## v0.3.3
 
 - Ask AI can now answer questions about fixtures: a new `get_fixtures` tool

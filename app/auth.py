@@ -89,10 +89,16 @@ def _load_all() -> dict:
 
 
 def _save_all(users: dict) -> None:
-    tmp_path = USERS_PATH + ".tmp"
+    # Resolve symlinks first: USERS_PATH may be a symlink into a directory
+    # that's persisted across deploys (see scripts/deploy.sh). os.replace()
+    # does NOT follow a symlink for its destination — it would delete the
+    # symlink and write the new file in its place inside the (ephemeral)
+    # release directory, silently breaking persistence across updates.
+    target_path = os.path.realpath(USERS_PATH)
+    tmp_path = target_path + ".tmp"
     with open(tmp_path, "w") as f:
         json.dump(users, f, indent=2)
-    os.replace(tmp_path, USERS_PATH)
+    os.replace(tmp_path, target_path)
 
 
 def get_user(username: str) -> User | None:

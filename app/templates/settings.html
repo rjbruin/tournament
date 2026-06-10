@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Settings — WC 2026{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-7">
+    <h2 class="mb-4">Settings</h2>
+
+    <div class="card shadow-sm">
+      <div class="card-header fw-bold">OpenRouter (Ask AI)</div>
+      <div class="card-body">
+        <p class="text-muted small">
+          The "Ask AI" chat page uses <a href="https://openrouter.ai" target="_blank" rel="noopener">OpenRouter</a>
+          to query a language model with tool access to the simulation results.
+          Your API key is stored locally in <code>data/settings.json</code> and never sent anywhere
+          except to OpenRouter.
+        </p>
+        <form method="post" action="{{ url_for('web.settings_save') }}">
+          <div class="mb-3">
+            <label for="openrouter_api_key" class="form-label">OpenRouter API key</label>
+            <input type="password" class="form-control" id="openrouter_api_key" name="openrouter_api_key"
+                   placeholder="sk-or-..." value="{{ settings.openrouter_api_key }}" autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label for="openrouter_model" class="form-label">Model</label>
+            <input type="text" class="form-control" id="openrouter_model" name="openrouter_model"
+                   value="{{ settings.openrouter_model }}">
+            <div class="form-text">Any model slug available on OpenRouter, e.g. <code>anthropic/claude-sonnet-4.5</code>, <code>openai/gpt-4o</code>.</div>
+          </div>
+          <button type="submit" class="btn btn-success">Save Settings</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+      <div class="card-header fw-bold">Display</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('web.settings_save') }}">
+          <input type="hidden" name="openrouter_api_key" value="{{ settings.openrouter_api_key }}">
+          <input type="hidden" name="openrouter_model" value="{{ settings.openrouter_model }}">
+          <div class="mb-3">
+            <label for="display_timezone" class="form-label">Timezone for fixture times</label>
+            <select class="form-select" id="display_timezone" name="display_timezone">
+              {% for tz in ["UTC", "Europe/Amsterdam", "Europe/London", "America/New_York", "America/Los_Angeles", "America/Mexico_City", "America/Toronto", "Asia/Tokyo", "Australia/Sydney"] %}
+              <option value="{{ tz }}" {% if settings.display_timezone == tz %}selected{% endif %}>{{ tz }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-success">Save Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

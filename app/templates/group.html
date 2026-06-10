@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Group {{ group.name }} — WC 2026{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('web.index') }}">Groups</a></li>
+    <li class="breadcrumb-item active">Group {{ group.name }}</li>
+  </ol>
+</nav>
+
+<h2 class="mb-4">Group {{ group.name }}</h2>
+
+<div class="row g-4">
+  {% for tname in group.teams %}
+  {% set t = teams_by_name[tname] %}
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold fs-5">{{ tname }}</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-6">Elo rating</dt>
+          <dd class="col-6 text-end">{{ t.elo }}</dd>
+          <dt class="col-6">Confederation</dt>
+          <dd class="col-6 text-end">{{ t.confederation }}</dd>
+          {% if results %}
+          <dt class="col-6">Advance from group</dt>
+          <dd class="col-6 text-end">
+            <strong>{{ "%.1f"|format(results.group_advance_prob.get(tname,0)*100) }}%</strong>
+          </dd>
+          <dt class="col-6">Reach Round of 16</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.round_of_16_prob.get(tname,0)*100) }}%</dd>
+          <dt class="col-6">Reach Quarter-final</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.quarterfinal_prob.get(tname,0)*100) }}%</dd>
+          <dt class="col-6">Reach Semi-final</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.semifinal_prob.get(tname,0)*100) }}%</dd>
+          <dt class="col-6">Reach Final</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.finalist_prob.get(tname,0)*100) }}%</dd>
+          <dt class="col-6 text-success fw-bold">Win tournament</dt>
+          <dd class="col-6 text-end text-success fw-bold">{{ "%.1f"|format(results.winner_prob.get(tname,0)*100) }}%</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if results %}
+<h4 class="mt-5 mb-3">Group matches (simulated probabilities)</h4>
+<div class="row g-3">
+  {% set teams = group.teams %}
+  {% for i in range(teams|length) %}
+    {% for j in range(i+1, teams|length) %}
+    {% set ta = teams[i] %}
+    {% set tb = teams[j] %}
+    {% set elo_a = teams_by_name[ta].elo %}
+    {% set elo_b = teams_by_name[tb].elo %}
+    <div class="col-12 col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold">{{ ta }}</span>
+            <span class="text-muted">vs</span>
+            <span class="fw-bold">{{ tb }}</span>
+          </div>
+          <div class="text-muted small text-center mt-1">
+            Elo: {{ elo_a }} vs {{ elo_b }}
+            (diff: {% if elo_a >= elo_b %}+{% endif %}{{ elo_a - elo_b }})
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info mt-4">Run a simulation to see probabilities.</div>
+{% endif %}
+
+{% endblock %}

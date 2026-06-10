@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% import "_fixture_macros.html" as fx %}
+{% block title %}{{ team.name }} — WC 2026{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <h2 class="mb-0">{{ team.name|flag }} {{ team.name }}</h2>
+  <form method="get" class="d-flex align-items-center gap-2" id="team-form">
+    <label for="team-select" class="form-label mb-0 small text-muted">Select team</label>
+    <select id="team-select" class="form-select form-select-sm" style="width:auto" onchange="window.location.href='/team/' + encodeURIComponent(this.value)">
+      {% for tname in all_team_names %}
+      <option value="{{ tname }}" {% if tname == team.name %}selected{% endif %}>{{ tname }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">Team Info</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-6">Elo rating</dt>
+          <dd class="col-6 text-end">{{ team.elo }}</dd>
+          <dt class="col-6">Confederation</dt>
+          <dd class="col-6 text-end">{{ team.confederation }}</dd>
+          {% if team.code %}
+          <dt class="col-6">Code</dt>
+          <dd class="col-6 text-end">{{ team.code }}</dd>
+          {% endif %}
+          {% if team_group %}
+          <dt class="col-6">Group</dt>
+          <dd class="col-6 text-end">
+            <a href="{{ url_for('web.group', name=team_group.name) }}">Group {{ team_group.name }}</a>
+          </dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-8">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">Tournament Probabilities</div>
+      <div class="card-body">
+        {% if results %}
+        <dl class="row mb-0">
+          {% if team_group and results.group_finish and results.group_finish.get(team_group.name, {}).get(team.name) %}
+          {% set finish = results.group_finish[team_group.name][team.name] %}
+          <dt class="col-6">Finish 1st in group</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(finish.first_prob*100) }}%</dd>
+          <dt class="col-6">Finish 2nd in group</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(finish.second_prob*100) }}%</dd>
+          <dt class="col-6">Finish 3rd in group</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(finish.third_prob*100) }}%</dd>
+          <dt class="col-6">Finish 4th in group</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(finish.fourth_prob*100) }}%</dd>
+          <dt class="w-100"><hr class="my-2"></dt>
+          {% endif %}
+          <dt class="col-6">Advance from group</dt>
+          <dd class="col-6 text-end"><strong>{{ "%.1f"|format(results.group_advance_prob.get(team.name,0)*100) }}%</strong></dd>
+          <dt class="col-6">Reach Round of 16</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.round_of_16_prob.get(team.name,0)*100) }}%</dd>
+          <dt class="col-6">Reach Quarter-final</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.quarterfinal_prob.get(team.name,0)*100) }}%</dd>
+          <dt class="col-6">Reach Semi-final</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.semifinal_prob.get(team.name,0)*100) }}%</dd>
+          <dt class="col-6">Reach Final</dt>
+          <dd class="col-6 text-end">{{ "%.1f"|format(results.finalist_prob.get(team.name,0)*100) }}%</dd>
+          <dt class="col-6 text-success fw-bold">Win tournament</dt>
+          <dd class="col-6 text-end text-success fw-bold">{{ "%.1f"|format(results.winner_prob.get(team.name,0)*100) }}%</dd>
+        </dl>
+        {% else %}
+        <div class="alert alert-info mb-0">Run a simulation to see probabilities for this team.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if fixtures_for_team %}
+<h4 class="mt-5 mb-3">Group {{ team_group.name }} fixtures</h4>
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+  {% for m in fixtures_for_team %}
+    {{ fx.large_fixture(m) }}
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if bracket_for_team %}
+<h4 class="mt-5 mb-3">Knockout matches involving {{ team.name }}</h4>
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+  {% for m in bracket_for_team %}
+    {{ fx.large_fixture(m, header=m.round) }}
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

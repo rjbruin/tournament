@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --wc-green: #0a3b2a;
+  --wc-green-bright: #00843d;
+  --wc-gold: #ffc72c;
+  --wc-gold-deep: #e6a800;
+  --wc-pink: #ff3b6e;
+  --wc-blue: #0b3954;
+  --wc-bg: #f4f7f4;
+}
+
+body {
+  background: var(--wc-bg);
+  font-family: 'Inter', system-ui, sans-serif;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(0, 132, 61, 0.08), transparent 40%),
+    radial-gradient(circle at 0% 20%, rgba(255, 199, 44, 0.10), transparent 35%);
+  background-attachment: fixed;
+}
+
+/* ---------- Headings ---------- */
+h1, h2, h3, h4, .navbar-brand {
+  font-family: 'Bebas Neue', 'Inter', sans-serif;
+  letter-spacing: 0.04em;
+}
+h1, h2 { color: var(--wc-green); }
+
+/* ---------- Navbar ---------- */
+.navbar.bg-dark {
+  background: linear-gradient(90deg, var(--wc-green) 0%, #0f5c3f 60%, var(--wc-green-bright) 100%) !important;
+  border-bottom: 4px solid var(--wc-gold);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.navbar-brand {
+  font-size: 1.6rem;
+  text-transform: uppercase;
+  color: #fff !important;
+}
+.navbar-brand .accent { color: var(--wc-gold); }
+.navbar .nav-link {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.85) !important;
+  transition: color 0.15s ease;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  color: var(--wc-gold) !important;
+}
+.navbar #run-sim {
+  background: var(--wc-gold);
+  border-color: var(--wc-gold-deep);
+  color: var(--wc-green);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.navbar #run-sim:hover {
+  background: var(--wc-gold-deep);
+  color: #fff;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  border-radius: 0.9rem;
+  border: 1px solid rgba(10, 59, 42, 0.08);
+}
+.card-header {
+  background: var(--wc-green);
+  color: #fff;
+  border-radius: 0.9rem 0.9rem 0 0 !important;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.05em;
+  font-size: 1.05rem;
+}
+.table-dark, thead.table-dark th {
+  background: var(--wc-green) !important;
+  color: #fff;
+}
+.table-light thead, thead.table-light th {
+  background: #eef5ef;
+}
+
+.progress { border-radius: 2px; }
+.progress-bar.bg-success { background: linear-gradient(90deg, var(--wc-green-bright), var(--wc-gold)) !important; }
+
+/* ---------- Hero / Champion projection ---------- */
+.hero-banner {
+  background: linear-gradient(135deg, var(--wc-green) 0%, var(--wc-green-bright) 55%, #00b35e 100%);
+  border-radius: 1rem;
+  color: #fff;
+  padding: 1.75rem 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(10, 59, 42, 0.25);
+}
+.hero-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+.hero-banner h1 {
+  color: #fff;
+  margin-bottom: 0.1rem;
+}
+.hero-subtitle {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.95rem;
+}
+
+.champion-card {
+  position: relative;
+  background: linear-gradient(160deg, #ffffff 0%, #fffdf4 100%);
+  border: 2px solid var(--wc-gold);
+  border-radius: 1rem;
+  text-align: center;
+  padding: 1.75rem 1rem 1.25rem;
+  box-shadow: 0 12px 30px rgba(255, 199, 44, 0.35), 0 4px 10px rgba(0,0,0,0.08);
+  transform: translateY(-8px) scale(1.04);
+  z-index: 2;
+}
+.champion-card .trophy {
+  font-size: 2.6rem;
+  display: block;
+  margin-bottom: 0.25rem;
+  filter: drop-shadow(0 4px 6px rgba(230, 168, 0, 0.45));
+  animation: trophy-bob 2.4s ease-in-out infinite;
+}
+@keyframes trophy-bob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+.champion-card .crown-label {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--wc-gold-deep);
+}
+.champion-card .team-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem;
+  color: var(--wc-green);
+  margin: 0.15rem 0;
+}
+.champion-card .team-prob {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.6rem;
+  background: linear-gradient(90deg, var(--wc-green-bright), var(--wc-gold-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1;
+}
+
+.podium-card {
+  background: #fff;
+  border-radius: 1rem;
+  text-align: center;
+  padding: 1.25rem 0.75rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  border: 1px solid rgba(10,59,42,0.06);
+  height: 100%;
+}
+.podium-card .rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #fff;
+  margin-bottom: 0.4rem;
+}
+.podium-card .team-name {
+  font-weight: 700;
+  color: var(--wc-green);
+}
+.podium-card .team-prob {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: var(--wc-green-bright);
+}
+.rank-2 { background: #9aa5ad; }
+.rank-3 { background: #cd7f32; }
+.rank-4, .rank-5 { background: var(--wc-blue); }
+.rank-other { background: #c7d3cb; color: var(--wc-green); }
+
+.podium-card-sm {
+  padding: 0.75rem 0.4rem;
+}
+.podium-card-sm .rank-badge {
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 0.7rem;
+  margin-bottom: 0.25rem;
+}
+.podium-card-sm .team-name {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.team-prob-sm {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  color: var(--wc-green-bright);
+}
+
+/* Group advance badges */
+.badge.bg-success { background-color: var(--wc-green-bright) !important; }
+.badge.bg-warning { background-color: var(--wc-gold) !important; }
+
+/* ---------- Fixture display macros ---------- */
+.fixture-flag-lg { font-size: 1.6rem; line-height: 1; }
+.fixture-odds {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  color: var(--wc-green-bright);
+}
+.fixture-card .card-header { font-size: 0.95rem; }
+.knockout-card { min-width: 220px; }
+
+/* ---------- Bracket spatial layout ---------- */
+.bracket-wrapper {
+  position: relative;
+}
+.bracket-scroll {
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+.bracket-shadow {
+  position: absolute;
+  top: 0;
+  bottom: 1rem; /* leave the scrollbar/padding area unshaded */
+  width: 48px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.bracket-shadow.visible {
+  opacity: 1;
+}
+.bracket-shadow-left {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.25) 0%, transparent 100%);
+}
+.bracket-shadow-right {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.25) 0%, transparent 100%);
+}
+.bracket-round {
+  min-width: 230px;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+.bracket-match {
+  transition: margin-top 0.35s ease;
+}
+.bracket-flex {
+  position: relative;
+}
+#bracket-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.bracket-connector {
+  fill: none;
+  stroke: var(--wc-green-bright, #28a745);
+  stroke-width: 1.5;
+  stroke-opacity: 0.35;
+}
+
+/* misc */
+.navbar-brand .ball { filter: drop-shadow(0 0 4px rgba(255,255,255,0.4)); }
+
+/* ---------- Markdown rendering in chat ---------- */
+.markdown-body { white-space: normal; text-align: left; }
+.markdown-body p:last-child { margin-bottom: 0; }
+.markdown-body ul, .markdown-body ol { margin-bottom: 0.5rem; padding-left: 1.25rem; }
+.markdown-body table { width: 100%; margin-bottom: 0.5rem; border-collapse: collapse; }
+.markdown-body th, .markdown-body td { border: 1px solid #dee2e6; padding: 0.25rem 0.5rem; }
+.markdown-body code { background: rgba(0,0,0,0.06); padding: 0.1rem 0.3rem; border-radius: 3px; }
+.markdown-body pre { background: rgba(0,0,0,0.06); padding: 0.5rem; border-radius: 4px; overflow-x: auto; }

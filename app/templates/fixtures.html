@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_fixture_macros.html" as fx %}
+{% block title %}Fixtures — WC 2026{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">Fixtures</h2>
+<p class="text-muted">
+  All matches, ordered by date and time ({{ app_settings.display_timezone }}). For matches not
+  yet played, the model's outcome odds are shown. Played matches show the
+  actual scoreline / winner. Click a fixture's header to jump to its group
+  or knockout-round section.
+</p>
+
+{% if not results %}
+<div class="alert alert-info">Run a simulation to see fixtures.</div>
+{% else %}
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    {% for m in all_fixtures %}
+    {{ fx.large_fixture(m, header=m.header, header_url=m.header_url) }}
+    {% endfor %}
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

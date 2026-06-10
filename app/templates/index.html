@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% import "_fixture_macros.html" as fx %}
+{% block title %}WC 2026 — Groups{% endblock %}
+{% block content %}
+
+<div class="hero-banner mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <div>
+    <h1 class="mb-0">{{ tournament.name }}</h1>
+    <div class="hero-subtitle">{{ tournament.host_countries | join(" · ") }} — {{ tournament.year }}</div>
+  </div>
+  {% if results %}
+  <span class="badge bg-light text-success fw-bold px-3 py-2">{{ "{:,}".format(results.n_simulations) }} simulations run</span>
+  {% else %}
+  <span class="badge bg-light text-secondary fw-bold px-3 py-2">No simulation yet — click Run Simulation</span>
+  {% endif %}
+</div>
+
+{% if results %}
+{% set top10 = results.winner_prob.items() | sort(attribute=1, reverse=True) | list %}
+<h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 Champion Projection 🏆</h2>
+
+<div class="row g-3 mb-3 justify-content-center">
+  {% set team, prob = top10[0] %}
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="champion-card">
+      <span class="trophy">🏆</span>
+      <div class="crown-label">Most Likely Champion</div>
+      <div class="team-name">{{ team }}</div>
+      <div class="team-prob">{{ "%.1f"|format(prob*100) }}%</div>
+      <div class="text-muted small mt-1">to lift the trophy</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3 justify-content-center">
+  {% for team, prob in top10[1:5] %}
+  {% set rank = loop.index + 1 %}
+  <div class="col-6 col-md-3">
+    <div class="podium-card">
+      <span class="rank-badge rank-{{ rank }}">{{ rank }}</span>
+      <div class="team-name">{{ team }}</div>
+      <div class="team-prob">{{ "%.1f"|format(prob*100) }}%</div>
+      <div class="text-muted small">win probability</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if top10|length > 5 %}
+<div class="row g-2 mb-5 justify-content-center">
+  {% for team, prob in top10[5:10] %}
+  {% set rank = loop.index + 5 %}
+  <div class="col-4 col-md-2">
+    <div class="podium-card podium-card-sm">
+      <span class="rank-badge rank-other">{{ rank }}</span>
+      <div class="team-name small">{{ team }}</div>
+      <div class="team-prob-sm">{{ "%.1f"|format(prob*100) }}%</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="mb-5"></div>
+{% endif %}
+{% endif %}
+
+{% for group in groups %}
+<div class="row mb-4" id="group-{{ group.name }}">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Group {{ group.name }}</span>
+        <a href="{{ url_for('web.group', name=group.name) }}" class="btn btn-outline-secondary btn-sm">Details</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th>Team</th>
+              <th class="text-end">GP</th>
+              <th class="text-end">GF</th>
+              <th class="text-end">GA</th>
+              <th class="text-end">GD</th>
+              <th class="text-end">P</th>
+              <th class="text-end">Elo</th>
+              {% if results %}<th class="text-end">Advance</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in group_tables[group.name] %}
+            <tr>
+              <td>
+                <a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">
+                  {{ row.name|flag }} {{ row.name }}
+                </a>
+              </td>
+              <td class="text-end">{{ row.gp }}</td>
+              <td class="text-end">{{ row.gf }}</td>
+              <td class="text-end">{{ row.ga }}</td>
+              <td class="text-end">{{ row.gd }}</td>
+              <td class="text-end fw-bold">{{ row.pts }}</td>
+              <td class="text-end text-muted">{{ row.elo }}</td>
+              {% if results %}
+              <td class="text-end">
+                {% set adv = row.advance_prob %}
+                <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                  {{ "%.0f"|format(adv*100) }}%
+                </span>
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if group_fixtures[group.name] %}
+      <div class="card-body border-top">
+        <div class="row g-2">
+          {% for m in group_fixtures[group.name] %}
+          <div class="col-12">
+            <div class="border rounded p-2">{{ fx.compact_fixture(m) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% if results and results.group_finish %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-bold">Best 3rd-placed teams (8 of 12 advance)</div>
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th>#</th>
+              <th>Team</th>
+              <th>Group</th>
+              <th class="text-end">Elo</th>
+              <th class="text-end">P(3rd)</th>
+              <th class="text-end">P(advance)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set rows = [] %}
+            {% for group in groups %}
+              {% for tname in group.teams %}
+                {% set finish = results.group_finish[group.name][tname] %}
+                {% if rows.append((finish.third_prob, group.name, tname, finish)) %}{% endif %}
+              {% endfor %}
+            {% endfor %}
+            {% set sorted_rows = rows | sort(attribute=0, reverse=True) %}
+            {% for third_prob, gname, tname, finish in sorted_rows[:8] %}
+            {% set t = teams_by_name[tname] %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                <a href="{{ url_for('web.team', name=tname) }}" class="text-decoration-none text-dark fw-semibold">{{ tname }}</a>
+              </td>
+              <td>{{ gname }}</td>
+              <td class="text-end text-muted">{{ t.elo }}</td>
+              <td class="text-end">{{ "%.1f"|format(third_prob*100) }}%</td>
+              <td class="text-end">
+                {% set adv = finish.advance_prob %}
+                <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                  {{ "%.0f"|format(adv*100) }}%
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Simulation #{{ index + 1 }} — WC 2026{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h2 class="mb-0">Simulation #{{ index + 1 }}</h2>
+  <a href="{{ url_for('web.simulations') }}" class="btn btn-outline-secondary btn-sm">&larr; Back to Simulations</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-sm-3"><strong>Label:</strong> {{ snapshot.label }}</div>
+      <div class="col-sm-3"><strong>Simulations:</strong> {{ "{:,}".format(snapshot.n_simulations) }}</div>
+      <div class="col-sm-3"><strong>Elapsed:</strong> {{ snapshot.elapsed_seconds }}s</div>
+    </div>
+  </div>
+</div>
+
+<h4 class="mb-3">Winner Probabilities</h4>
+<div class="row g-2 mb-4">
+  {% set sorted_winners = snapshot.winner_prob.items() | sort(attribute=1, reverse=True) | list %}
+  {% for team, prob in sorted_winners %}
+  {% if prob > 0.001 %}
+  <div class="col-6 col-md-3 col-lg-2">
+    <div class="card text-center border-0 bg-light">
+      <div class="card-body py-2 px-1">
+        <div class="small fw-semibold">{{ team }}</div>
+        <div class="fs-5 text-success fw-bold">{{ "%.1f"|format(prob*100) }}%</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+<h4 class="mb-3">Group Stage</h4>
+<div class="row g-3">
+{% for g in engine.groups %}
+<div class="col-12 col-md-6 col-lg-4">
+  <div class="card shadow-sm">
+    <div class="card-header fw-bold">Group {{ g.name }}</div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Team</th>
+            <th class="text-end">Adv</th>
+            <th class="text-end">R16</th>
+            <th class="text-end">QF</th>
+            <th class="text-end">SF</th>
+            <th class="text-end">Final</th>
+            <th class="text-end">Win🏆</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for tname in g.teams %}
+        <tr>
+          <td class="fw-semibold">{{ tname }}</td>
+          <td class="text-end small">{{ "%.0f"|format(snapshot.group_advance_prob.get(tname,0)*100) }}%</td>
+          <td class="text-end small">{{ "%.0f"|format(snapshot.round_of_16_prob.get(tname,0)*100) }}%</td>
+          <td class="text-end small">{{ "%.0f"|format(snapshot.quarterfinal_prob.get(tname,0)*100) }}%</td>
+          <td class="text-end small">{{ "%.0f"|format(snapshot.semifinal_prob.get(tname,0)*100) }}%</td>
+          <td class="text-end small">{{ "%.0f"|format(snapshot.finalist_prob.get(tname,0)*100) }}%</td>
+          <td class="text-end small fw-bold text-success">{{ "%.1f"|format(snapshot.winner_prob.get(tname,0)*100) }}%</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+{% endblock %}

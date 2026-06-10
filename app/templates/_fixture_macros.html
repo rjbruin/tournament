@@ -1,0 +1,127 @@
+{# Unified fixture display components #}
+
+{# ---------- Compact: "Home - Away" with odds, for use in tables ---------- #}
+{% macro compact_fixture(match) %}
+  {% if match.played %}
+    <span class="fw-semibold">{{ match.home_team }} - {{ match.away_team }}</span>
+    <span class="float-end fw-bold">{{ match.home_goals }} - {{ match.away_goals }}</span>
+  {% else %}
+    <span class="fw-semibold">{{ match.home_team }} - {{ match.away_team }}</span>
+    <span class="float-end small text-muted">
+      {{ match.home_team|flag }} {{ "%.0f"|format(match.home_prob*100) }}%
+      {% if match.draw_prob is defined %} / &#9898; {{ "%.0f"|format(match.draw_prob*100) }}%{% endif %}
+      / {{ "%.0f"|format(match.away_prob*100) }}% {{ match.away_team|flag }}
+    </span>
+  {% endif %}
+{% endmacro %}
+
+
+{# ---------- Side block: known team or top-5 candidates ---------- #}
+{% macro _side(side, prob, label, align) %}
+  {% if side.determined %}
+    <div class="fixture-side text-{{ align }}">
+      <span class="fixture-team">{{ side.team }}</span>
+      <span class="fixture-flag">{{ side.team|flag }}</span>
+    </div>
+  {% else %}
+    <div class="fixture-side fixture-side-tbd text-{{ align }}">
+      {% for cand in side.candidates[:5] %}
+      <div class="small text-muted">
+        {% if align == 'end' %}{{ "%.0f"|format(side.candidate_probs[cand]*100 if side.candidate_probs is defined else 0) }}% {{ cand }} {{ cand|flag }}
+        {% else %}{{ cand|flag }} {{ cand }} {{ "%.0f"|format(side.candidate_probs[cand]*100 if side.candidate_probs is defined else 0) }}%{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+
+{# ---------- Large fixture card: header + odds row + meta line ---------- #}
+{% macro large_fixture(match, header=None, header_url=None) %}
+<div class="card shadow-sm fixture-card mb-3">
+  {% if header %}
+  <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+    {% if header_url %}<a href="{{ header_url }}" class="text-white text-decoration-none">{{ header }}</a>{% else %}{{ header }}{% endif %}
+  </div>
+  {% endif %}
+  <div class="card-body">
+    <div class="row align-items-center text-center">
+      <div class="col-5">
+        {% if match.home_team %}
+        <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
+        <div class="fw-semibold">{{ match.home_team }}</div>
+        {% if match.home_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.home_prob*100) }}%</div>{% endif %}
+        {% else %}
+        {% for cand, p in (match.home_candidates or {}).items() %}
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        {% endfor %}
+        {% endif %}
+      </div>
+      <div class="col-2">
+        {% if match.draw_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.draw_prob*100) }}%</div>{% else %}<div class="fw-bold">vs</div>{% endif %}
+      </div>
+      <div class="col-5">
+        {% if match.away_team %}
+        <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
+        <div class="fw-semibold">{{ match.away_team }}</div>
+        {% if match.away_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.away_prob*100) }}%</div>{% endif %}
+        {% else %}
+        {% for cand, p in (match.away_candidates or {}).items() %}
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+    {% if match.played %}
+    <div class="text-center fw-bold mt-1">{{ match.home_goals }} - {{ match.away_goals }}</div>
+    {% endif %}
+    {% if match.date %}
+    <div class="text-muted small text-center mt-2">
+      {{ match|local_time }}
+      {% if match.venue %} &middot; {{ match.venue }}{% if match.place %}, {{ match.place }}{% endif %}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+
+{# ---------- Knockout fixture: teams stacked vertically, no header ---------- #}
+{% macro knockout_fixture(match) %}
+<div class="card shadow-sm fixture-card knockout-card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div>
+        {% if match.home_team %}
+        <span class="fixture-flag-lg me-1">{{ match.home_team|flag }}</span>
+        <span class="fw-semibold {% if match.actual_winner == match.home_team %}text-success{% endif %}">{{ match.home_team }}</span>
+        {% else %}
+        {% for cand, p in (match.home_candidates or {}).items() %}
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        {% endfor %}
+        {% endif %}
+      </div>
+      {% if match.home_prob is defined %}<span class="fixture-odds">{{ "%.0f"|format(match.home_prob*100) }}%</span>{% endif %}
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        {% if match.away_team %}
+        <span class="fixture-flag-lg me-1">{{ match.away_team|flag }}</span>
+        <span class="fw-semibold {% if match.actual_winner == match.away_team %}text-success{% endif %}">{{ match.away_team }}</span>
+        {% else %}
+        {% for cand, p in (match.away_candidates or {}).items() %}
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        {% endfor %}
+        {% endif %}
+      </div>
+      {% if match.away_prob is defined %}<span class="fixture-odds">{{ "%.0f"|format(match.away_prob*100) }}%</span>{% endif %}
+    </div>
+    {% if match.date %}
+    <div class="text-muted small text-center mt-2 border-top pt-1">
+      {{ match|local_time }}
+      {% if match.venue %} &middot; {{ match.venue }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}

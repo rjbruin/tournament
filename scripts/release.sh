@@ -31,7 +31,7 @@ fi
 
 echo "$VERSION" > VERSION
 git add VERSION
-git commit -m "Release ${TAG}"
+git diff --cached --quiet || git commit -m "Release ${TAG}"
 
 git tag -a "$TAG" -m "Release ${TAG}"
 

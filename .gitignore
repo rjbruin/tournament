@@ -9,3 +9,4 @@ venv/
 data/snapshots.json
 data/settings.json
 .claude/
+*.tar.gz

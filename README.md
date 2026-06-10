@@ -52,3 +52,16 @@ tarball from GitHub, installs it into a versioned directory under
 (`snapshots.json`, `settings.json`, `actuals.json`) from a shared directory,
 and points `<install-dir>/current` at the new release. See the script for
 systemd integration.
+
+If the server can't reach GitHub directly (e.g. private repo without
+credentials, or no internet access), fetch the tarball on a machine that
+does have access and pass it in instead:
+
+```bash
+# On your machine (authenticated with gh):
+scripts/fetch-release.sh v0.1.0
+scp tournament-v0.1.0.tar.gz myserver:/tmp/
+
+# On the server:
+/opt/tournament/scripts/deploy.sh v0.1.0 /opt/tournament --tarball /tmp/tournament-v0.1.0.tar.gz
+```

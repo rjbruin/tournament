@@ -43,6 +43,6 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 echo "==> Updating ${INSTALL_DIR} to ${VERSION}"
-SERVICE_NAME="$SERVICE_NAME" "${REPO_ROOT}/deploy.sh" "$VERSION" "$INSTALL_DIR"
+SERVICE_NAME="$SERVICE_NAME" "${REPO_ROOT}/scripts/deploy.sh" "$VERSION" "$INSTALL_DIR"
 
 echo "==> Update complete: ${VERSION}"

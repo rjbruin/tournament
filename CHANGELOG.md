@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.1
+
+- `scripts/deploy.sh` can now install from a local tarball (`--tarball
+  <path>`) for servers that can't reach GitHub directly.
+- Added `scripts/fetch-release.sh` to download a release tarball from a
+  machine with GitHub access, for transfer to such servers.
+
 ## v0.1.0
 
 Initial release.

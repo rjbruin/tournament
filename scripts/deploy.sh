@@ -27,7 +27,7 @@ fi
 # Allow both "0.1.0" and "v0.1.0".
 [[ "$VERSION" != v* ]] && VERSION="v${VERSION}"
 
-REPO="${REPO:-robert-jan/tournament}"
+REPO="${REPO:-rjbruin/tournament}"
 INSTALL_DIR="${2:-/opt/tournament}"
 PORT="${PORT:-5001}"
 SERVICE_NAME="${SERVICE_NAME:-}"

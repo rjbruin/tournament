@@ -85,7 +85,7 @@ document.querySelectorAll('.remove-snapshot').forEach(btn => {
   btn.addEventListener('click', async () => {
     if (!confirm('Remove this simulation snapshot?')) return;
     btn.disabled = true;
-    const res = await fetch(`/api/snapshots/${btn.dataset.index}`, {method: 'DELETE'});
+    const res = await fetch(`${window.API_ROOT}/snapshots/${btn.dataset.index}`, {method: 'DELETE'});
     if (res.ok) {
       window.location.reload();
     } else {
@@ -103,7 +103,7 @@ document.getElementById('run-sim').addEventListener('click', async () => {
   btn.disabled = true;
   status.textContent = 'Running…';
   try {
-    const res = await fetch('/api/simulate', {
+    const res = await fetch('{{ url_for("api.simulate") }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({n, label})

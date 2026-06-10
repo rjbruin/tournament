@@ -39,6 +39,27 @@ App settings live in `data/settings.json` (gitignored — copy from
 - `openrouter_model` — model to use for the chat interface.
 - `display_timezone` — IANA timezone name used to display fixture times.
 
+### Running alongside another app
+
+To run on a different port and/or under a URL subpath (e.g. so it can sit
+behind a reverse proxy at `http://<host>:<port>/tournament`), set:
+
+- `PORT` — port to listen on (default `5001`).
+- `URL_PREFIX` — subpath to mount the app under, e.g. `tournament`. All
+  generated links, redirects, static assets, and API calls automatically
+  account for the prefix.
+- `HOST` — interface to bind to (default `127.0.0.1`).
+
+```bash
+PORT=5050 URL_PREFIX=/tournament python run.py
+# now serves at http://127.0.0.1:5050/tournament/
+```
+
+If you're putting this behind nginx/Apache, proxy `/tournament/` to
+`http://127.0.0.1:5050/tournament/` and set `URL_PREFIX=/tournament` for the
+app process — no `ProxyPass`-rewrite of paths is needed since the app emits
+prefixed URLs itself.
+
 ## Releases
 
 `scripts/release.sh <version>` bumps `VERSION`, tags the commit, pushes it,

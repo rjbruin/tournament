@@ -102,7 +102,7 @@ async function ask(question) {
   document.getElementById('chat-box').appendChild(thinking);
 
   try {
-    const res = await fetch('/api/query', {
+    const res = await fetch(`${window.API_ROOT}/query`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({question})
@@ -133,7 +133,7 @@ if (quickSim) {
   quickSim.addEventListener('click', async () => {
     quickSim.disabled = true;
     quickSim.textContent = 'Running…';
-    await fetch('/api/simulate', {
+    await fetch(`${window.API_ROOT}/simulate`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({n: 50000})

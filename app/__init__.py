@@ -22,11 +22,40 @@ def set_simulation_results(results):
     _simulation_results = results
 
 
+class PrefixMiddleware:
+    """WSGI middleware that lets the app be served under a URL prefix, e.g.
+
+        REVERSE_PROXY <IP>:<port>/tournament/...  ->  app:5001/...
+
+    Setting ``SCRIPT_NAME`` makes Flask's ``url_for`` (and therefore all
+    templates, redirects, and static asset links) generate URLs that include
+    the prefix, without any route having to know about it.
+    """
+
+    def __init__(self, app, prefix):
+        self.app = app
+        self.prefix = "/" + prefix.strip("/") if prefix else ""
+
+    def __call__(self, environ, start_response):
+        if not self.prefix:
+            return self.app(environ, start_response)
+
+        path = environ.get("PATH_INFO", "")
+        if path.startswith(self.prefix):
+            environ["SCRIPT_NAME"] = self.prefix
+            environ["PATH_INFO"] = path[len(self.prefix):] or "/"
+        return self.app(environ, start_response)
+
+
 def create_app():
     global _engine
 
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
+
+    url_prefix = os.environ.get("URL_PREFIX", "").strip()
+    if url_prefix:
+        app.wsgi_app = PrefixMiddleware(app.wsgi_app, url_prefix)
 
     data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "wc2026.json")
     with open(data_path) as f:

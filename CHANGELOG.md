@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.0
+
+- The app now reads `PORT` and `HOST` environment variables, so it can run
+  on a different port alongside another Flask app.
+- Added `URL_PREFIX` environment variable to mount the app under a subpath
+  (e.g. `/tournament`), so it can be reverse-proxied at
+  `http://<host>:<port>/tournament`. All generated links, redirects, static
+  assets, and client-side API calls respect the prefix.
+
 ## v0.1.1
 
 - `scripts/deploy.sh` can now install from a local tarball (`--tarball

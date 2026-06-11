@@ -1,12 +1,23 @@
 {# Unified fixture display components #}
 
+{# ---------- Form badge: Elo modifier vs. expected results ---------- #}
+{% macro form_badge(team) %}
+  {% set f = (team_form or {}).get(team) %}
+  {% if f is not none and f != 0 %}
+  <span class="badge rounded-pill {% if f > 1 %}bg-success{% elif f < -1 %}bg-danger{% else %}bg-secondary{% endif %}"
+        title="Form: {{ '%+.1f'|format(f) }} Elo vs. expected results"
+        style="font-size:0.65em; vertical-align:middle;">{{ '%+.0f'|format(f) }}</span>
+  {% endif %}
+{% endmacro %}
+
+
 {# ---------- Compact: "Home - Away" with odds, for use in tables ---------- #}
 {% macro compact_fixture(match) %}
   {% if match.played %}
-    <span class="fw-semibold">{{ match.home_team }} - {{ match.away_team }}</span>
+    <span class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }} - {{ match.away_team }} {{ form_badge(match.away_team) }}</span>
     <span class="float-end fw-bold">{{ match.home_goals }} - {{ match.away_goals }}</span>
   {% else %}
-    <span class="fw-semibold">{{ match.home_team }} - {{ match.away_team }}</span>
+    <span class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }} - {{ match.away_team }} {{ form_badge(match.away_team) }}</span>
     <span class="float-end small text-muted">
       {{ match.home_team|flag }} {{ "%.0f"|format(match.home_prob*100) }}%
       {% if match.draw_prob is defined %} / &#9898; {{ "%.0f"|format(match.draw_prob*100) }}%{% endif %}
@@ -22,6 +33,7 @@
     <div class="fixture-side text-{{ align }}">
       <span class="fixture-team">{{ side.team }}</span>
       <span class="fixture-flag">{{ side.team|flag }}</span>
+      {{ form_badge(side.team) }}
     </div>
   {% else %}
     <div class="fixture-side fixture-side-tbd text-{{ align }}">
@@ -49,7 +61,7 @@
       <div class="col-5">
         {% if match.home_team %}
         <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
-        <div class="fw-semibold">{{ match.home_team }}</div>
+        <div class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }}</div>
         {% if match.home_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.home_prob*100) }}%</div>{% endif %}
         {% else %}
         {% for cand, p in (match.home_candidates or {}).items() %}
@@ -63,7 +75,7 @@
       <div class="col-5">
         {% if match.away_team %}
         <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
-        <div class="fw-semibold">{{ match.away_team }}</div>
+        <div class="fw-semibold">{{ match.away_team }} {{ form_badge(match.away_team) }}</div>
         {% if match.away_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.away_prob*100) }}%</div>{% endif %}
         {% else %}
         {% for cand, p in (match.away_candidates or {}).items() %}
@@ -95,6 +107,7 @@
         {% if match.home_team %}
         <span class="fixture-flag-lg me-1">{{ match.home_team|flag }}</span>
         <span class="fw-semibold {% if match.actual_winner == match.home_team %}text-success{% endif %}">{{ match.home_team }}</span>
+        {{ form_badge(match.home_team) }}
         {% else %}
         {% for cand, p in (match.home_candidates or {}).items() %}
         <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
@@ -108,6 +121,7 @@
         {% if match.away_team %}
         <span class="fixture-flag-lg me-1">{{ match.away_team|flag }}</span>
         <span class="fw-semibold {% if match.actual_winner == match.away_team %}text-success{% endif %}">{{ match.away_team }}</span>
+        {{ form_badge(match.away_team) }}
         {% else %}
         {% for cand, p in (match.away_candidates or {}).items() %}
         <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>

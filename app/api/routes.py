@@ -37,8 +37,14 @@ def _authenticate():
     g.user = user
 
 
+def _scenario_id() -> str:
+    return request.args.get("s") or (request.json.get("scenario") if request.is_json else None) or "current"
+
+
 def _require_results():
-    results = app_module.get_simulation_results(g.user.username)
+    scenario_id = _scenario_id()
+    results = app_module.get_or_run_results(g.user.username, scenario_id,
+                                              n=g.user.settings.get("n_simulations"))
     if results is None:
         return None, (jsonify({"error": "No simulation results. Run /api/simulate first."}), 400)
     return results, None
@@ -55,18 +61,21 @@ def simulate():
     n = request.json.get("n", default_n) if request.is_json else default_n
     n = max(100, min(int(n), 500_000))
     save_label = request.json.get("label") if request.is_json else None
+    scenario_id = _scenario_id()
 
     engine = app_module.get_engine()
 
     # Save the previous results as a snapshot before overwriting, so the new
     # run can be compared against it.
-    previous = app_module.get_simulation_results(g.user.username)
+    previous = app_module.get_simulation_results(g.user.username, scenario_id)
     if previous is not None:
         data_store.save_snapshot(g.user.username, previous, label=save_label)
 
-    actuals = data_store.load_actuals()
-    results = engine.run(n, actuals=actuals)
-    app_module.set_simulation_results(g.user.username, results)
+    scenario = data_store.load_scenario(scenario_id)
+    if scenario is None:
+        return jsonify({"error": "Unknown scenario"}), 404
+    results = engine.run(n, actuals=scenario["actuals"])
+    app_module.set_simulation_results(g.user.username, results, scenario_id)
     return jsonify({
         "ok": True,
         "n_simulations": results["n_simulations"],
@@ -80,21 +89,28 @@ def sync_results():
     newly-completed group-stage matches into data/actuals.json, and re-run
     the simulation for the current account using those updated actuals."""
     engine = app_module.get_engine()
+
+    # Per the scenarios feature: snapshot the real-world results as a frozen
+    # scenario before they're overwritten, so users can keep exploring "what
+    # the projections looked like before this update".
+    archived = data_store.archive_current_scenario()
+
     sync_info = fetch_and_apply_official_results(engine)
     if "error" in sync_info:
         return jsonify(sync_info), 400
+    sync_info["archived_scenario"] = {"id": archived["id"], "label": archived["label"]}
 
     default_n = g.user.settings.get("n_simulations", auth.DEFAULT_USER_SETTINGS["n_simulations"])
     n = request.json.get("n", default_n) if request.is_json else default_n
     n = max(100, min(int(n), 500_000))
 
-    previous = app_module.get_simulation_results(g.user.username)
+    previous = app_module.get_simulation_results(g.user.username, "current")
     if previous is not None:
         data_store.save_snapshot(g.user.username, previous, label="Before results sync")
 
     actuals = data_store.load_actuals()
     results = engine.run(n, actuals=actuals)
-    app_module.set_simulation_results(g.user.username, results)
+    app_module.set_simulation_results(g.user.username, results, "current")
 
     return jsonify({
         "ok": True,
@@ -228,11 +244,31 @@ def query():
     data = request.get_json()
     if not data or "question" not in data:
         return jsonify({"error": "Missing 'question' field"}), 400
-    results = app_module.get_simulation_results(g.user.username)
+    scenario_id = data.get("scenario") or _scenario_id()
+    results = app_module.get_or_run_results(g.user.username, scenario_id,
+                                              n=g.user.settings.get("n_simulations"))
     engine = app_module.get_engine()
     history = data.get("history") if isinstance(data.get("history"), list) else None
     answer = answer_question(data["question"], engine, results, user_settings=g.user.settings, history=history)
     return jsonify({"question": data["question"], "answer": answer})
+
+
+# ----------------------------------------------------------------------
+# Scenarios
+# ----------------------------------------------------------------------
+
+@api_bp.get("/scenarios")
+def get_scenarios():
+    """List scenarios, optionally filtered by quality flags, e.g.
+    ?group_stage_complete=true&has_knockout_results=false"""
+    scenarios = data_store.list_scenarios()
+    quality_keys = ("group_stage_complete", "has_group_results",
+                    "has_knockout_results", "knockout_complete")
+    for key in quality_keys:
+        if key in request.args:
+            want = request.args.get(key).lower() in ("1", "true", "yes")
+            scenarios = [s for s in scenarios if bool(s.get(key)) == want]
+    return jsonify(scenarios)
 
 
 # ----------------------------------------------------------------------
@@ -241,7 +277,45 @@ def query():
 
 @api_bp.get("/actuals")
 def get_actuals():
-    return jsonify(data_store.load_actuals())
+    scenario = data_store.load_scenario(_scenario_id())
+    if scenario is None:
+        return jsonify({"error": "Unknown scenario"}), 404
+    return jsonify(scenario["actuals"])
+
+
+def _invalidate_results(scenario_id):
+    """Drop any cached simulation results for this scenario, for every
+    account, so the next page load/API call re-runs against the new
+    actuals."""
+    for key in list(app_module._simulation_results.keys()):
+        if key[1] == scenario_id:
+            del app_module._simulation_results[key]
+
+
+def _load_actuals_for_edit():
+    """Resolve the (scenario_id, actuals) pair to mutate for a results edit.
+
+    - ``s=current`` (or no `s`/`scenario` param) edits ``data/actuals.json``
+      directly — used for real-world result corrections.
+    - ``s=<other>`` and ``fork=true`` forks that scenario into a new "what
+      if" scenario and edits the copy, leaving the original untouched.
+    - ``s=<other>`` without ``fork`` edits that scenario's saved actuals
+      in place.
+    """
+    scenario_id = _scenario_id()
+    fork = (request.args.get("fork") or (request.json or {}).get("fork") if request.is_json else request.args.get("fork"))
+    fork = str(fork).lower() in ("1", "true", "yes") if fork else False
+
+    scenario = data_store.load_scenario(scenario_id)
+    if scenario is None:
+        return None, None, False
+    import copy
+    actuals = copy.deepcopy(scenario["actuals"])
+    if fork:
+        return None, actuals, True  # caller forks after mutating
+    if scenario_id == "current":
+        return "current", actuals, False
+    return scenario_id, actuals, False
 
 
 @api_bp.post("/actuals/group_result")
@@ -249,6 +323,10 @@ def post_group_result():
     """
     Body: {"group": "A", "home": "Mexico", "away": "South Africa",
            "home_goals": 2, "away_goals": 1}
+
+    Optional query params: ?s=<scenario_id> to edit a non-current scenario,
+    ?fork=true to create a new "what if" scenario from the result instead of
+    editing in place.
     """
     body = request.get_json()
     required = ("group", "home", "away", "home_goals", "away_goals")
@@ -260,9 +338,12 @@ def post_group_result():
     if gname not in engine.group_pos:
         return jsonify({"error": "Unknown group"}), 404
 
-    actuals = data_store.load_actuals()
+    base_scenario_id = _scenario_id()
+    target_id, actuals, do_fork = _load_actuals_for_edit()
+    if actuals is None:
+        return jsonify({"error": "Unknown scenario"}), 404
+
     matches = actuals["group_results"].setdefault(gname, [])
-    # Replace any existing entry for the same fixture
     matches = [
         m for m in matches
         if {m.get("home"), m.get("away")} != {body["home"], body["away"]}
@@ -274,13 +355,14 @@ def post_group_result():
         "away_goals": int(body["away_goals"]),
     })
     actuals["group_results"][gname] = matches
-    data_store.save_actuals(actuals)
-    return jsonify({"ok": True, "actuals": actuals})
+
+    return _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork)
 
 
 @api_bp.post("/actuals/knockout_result")
 def post_knockout_result():
-    """Body: {"match": 73, "winner": "Spain"}"""
+    """Body: {"match": 73, "winner": "Spain"}. Same `s`/`fork` params as
+    /actuals/group_result."""
     body = request.get_json()
     if not body or "match" not in body or "winner" not in body:
         return jsonify({"error": "Missing fields, required: match, winner"}), 400
@@ -289,15 +371,41 @@ def post_knockout_result():
     if body["winner"] not in engine.team_idx:
         return jsonify({"error": "Unknown team"}), 404
 
-    actuals = data_store.load_actuals()
+    base_scenario_id = _scenario_id()
+    target_id, actuals, do_fork = _load_actuals_for_edit()
+    if actuals is None:
+        return jsonify({"error": "Unknown scenario"}), 404
+
     actuals["knockout_results"][str(int(body["match"]))] = body["winner"]
-    data_store.save_actuals(actuals)
-    return jsonify({"ok": True, "actuals": actuals})
+
+    return _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork)
+
+
+def _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork):
+    if do_fork:
+        scenario = data_store.fork_scenario(base_scenario_id, actuals)
+        return jsonify({"ok": True, "scenario": {k: v for k, v in scenario.items() if k != "actuals"},
+                         "actuals": actuals})
+    if target_id == "current":
+        data_store.save_actuals(actuals)
+    else:
+        existing = data_store.load_scenario(target_id)
+        data_store.save_scenario(existing["label"], actuals, scenario_id=target_id)
+    _invalidate_results(target_id)
+    return jsonify({"ok": True, "scenario_id": target_id, "actuals": actuals})
 
 
 @api_bp.post("/actuals/reset")
 def reset_actuals():
-    data_store.save_actuals(data_store._empty_actuals())
+    scenario_id = _scenario_id()
+    if scenario_id == "current":
+        data_store.save_actuals(data_store._empty_actuals())
+    else:
+        existing = data_store.load_scenario(scenario_id)
+        if existing is None:
+            return jsonify({"error": "Unknown scenario"}), 404
+        data_store.save_scenario(existing["label"], data_store._empty_actuals(), scenario_id=scenario_id)
+    _invalidate_results(scenario_id)
     return jsonify({"ok": True})
 
 

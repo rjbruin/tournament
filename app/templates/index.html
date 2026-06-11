@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_fixture_macros.html" as fx %}
+{% import "_fixture_macros.html" as fx with context %}
 {% block title %}WC 2026 — Groups{% endblock %}
 {% block content %}
 
@@ -39,6 +39,65 @@ document.getElementById('sync-results-btn')?.addEventListener('click', async fun
   }
 });
 </script>
+
+{% if featured_fixture %}
+<div class="card shadow-sm mb-4" id="featured-fixture">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-bold">{{ "Latest result" if featured_fixture.played else "Up next" }} — Group {{ featured_fixture._group }}</span>
+    {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
+  </div>
+  <div class="card-body">
+    <div class="border rounded p-2">{{ fx.large_fixture(featured_fixture) }}</div>
+    {% if current_user.is_authenticated %}
+    <form id="featured-score-form" class="row g-2 align-items-end mt-3">
+      <div class="col-auto">
+        <label class="form-label small mb-0">{{ featured_fixture.home_team }}</label>
+        <input type="number" min="0" class="form-control form-control-sm" name="home_goals" style="width:5rem"
+               value="{{ featured_fixture.home_goals if featured_fixture.played else '' }}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label small mb-0">{{ featured_fixture.away_team }}</label>
+        <input type="number" min="0" class="form-control form-control-sm" name="away_goals" style="width:5rem"
+               value="{{ featured_fixture.away_goals if featured_fixture.played else '' }}">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-success btn-sm">Save score</button>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary btn-sm" name="fork" value="1">Save as "what if"</button>
+      </div>
+    </form>
+    <script>
+    document.getElementById('featured-score-form')?.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      const fork = (e.submitter && e.submitter.name === 'fork');
+      const params = new URLSearchParams({s: '{{ scenario_id }}'});
+      if (fork) params.set('fork', 'true');
+      const resp = await fetch(`${window.API_ROOT}/actuals/group_result?${params}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          group: '{{ featured_fixture._group }}',
+          home: '{{ featured_fixture.home_team }}',
+          away: '{{ featured_fixture.away_team }}',
+          home_goals: parseInt(fd.get('home_goals') || '0', 10),
+          away_goals: parseInt(fd.get('away_goals') || '0', 10),
+        })
+      });
+      const data = await resp.json();
+      if (!resp.ok) { alert(data.error || 'Failed to save score.'); return; }
+      if (data.scenario && data.scenario.id) {
+        window.location = `${window.location.pathname}?s=${data.scenario.id}`;
+      } else {
+        window.location.reload();
+      }
+    });
+    </script>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 {% if results %}
 {% set top10 = results.winner_prob.items() | sort(attribute=1, reverse=True) | list %}
@@ -89,6 +148,16 @@ document.getElementById('sync-results-btn')?.addEventListener('click', async fun
 {% endif %}
 {% endif %}
 
+{% if not current_user.is_authenticated %}
+<div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <span>
+    👋 You're viewing the current real-world scenario.
+    <a href="{{ url_for('auth.register') }}">Sign in or create an account</a> to explore "what if" scenarios
+    and ask the AI questions about the results.
+  </span>
+</div>
+{% endif %}
+
 {% for group in groups %}
 <div class="row mb-4" id="group-{{ group.name }}">
   <div class="col-12">
@@ -117,7 +186,7 @@ document.getElementById('sync-results-btn')?.addEventListener('click', async fun
               <td>
                 <a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">
                   {{ row.name|flag }} {{ row.name }}
-                </a>
+                </a> {{ fx.form_badge(row.name) }}
               </td>
               <td class="text-end">{{ row.gp }}</td>
               <td class="text-end">{{ row.gf }}</td>

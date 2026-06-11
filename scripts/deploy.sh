@@ -119,6 +119,13 @@ mkdir -p "$src_dir"
 rm -rf "$dst_dir"
 ln -s "$src_dir" "$dst_dir"
 
+# Saved "what if" scenarios (data/scenarios/<id>.json).
+src_dir="${SHARED_DIR}/data/scenarios"
+dst_dir="${RELEASE_DIR}/data/scenarios"
+mkdir -p "$src_dir"
+rm -rf "$dst_dir"
+ln -s "$src_dir" "$dst_dir"
+
 # The service user (e.g. www-data) needs to write to the shared data
 # directory and to the release's data/ directory itself (which holds the
 # symlinks — atomic writes create a temp file alongside the symlink before

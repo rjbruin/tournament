@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Compare Scenarios — WC 2026{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">Compare scenarios</h2>
+
+<form method="get" class="row g-2 align-items-end mb-4">
+  <div class="col-12 col-md-4">
+    <label class="form-label">Scenario A</label>
+    <select class="form-select" name="a">
+      {% for s in scenarios %}
+      <option value="{{ s.id }}" {% if s.id == a_id %}selected{% endif %}>{{ s.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 col-md-4">
+    <label class="form-label">Scenario B</label>
+    <select class="form-select" name="b">
+      {% for s in scenarios %}
+      <option value="{{ s.id }}" {% if s.id == b_id %}selected{% endif %}>{{ s.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 col-md-3">
+    <label class="form-label">Team</label>
+    <select class="form-select" name="team">
+      {% for t in all_team_names %}
+      <option value="{{ t }}" {% if t == team %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 col-md-1">
+    <button type="submit" class="btn btn-success w-100">Go</button>
+  </div>
+</form>
+
+<div class="row g-4">
+  {% for summary in [summary_a, summary_b] %}
+  <div class="col-12 col-md-6">
+    {% if summary %}
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">{{ summary.scenario.label }}</div>
+      <div class="card-body">
+        <h6>Top 5 predicted winners</h6>
+        <ol class="mb-3">
+          {% for t, p in summary.top5 %}
+          <li>{{ t | flag }} {{ t }} — {{ "%.1f"|format(p * 100) }}%</li>
+          {% endfor %}
+        </ol>
+        <h6>{{ team }} odds</h6>
+        <ul class="list-unstyled mb-0 small">
+          <li>Group advance: <strong>{{ "%.1f"|format(summary.team_odds.group_advance_prob * 100) }}%</strong></li>
+          <li>Round of 16: <strong>{{ "%.1f"|format(summary.team_odds.round_of_16_prob * 100) }}%</strong></li>
+          <li>Quarterfinal: <strong>{{ "%.1f"|format(summary.team_odds.quarterfinal_prob * 100) }}%</strong></li>
+          <li>Semifinal: <strong>{{ "%.1f"|format(summary.team_odds.semifinal_prob * 100) }}%</strong></li>
+          <li>Final: <strong>{{ "%.1f"|format(summary.team_odds.finalist_prob * 100) }}%</strong></li>
+          <li>Winner: <strong>{{ "%.1f"|format(summary.team_odds.winner_prob * 100) }}%</strong></li>
+        </ul>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">No data for this scenario.</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

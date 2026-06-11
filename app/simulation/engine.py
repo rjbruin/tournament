@@ -382,6 +382,7 @@ class SimulationEngine:
 
         results = self._aggregate(n, reached, group_order)
         results["_bracket_matches"] = self._summarize_bracket_matches(n, bracket_matches)
+        results["opponent_probs"] = self._compute_opponent_probs(n, bracket_matches)
         return results
 
     def _simulate_knockout_match(self, team_a: np.ndarray, team_b: np.ndarray) -> np.ndarray:
@@ -425,6 +426,42 @@ class SimulationEngine:
             for i in top_idx if probs[i] > 0
         ]
         return {"determined": False, "team": None, "elo": None, "candidates": candidates}
+
+    def _compute_opponent_probs(self, n: int, bracket_matches: dict) -> dict:
+        """For each team and each knockout round, the top-5 most likely
+        opponents in that round (conditional on the team reaching it)."""
+        rounds = [
+            ("Round of 32", self.r32_defs),
+            ("Round of 16", self.r16_defs),
+            ("Quarterfinals", self.qf_defs),
+            ("Semifinals", self.sf_defs),
+            ("Final", [self.final_def]),
+        ]
+        n_teams = len(self.team_names)
+        out = {tname: {} for tname in self.team_names}
+        for round_name, defs in rounds:
+            opp_counts = np.zeros((n_teams, n_teams), dtype=np.int64)
+            appearances = np.zeros(n_teams, dtype=np.int64)
+            for m in defs:
+                home_arr = bracket_matches[m["match"]]["home"]
+                away_arr = bracket_matches[m["match"]]["away"]
+                np.add.at(opp_counts, (home_arr, away_arr), 1)
+                np.add.at(opp_counts, (away_arr, home_arr), 1)
+                np.add.at(appearances, home_arr, 1)
+                np.add.at(appearances, away_arr, 1)
+            for tidx, tname in enumerate(self.team_names):
+                total = appearances[tidx]
+                if total == 0:
+                    continue
+                probs = opp_counts[tidx] / total
+                top_idx = np.argsort(-probs)[:5]
+                opponents = [
+                    {"team": self.team_names[i], "probability": round(float(probs[i]), 4)}
+                    for i in top_idx if probs[i] > 0
+                ]
+                if opponents:
+                    out[tname][round_name] = opponents
+        return out
 
     def _summarize_bracket_matches(self, n: int, bracket_matches: dict) -> dict:
         out = {}

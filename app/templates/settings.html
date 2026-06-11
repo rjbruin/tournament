@@ -54,6 +54,15 @@
               {% endfor %}
             </select>
           </div>
+          <div class="mb-3">
+            <label for="default_team" class="form-label">Default team</label>
+            <select class="form-select" id="default_team" name="default_team">
+              {% for t in all_team_names %}
+              <option value="{{ t }}" {% if settings.default_team == t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Used as the default team on the Team page and the Scenarios comparison page.</div>
+          </div>
         </div>
       </div>
 

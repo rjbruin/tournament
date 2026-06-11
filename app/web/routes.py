@@ -8,20 +8,55 @@ from app.web.view_helpers import normalize_group_match, normalize_bracket_match,
 web_bp = Blueprint("web", __name__)
 
 
+def _scenario_id() -> str:
+    """Resolve the active scenario id from the `s` query param. Anonymous
+    visitors are always pinned to the public "current" scenario."""
+    if not current_user.is_authenticated:
+        return "current"
+    return request.args.get("s") or "current"
+
+
+def _username():
+    return current_user.username if current_user.is_authenticated else None
+
+
+def _results_for_scenario(scenario_id: str):
+    n = None
+    if current_user.is_authenticated:
+        n = current_user.settings.get("n_simulations")
+    return app_module.get_or_run_results(_username(), scenario_id, n=n)
+
+
 @web_bp.get("/")
 def index():
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results(current_user.username)
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
     groups = engine.groups
     groups_by_name = {g["name"]: g for g in engine.groups}
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
 
     group_tables = {}
     group_fixtures = {}
+    all_normalized = []
     for g in groups:
         raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
         group_tables[g["name"]] = compute_group_table(g, raw_fixtures, teams_by_name, results)
-        group_fixtures[g["name"]] = [normalize_group_match(m) for m in raw_fixtures]
+        normalized = [normalize_group_match(m) for m in raw_fixtures]
+        group_fixtures[g["name"]] = normalized
+        for m, raw in zip(normalized, raw_fixtures):
+            m["_group"] = g["name"]
+            m["_sort_key"] = _utc_sort_key(raw)
+            all_normalized.append(m)
+
+    # The "current/next fixture" card: prefer a fixture without a result yet
+    # (i.e. upcoming or in progress), otherwise fall back to the most
+    # recently played one.
+    featured_fixture = None
+    if all_normalized:
+        all_normalized.sort(key=lambda m: m["_sort_key"])
+        upcoming = [m for m in all_normalized if not m.get("played")]
+        featured_fixture = upcoming[0] if upcoming else all_normalized[-1]
 
     return render_template(
         "index.html",
@@ -32,13 +67,16 @@ def index():
         group_tables=group_tables,
         group_fixtures=group_fixtures,
         results=results,
+        scenario_id=scenario_id,
+        featured_fixture=featured_fixture,
     )
 
 
 @web_bp.get("/group/<name>")
 def group(name: str):
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results(current_user.username)
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
     group = next((g for g in engine.groups if g["name"] == name.upper()), None)
     if group is None:
         return redirect(url_for("web.index"))
@@ -48,21 +86,26 @@ def group(name: str):
         group=group,
         teams_by_name=teams_by_name,
         results=results,
+        scenario_id=scenario_id,
     )
 
 
 @web_bp.get("/team")
 def team_default():
-    return redirect(url_for("web.team", name="Netherlands"))
+    default_team = "Netherlands"
+    if current_user.is_authenticated:
+        default_team = current_user.settings.get("default_team", "Netherlands")
+    return redirect(url_for("web.team", name=default_team, **request.args))
 
 
 @web_bp.get("/team/<name>")
 def team(name: str):
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results(current_user.username)
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
     if name not in teams_by_name:
-        return redirect(url_for("web.team", name="Netherlands"))
+        return redirect(url_for("web.team_default"))
 
     team_group = next((g for g in engine.groups if name in g["teams"]), None)
 
@@ -91,15 +134,17 @@ def team(name: str):
         fixtures_for_team=fixtures_for_team,
         bracket_for_team=bracket_for_team,
         results=results,
+        scenario_id=scenario_id,
     )
 
 
 @web_bp.get("/bracket")
 def bracket():
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results(current_user.username)
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
     if results is None or "bracket_matches" not in results:
-        return render_template("bracket.html", results=results, rounds=None)
+        return render_template("bracket.html", results=results, rounds=None, scenario_id=scenario_id)
 
     bm = results["bracket_matches"]
     rounds = [
@@ -109,13 +154,14 @@ def bracket():
         ("Semifinals", [normalize_bracket_match(bm[m]) for m in (101, 102)]),
         ("Final", [normalize_bracket_match(bm[103])]),
     ]
-    return render_template("bracket.html", results=results, rounds=rounds)
+    return render_template("bracket.html", results=results, rounds=rounds, scenario_id=scenario_id)
 
 
 @web_bp.get("/fixtures")
 def fixtures():
     engine = app_module.get_engine()
-    results = app_module.get_simulation_results(current_user.username)
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
     groups = engine.groups
     all_fixtures = []
     if results is not None:
@@ -141,6 +187,81 @@ def fixtures():
         groups=groups,
         all_fixtures=all_fixtures,
         results=results,
+        scenario_id=scenario_id,
+    )
+
+
+@web_bp.get("/scenarios")
+@login_required
+def scenarios():
+    scenario_list = data_store.list_scenarios()
+    return render_template("scenarios.html", scenarios=scenario_list)
+
+
+@web_bp.post("/scenarios/new")
+@login_required
+def scenarios_new():
+    label = request.form.get("label", "").strip() or "Untitled scenario"
+    base_id = request.form.get("based_on") or "current"
+    base = data_store.load_scenario(base_id)
+    actuals = (base or {}).get("actuals") or data_store._empty_actuals()
+    import copy
+    scenario = data_store.fork_scenario(base_id, copy.deepcopy(actuals), label=label)
+    flash(f"Created scenario '{scenario['label']}'.", "success")
+    return redirect(url_for("web.scenarios"))
+
+
+@web_bp.post("/scenarios/<scenario_id>/delete")
+@login_required
+def scenarios_delete(scenario_id):
+    if data_store.delete_scenario(scenario_id):
+        flash("Scenario deleted.", "success")
+    else:
+        flash("Could not delete that scenario.", "danger")
+    return redirect(url_for("web.scenarios"))
+
+
+@web_bp.get("/scenarios/compare")
+@login_required
+def scenario_compare():
+    engine = app_module.get_engine()
+    scenario_list = data_store.list_scenarios()
+    ids = [s["id"] for s in scenario_list]
+    a_id = request.args.get("a") or (ids[0] if ids else "current")
+    b_id = request.args.get("b") or (ids[1] if len(ids) > 1 else a_id)
+    team = request.args.get("team") or current_user.settings.get("default_team", "Netherlands")
+
+    n = current_user.settings.get("n_simulations")
+
+    def _summary(scenario_id):
+        results = app_module.get_or_run_results(current_user.username, scenario_id, n=n)
+        if results is None:
+            return None
+        top5 = sorted(results["winner_prob"].items(), key=lambda x: x[1], reverse=True)[:5]
+        return {
+            "scenario": data_store.load_scenario(scenario_id),
+            "top5": top5,
+            "team_odds": {
+                "group_advance_prob": results["group_advance_prob"].get(team, 0),
+                "round_of_16_prob": results["round_of_16_prob"].get(team, 0),
+                "quarterfinal_prob": results["quarterfinal_prob"].get(team, 0),
+                "semifinal_prob": results["semifinal_prob"].get(team, 0),
+                "finalist_prob": results["finalist_prob"].get(team, 0),
+                "winner_prob": results["winner_prob"].get(team, 0),
+            },
+        }
+
+    all_team_names = sorted(t["name"] for t in engine.data["teams"])
+
+    return render_template(
+        "scenario_compare.html",
+        scenarios=scenario_list,
+        a_id=a_id,
+        b_id=b_id,
+        team=team,
+        all_team_names=all_team_names,
+        summary_a=_summary(a_id),
+        summary_b=_summary(b_id),
     )
 
 
@@ -155,12 +276,46 @@ def chat():
     return render_template("chat.html", results=results)
 
 
+@web_bp.get("/onboarding")
+def onboarding():
+    engine = app_module.get_engine()
+    all_team_names = sorted(t["name"] for t in engine.data["teams"])
+    return render_template(
+        "onboarding.html",
+        settings=current_user.settings,
+        all_team_names=all_team_names,
+    )
+
+
+@web_bp.post("/onboarding")
+def onboarding_save():
+    n_simulations = request.form.get("n_simulations", "").strip()
+    try:
+        n_simulations = max(100, min(int(n_simulations), 500_000))
+    except ValueError:
+        n_simulations = auth.DEFAULT_USER_SETTINGS["n_simulations"]
+
+    auth.update_settings(
+        current_user.username,
+        default_team=request.form.get("default_team", "").strip() or auth.DEFAULT_USER_SETTINGS["default_team"],
+        display_timezone=request.form.get("display_timezone", "").strip() or auth.DEFAULT_USER_SETTINGS["display_timezone"],
+        n_simulations=n_simulations,
+        openrouter_api_key=request.form.get("openrouter_api_key", "").strip(),
+        onboarded=True,
+    )
+    flash("Welcome! Your settings have been saved — you can change these any time on the Settings page.", "success")
+    return redirect(url_for("web.index"))
+
+
 @web_bp.get("/settings")
 def settings():
+    engine = app_module.get_engine()
+    all_team_names = sorted(t["name"] for t in engine.data["teams"])
     return render_template(
         "settings.html",
         settings=current_user.settings,
         global_settings=data_store.load_global_settings(),
+        all_team_names=all_team_names,
     )
 
 
@@ -178,6 +333,8 @@ def settings_save():
         openrouter_model=request.form.get("openrouter_model", "").strip() or auth.DEFAULT_USER_SETTINGS["openrouter_model"],
         display_timezone=request.form.get("display_timezone", "").strip() or auth.DEFAULT_USER_SETTINGS["display_timezone"],
         n_simulations=n_simulations,
+        default_team=request.form.get("default_team", "").strip() or auth.DEFAULT_USER_SETTINGS["default_team"],
+        onboarded=True,
     )
 
     # The official-results API key is a shared/global setting (it's not tied

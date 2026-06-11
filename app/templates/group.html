@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_fixture_macros.html" as fx with context %}
 {% block title %}Group {{ group.name }} — WC 2026{% endblock %}
 {% block content %}
 
@@ -16,7 +17,7 @@
   {% set t = teams_by_name[tname] %}
   <div class="col-12 col-md-4">
     <div class="card shadow-sm h-100">
-      <div class="card-header fw-bold fs-5">{{ tname }}</div>
+      <div class="card-header fw-bold fs-5">{{ tname }} {{ fx.form_badge(tname) }}</div>
       <div class="card-body">
         <dl class="row mb-0">
           <dt class="col-6">Elo rating</dt>

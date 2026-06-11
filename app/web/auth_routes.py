@@ -64,7 +64,7 @@ def register_post():
 
     login_user(user)
     flash("Account created. Welcome!", "success")
-    return redirect(url_for("web.index"))
+    return redirect(url_for("web.onboarding"))
 
 
 @auth_bp.get("/login")

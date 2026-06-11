@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.4.0
+
+- Added **scenarios**: a scenario is a named set of fixture results. "Current"
+  always reflects the real-world tournament; users can create, view, and
+  delete additional "what if" scenarios from the new Scenarios page, and
+  compare any two scenarios head-to-head (top-5 predicted winners + a chosen
+  team's odds).
+- Any results/standings/bracket/fixtures page can be loaded for a particular
+  scenario via `?s=<scenario_id>`.
+- The homepage is now viewable without an account (always showing the
+  "current" scenario), with a sign-in hint to unlock other scenarios and Ask
+  AI. Logged-in users see a "current/next fixture" card at the top with an
+  inline score-update form (optionally saving as a new "what if" scenario).
+- `/api/results/sync` now archives the current real-world scenario before
+  overwriting it with newly-fetched results, so earlier states remain
+  explorable.
+- The `/api/actuals/*` endpoints, `/api/query` (Ask AI), and the stats
+  endpoints now accept a `?s=<scenario_id>` parameter (and `?fork=true` for
+  result edits) for scenario-aware results.
+- Added a new `GET /api/scenarios` endpoint, with optional quality filters
+  (`group_stage_complete`, `has_group_results`, `has_knockout_results`,
+  `knockout_complete`).
+- Added a configurable "Default team" setting (used on the Team page and
+  Scenario comparison page), defaulting to Netherlands for new accounts.
+
 ## v0.3.5
 
 - Ask AI now remembers the conversation: the chat page sends recent message

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Welcome — WC 2026{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-7">
+    <h2 class="mb-1">Welcome to the World Cup Simulator!</h2>
+    <p class="text-muted mb-4">
+      Let's set a few preferences to personalize your experience. You can change these any time on the
+      <a href="{{ url_for('web.settings') }}">Settings page</a>.
+    </p>
+
+    <form method="post" action="{{ url_for('web.onboarding_save') }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="default_team" class="form-label">Which team are you following?</label>
+            <select class="form-select" id="default_team" name="default_team">
+              {% for t in all_team_names %}
+              <option value="{{ t }}" {% if settings.default_team == t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Used as the default on the Team page and the Scenario comparison page.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="display_timezone" class="form-label">Timezone for fixture times</label>
+            <select class="form-select" id="display_timezone" name="display_timezone">
+              {% for tz in ["UTC", "Europe/Amsterdam", "Europe/London", "America/New_York", "America/Los_Angeles", "America/Mexico_City", "America/Toronto", "Asia/Tokyo", "Australia/Sydney"] %}
+              <option value="{{ tz }}" {% if settings.display_timezone == tz %}selected{% endif %}>{{ tz }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="n_simulations" class="form-label">Number of simulations</label>
+            <input type="number" class="form-control" id="n_simulations" name="n_simulations"
+                   min="100" max="500000" step="100" value="{{ settings.n_simulations }}">
+            <div class="form-text">Higher values are more accurate but take longer to compute. 100,000 is a good default.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="openrouter_api_key" class="form-label">OpenRouter API key (optional)</label>
+            <input type="password" class="form-control" id="openrouter_api_key" name="openrouter_api_key"
+                   placeholder="sk-or-..." autocomplete="off">
+            <div class="form-text">
+              Needed to use "Ask AI". Get one at <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> —
+              you can also add this later on the Settings page.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{{ url_for('web.index') }}" class="btn btn-outline-secondary">Skip for now</a>
+        <button type="submit" class="btn btn-success">Get started</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

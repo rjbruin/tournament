@@ -50,6 +50,8 @@ DEFAULT_USER_SETTINGS = {
     "openrouter_model": "anthropic/claude-sonnet-4.5",
     "display_timezone": "UTC",
     "n_simulations": 100_000,
+    "default_team": "Netherlands",
+    "onboarded": False,
 }
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]{3,32}$")

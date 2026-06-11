@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% import "_fixture_macros.html" as fx %}
+{% import "_fixture_macros.html" as fx with context %}
 {% block title %}{{ team.name }} — WC 2026{% endblock %}
 {% block content %}
 
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-  <h2 class="mb-0">{{ team.name|flag }} {{ team.name }}</h2>
+  <h2 class="mb-0">{{ team.name|flag }} {{ team.name }} {{ fx.form_badge(team.name) }}</h2>
   <form method="get" class="d-flex align-items-center gap-2" id="team-form">
     <label for="team-select" class="form-label mb-0 small text-muted">Select team</label>
     <select id="team-select" class="form-select form-select-sm" style="width:auto" onchange="window.location.href='/team/' + encodeURIComponent(this.value)">
@@ -98,6 +98,32 @@
     {{ fx.large_fixture(m, header=m.round) }}
   {% endfor %}
   </div>
+</div>
+{% endif %}
+
+{% if results and results.opponent_probs and results.opponent_probs.get(team.name) %}
+<h4 class="mt-5 mb-3">Likely opponents by round</h4>
+<div class="row g-3 justify-content-center">
+  {% for round_name in ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"] %}
+  {% set opponents = results.opponent_probs[team.name].get(round_name) %}
+  {% if opponents %}
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">{{ round_name }}</div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          {% for o in opponents %}
+          <li class="d-flex justify-content-between">
+            <span>{{ o.team|flag }} {{ o.team }} {{ fx.form_badge(o.team) }}</span>
+            <span class="text-muted">{{ "%.1f"|format(o.probability*100) }}%</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
 </div>
 {% endif %}
 

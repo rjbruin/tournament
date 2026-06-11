@@ -13,7 +13,7 @@ from app.flags import flag_emoji
 # Snapshots are persisted to disk (see data_store), but the "current" results
 # only live in memory and are lost on restart — the user can re-run the
 # simulation from their last snapshot's settings.
-_simulation_results: dict[str, dict] = {}
+_simulation_results: dict[tuple, dict] = {}
 _engine: SimulationEngine = None
 
 
@@ -21,12 +21,30 @@ def get_engine() -> SimulationEngine:
     return _engine
 
 
-def get_simulation_results(username: str):
-    return _simulation_results.get(username.lower()) if username else None
+def get_simulation_results(username: str, scenario_id: str = "current"):
+    key = ((username or "_anon").lower(), scenario_id or "current")
+    return _simulation_results.get(key)
 
 
-def set_simulation_results(username: str, results) -> None:
-    _simulation_results[username.lower()] = results
+def set_simulation_results(username: str, results, scenario_id: str = "current") -> None:
+    key = ((username or "_anon").lower(), scenario_id or "current")
+    _simulation_results[key] = results
+
+
+def get_or_run_results(username: str, scenario_id: str = "current", n: int = None):
+    """Return cached simulation results for (account, scenario), running and
+    caching a fresh simulation against that scenario's actuals if needed."""
+    scenario_id = scenario_id or "current"
+    cached = get_simulation_results(username, scenario_id)
+    if cached is not None:
+        return cached
+    from app import data_store
+    scenario = data_store.load_scenario(scenario_id)
+    if scenario is None:
+        return None
+    results = _engine.run(n or 100_000, actuals=scenario["actuals"])
+    set_simulation_results(username, results, scenario_id)
+    return results
 
 
 class PrefixMiddleware:
@@ -113,6 +131,14 @@ def create_app():
             return
         if request.blueprint == "api":
             return
+        # The default "current" scenario (real tournament state) is public
+        # so the app is useful while watching a game without an account.
+        public_endpoints = {
+            "web.index", "web.group", "web.team", "web.team_default",
+            "web.bracket", "web.fixtures",
+        }
+        if request.endpoint in public_endpoints:
+            return
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login", next=request.full_path))
 
@@ -165,5 +191,21 @@ def create_app():
         if current_user.is_authenticated:
             return {"app_settings": current_user.settings, "current_user": current_user}
         return {"app_settings": auth.DEFAULT_USER_SETTINGS, "current_user": current_user}
+
+    @app.context_processor
+    def inject_form():
+        # Team "form" badges (Elo modifier vs. expected results), computed
+        # for the scenario currently being viewed (defaults to "current").
+        from app import data_store
+        from app.form import compute_form
+        if request.blueprint == "api" or request.endpoint in (None, "static") or (request.endpoint or "").startswith("auth."):
+            return {}
+        scenario_id = request.args.get("s") or "current"
+        scenario = data_store.load_scenario(scenario_id) or data_store.load_scenario("current")
+        try:
+            team_form = compute_form(scenario["actuals"], _engine)
+        except Exception:
+            team_form = {}
+        return {"team_form": team_form}
 
     return app

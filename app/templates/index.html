@@ -49,7 +49,7 @@
     document.getElementById('hypothetical-form')?.addEventListener('submit', async function (e) {
       e.preventDefault();
       const fd = new FormData(this);
-      const btn = this.querySelector('button[type=submit]');
+      const btn = document.querySelector('button[type=submit][form="hypothetical-form"]');
       btn.disabled = true;
       btn.textContent = 'Computing...';
       document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');

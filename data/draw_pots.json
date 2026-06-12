@@ -7,54 +7,54 @@
       "Spain",
       "Argentina",
       "France",
-      "Brazil",
       "England",
+      "Brazil",
       "Portugal",
       "Netherlands",
-      "Germany",
-      "Belgium"
+      "Belgium",
+      "Germany"
     ],
     [
       "Croatia",
-      "Colombia",
       "Morocco",
+      "Colombia",
       "Uruguay",
       "Switzerland",
       "Japan",
-      "Austria",
       "Senegal",
-      "Norway",
-      "South Korea",
-      "Turkey",
-      "Ecuador"
-    ],
-    [
-      "Sweden",
       "Iran",
-      "Australia",
-      "Scotland",
-      "Czech Republic",
-      "Ivory Coast",
-      "Paraguay",
-      "Algeria",
-      "Bosnia and Herzegovina",
-      "Egypt",
-      "Tunisia",
-      "Ghana"
+      "South Korea",
+      "Ecuador",
+      "Austria",
+      "Australia"
     ],
     [
-      "South Africa",
-      "Iraq",
+      "Norway",
       "Panama",
+      "Egypt",
+      "Algeria",
+      "Scotland",
+      "Paraguay",
+      "Tunisia",
+      "Ivory Coast",
       "Uzbekistan",
-      "Saudi Arabia",
-      "DR Congo",
-      "Cape Verde",
       "Qatar",
+      "Saudi Arabia",
+      "South Africa"
+    ],
+    [
       "Jordan",
+      "Cape Verde",
+      "Ghana",
       "Curacao",
       "Haiti",
-      "New Zealand"
+      "New Zealand",
+      "Bosnia and Herzegovina",
+      "Czech Republic",
+      "Sweden",
+      "Turkey",
+      "DR Congo",
+      "Iraq"
     ]
   ],
   "host_groups": {
@@ -122,5 +122,5 @@
     "Haiti": "CONCACAF",
     "New Zealand": "OFC"
   },
-  "source": "Pots derived from Elo ranking, following the real 2026 FIFA World Cup draw procedure (hosts seeded to A1/B1/D1; ranks 1-2 and 3-4 placed in opposite bracket halves)."
+  "source": "The actual 4 pots used in the real 2026 FIFA World Cup final draw (held 5 Dec 2025), per Wikipedia's '2026 FIFA World Cup draw' article, with Pot 4's six playoff-winner placeholders resolved to Bosnia and Herzegovina, Czech Republic (Czechia), Sweden, Turkey (UEFA play-offs), and DR Congo, Iraq (inter-confederation play-offs). This 48-team set matches this app's dataset exactly. Draw procedure: hosts seeded to A1/B1/D1; the #1/#2 ranked teams (Spain/Argentina) and #3/#4 (France/England) placed in opposite bracket halves (A-F vs G-L); UEFA may have up to 2 teams per group, every other confederation max 1."
 }

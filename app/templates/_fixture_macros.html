@@ -131,7 +131,7 @@
 
 
 {# ---------- Group standings table ---------- #}
-{% macro group_table(rows, results) %}
+{% macro group_table(rows, results, show_form=True) %}
 <div class="table-responsive">
   <table class="table table-sm table-hover mb-0">
     <thead class="table-dark">
@@ -148,7 +148,7 @@
     <tbody>
       {% for row in rows %}
       <tr>
-        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {{ form_badge(row.name) }}</td>
+        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {% if show_form %}{{ form_badge(row.name) }}{% endif %}</td>
         <td class="text-end">{{ row.gp }}</td>
         <td class="text-end">{{ row.gf }}</td>
         <td class="text-end">{{ row.ga }}</td>

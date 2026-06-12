@@ -128,7 +128,7 @@
     {% if featured_fixture.in_progress and featured_group_table_before %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings — before this match</div>
-    {{ fx.group_table(featured_group_table_before, results) }}
+    {{ fx.group_table(featured_group_table_before, none, show_form=false) }}
     <div class="small text-muted fw-bold mb-2 mt-3">Group {{ featured_fixture._group }} standings — with live score</div>
     {{ fx.group_table(featured_group_table, results) }}
     {% elif featured_group_table %}

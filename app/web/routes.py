@@ -18,6 +18,12 @@ def _scenario_id() -> str:
     from flask import session
     s = request.args.get("s")
     if s:
+        if s == "current" and session.get("scenario_id") != "current":
+            # Switching back to "current" from another scenario: drop any
+            # cached results so they're recomputed against the latest
+            # data/actuals.json instead of showing a stale snapshot.
+            key = ((_username() or "_anon").lower(), "current")
+            app_module._simulation_results.pop(key, None)
         session["scenario_id"] = s
         return s
     return session.get("scenario_id") or "current"

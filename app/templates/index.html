@@ -28,7 +28,7 @@
 {% if featured_fixture %}
 <div class="card shadow-sm mb-4" id="featured-fixture">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <span class="fw-bold">{{ "Latest result" if featured_fixture.played else "Up next" }} — Group {{ featured_fixture._group }}</span>
+    <span class="fw-bold">{{ "Live match" if featured_is_live else ("Latest result" if featured_fixture.played else "Up next") }} — Group {{ featured_fixture._group }}</span>
     {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
   </div>
   <div class="card-body">

@@ -135,6 +135,18 @@ def index():
                     before_fixtures.append(m)
                 featured_group_table_before = compute_group_table(g, before_fixtures, teams_by_name, results)
 
+    featured_is_live = False
+    if featured_fixture:
+        if featured_fixture.get("in_progress"):
+            featured_is_live = True
+        else:
+            from datetime import datetime, timedelta, timezone
+            start = _utc_sort_key(featured_fixture)
+            if start != datetime.min:
+                now = datetime.now(timezone.utc)
+                if start <= now <= start + timedelta(hours=2):
+                    featured_is_live = True
+
     scenario_list = data_store.list_scenarios()
     active_scenario = data_store.load_scenario(scenario_id)
     last_updated_ts = data_store.actuals_last_updated()
@@ -153,6 +165,7 @@ def index():
         scenario_list=scenario_list,
         last_updated=last_updated,
         featured_fixture=featured_fixture,
+        featured_is_live=featured_is_live,
         featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
     )

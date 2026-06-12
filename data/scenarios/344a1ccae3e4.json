@@ -3,9 +3,11 @@
   "label": "Test draw",
   "actuals": {
     "group_results": {},
-    "knockout_results": {}
+    "knockout_results": {},
+    "live_matches": []
   },
   "based_on": "current",
   "created_at": 1781286156.721822,
-  "draw": null
+  "draw": null,
+  "featured_match": null
 }

@@ -151,6 +151,9 @@ def create_app():
     if url_prefix:
         app.wsgi_app = PrefixMiddleware(app.wsgi_app, url_prefix)
 
+    from app.migrations import run_pending_migrations
+    run_pending_migrations()
+
     data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "wc2026.json")
     with open(data_path) as f:
         tournament_data = json.load(f)

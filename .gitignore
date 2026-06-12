@@ -10,5 +10,6 @@ data/snapshots.json
 data/settings.json
 data/users.json
 data/users/
+data/.migrations.json
 .claude/
 *.tar.gz

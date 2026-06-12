@@ -348,6 +348,7 @@ def load_scenario(scenario_id: str | None) -> dict | None:
     data.setdefault("is_pre_draw", False)
     data.setdefault("is_hypothetical", False)
     data.setdefault("is_manual", False)
+    data.setdefault("featured_match", None)
     data["is_current"] = False
     data.update(_scenario_qualities(data["actuals"], draw=data.get("draw")))
     data["progress_label"] = describe_progress(data["actuals"])

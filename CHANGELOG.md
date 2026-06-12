@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.6.0
+
+- Added support for marking a group-stage fixture as **"in progress"** with
+  a live scoreline (`actuals["live_matches"]`). In-progress matches
+  propagate into standings/brackets as if completed, but are visually
+  flagged with a "🔴 LIVE" badge.
+- The homepage's featured fixture card now shows **"Live match"** as its
+  header when the match is in progress or within 2 hours of its scheduled
+  kickoff, and offers an **"📡 Edit live score"** action (alongside
+  "🔍 Explore") to record/update the live scoreline via the new
+  `POST /api/actuals/live_score` endpoint.
+- When the featured (or a fixtures-list) match is live, a collapsed
+  "standings before this match" table is shown alongside the current
+  standings, so you can see the effect of the live result.
+- The hypothetical "what if" scenario now records which match was edited
+  (`featured_match`), so the homepage features that match (with its
+  hypothetical scoreline treated as final) instead of the next upcoming
+  fixture.
+- Removed the duplicate outer box around the featured fixture card.
+- New **data migration framework** (`app/migrations/`): on-disk data files
+  are automatically brought up to date on startup (and via
+  `scripts/migrate.py`), tracked in `data/.migrations.json`. This release
+  includes a migration that adds the new `live_matches` and
+  `featured_match` fields to existing `data/actuals.json` and scenario
+  files.
+
 ## v0.5.0
 
 - Added a **draw phase**: the 48 teams are split into 4 pots of 12, following

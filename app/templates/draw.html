@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Draw — WC 2026{% endblock %}
+{% block content %}
+
+<h2 class="mb-1">The Draw</h2>
+<p class="text-muted mb-4">
+  The 48 teams are split into 4 pots of 12. One team from each pot is drawn into each of the
+  12 groups (A-L). Hosts (Mexico, Canada, USA) are pre-seeded into A1/B1/D1. Spain/Argentina and
+  France/England are placed in opposite halves of the bracket (A-F vs G-L). No group may have
+  more than one team per confederation, except UEFA (which may have up to two).
+</p>
+
+<h4>Pots</h4>
+<div class="row mb-4">
+  {% for pot in pots %}
+  <div class="col-12 col-md-3 mb-3">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header fw-bold">Pot {{ loop.index }}</div>
+      <ul class="list-group list-group-flush">
+        {% for team in pot %}
+        <li class="list-group-item">{{ team|flag }} {{ team }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<h4>Actual draw (current scenario)</h4>
+<div class="row mb-4">
+  {% for letter in group_letters %}
+  <div class="col-6 col-md-3 col-lg-2 mb-3">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header fw-bold">Group {{ letter }}</div>
+      <ul class="list-group list-group-flush">
+        {% for team in actual_groups[letter] %}
+        <li class="list-group-item small">{{ team|flag }} {{ team }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<h4>Actual draw vs. "pre-draw" (average over possible draws)</h4>
+<p class="text-muted small">
+  The "pre-draw" scenario averages tournament-winner probability over many randomly simulated
+  draws (following the same procedure as the real draw). Comparing it to the actual draw shows
+  how much the real draw helped or hurt each team.
+</p>
+<div class="table-responsive mb-4">
+  <table class="table table-sm table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Team</th>
+        <th class="text-end">Winner prob (actual draw)</th>
+        <th class="text-end">Winner prob (avg. draw)</th>
+        <th class="text-end">Difference</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in comparison[:15] %}
+      <tr>
+        <td><a href="{{ url_for('web.team', name=row.team) }}">{{ row.team|flag }} {{ row.team }}</a></td>
+        <td class="text-end">{{ "%.2f"|format(row.current_winner_prob * 100) }}%</td>
+        <td class="text-end">{{ "%.2f"|format(row.pre_draw_winner_prob * 100) }}%</td>
+        <td class="text-end {% if row.current_winner_prob > row.pre_draw_winner_prob %}text-success{% elif row.current_winner_prob < row.pre_draw_winner_prob %}text-danger{% endif %}">
+          {{ "%+.2f"|format((row.current_winner_prob - row.pre_draw_winner_prob) * 100) }}%
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p>
+  <a href="{{ url_for('web.scenario_compare', a='current', b='pre-draw') }}" class="btn btn-sm btn-outline-primary">
+    Full scenario comparison: current vs. pre-draw
+  </a>
+</p>
+
+<h4>Simulate a new draw</h4>
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <p class="text-muted small">
+      Run a fresh random draw (following the same procedure) and save it as a new scenario to
+      explore "what if the draw had gone differently".
+    </p>
+    <button id="simulate-draw-btn" type="button" class="btn btn-success">Simulate a random draw</button>
+    <div id="draw-result" class="mt-3"></div>
+  </div>
+</div>
+
+{% if scenarios %}
+<h4>Draw scenarios</h4>
+<div class="table-responsive mb-4">
+  <table class="table table-sm table-hover align-middle">
+    <thead>
+      <tr><th>Label</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for s in scenarios %}
+      <tr>
+        <td>{{ s.label }} {% if s.is_current %}<span class="badge bg-primary ms-1">current</span>{% endif %}</td>
+        <td class="small text-muted">{% if s.draw_complete %}Draw complete{% else %}Draw incomplete{% endif %}</td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<script>
+document.getElementById('simulate-draw-btn').addEventListener('click', async function () {
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Simulating...';
+  try {
+    const resp = await fetch("{{ url_for('api.draw_simulate') }}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({})
+    });
+    const data = await resp.json();
+    const groups = data.draw;
+    let html = '<div class="row">';
+    for (const letter of {{ group_letters|tojson }}) {
+      html += '<div class="col-6 col-md-3 col-lg-2 mb-2"><div class="card h-100"><div class="card-header fw-bold py-1">Group ' + letter + '</div><ul class="list-group list-group-flush">';
+      for (const team of groups[letter]) {
+        html += '<li class="list-group-item small py-1">' + team + '</li>';
+      }
+      html += '</ul></div></div>';
+    }
+    html += '</div>';
+    html += '<button id="save-draw-btn" class="btn btn-sm btn-outline-success mt-2">Save as new scenario</button>';
+    document.getElementById('draw-result').innerHTML = html;
+    document.getElementById('save-draw-btn').addEventListener('click', async function () {
+      this.disabled = true;
+      this.textContent = 'Saving...';
+      const resp = await fetch("{{ url_for('api.draw_save') }}", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({draw: groups, label: "Simulated draw"})
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        window.location.href = "{{ url_for('web.index') }}" + "?s=" + data.scenario.id;
+      } else {
+        this.textContent = 'Error: ' + (data.error || 'failed');
+      }
+    });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Simulate a random draw';
+  }
+});
+</script>
+
+{% endblock %}

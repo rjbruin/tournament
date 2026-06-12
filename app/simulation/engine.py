@@ -15,6 +15,7 @@ the real scoreline for every simulation, and knockout matches with a
 recorded winner are forced to that outcome.
 """
 
+import contextlib
 import json
 import os
 
@@ -85,32 +86,67 @@ class SimulationEngine:
     # Public API
     # ------------------------------------------------------------------
 
-    def run(self, n: int = 10_000, actuals: dict | None = None) -> dict:
-        t0 = time.perf_counter()
-        actuals = actuals or {"group_results": {}, "knockout_results": {}}
+    def run(self, n: int = 10_000, actuals: dict | None = None, groups: dict | None = None) -> dict:
+        with self._temporary_groups(groups):
+            t0 = time.perf_counter()
+            actuals = actuals or {"group_results": {}, "knockout_results": {}}
 
-        fixed_group_results = self._resolve_fixed_group_results(actuals.get("group_results", {}))
-        fixed_knockout_winners = self._resolve_fixed_knockout_winners(actuals.get("knockout_results", {}))
+            fixed_group_results = self._resolve_fixed_group_results(actuals.get("group_results", {}))
+            fixed_knockout_winners = self._resolve_fixed_knockout_winners(actuals.get("knockout_results", {}))
 
-        # group_order[sim, g, pos] = team index at rank `pos` (0=1st..3=4th)
-        # group_key[sim, g, pos]   = ranking key at that rank (for 3rd-place comparison)
-        group_order, group_key = self._simulate_group_stage(n, fixed_group_results)
+            # group_order[sim, g, pos] = team index at rank `pos` (0=1st..3=4th)
+            # group_key[sim, g, pos]   = ranking key at that rank (for 3rd-place comparison)
+            group_order, group_key = self._simulate_group_stage(n, fixed_group_results)
 
-        results = self._simulate_knockout(n, group_order, group_key, fixed_knockout_winners)
+            results = self._simulate_knockout(n, group_order, group_key, fixed_knockout_winners)
 
-        results["fixtures"] = self._build_group_fixtures(actuals.get("group_results", {}))
-        results["bracket_matches"] = results.pop("_bracket_matches")
-        for m in results["bracket_matches"].values():
-            mn = m["match"]
-            if str(mn) in actuals.get("knockout_results", {}):
-                m["actual_winner"] = actuals["knockout_results"][str(mn)]
+            results["fixtures"] = self._build_group_fixtures(actuals.get("group_results", {}))
+            results["bracket_matches"] = results.pop("_bracket_matches")
+            for m in results["bracket_matches"].values():
+                mn = m["match"]
+                if str(mn) in actuals.get("knockout_results", {}):
+                    m["actual_winner"] = actuals["knockout_results"][str(mn)]
 
-        self._attach_schedule(results)
+            self._attach_schedule(results)
 
-        elapsed = time.perf_counter() - t0
-        results["n_simulations"] = n
-        results["elapsed_seconds"] = round(elapsed, 3)
-        return results
+            elapsed = time.perf_counter() - t0
+            results["n_simulations"] = n
+            results["elapsed_seconds"] = round(elapsed, 3)
+            return results
+
+    @contextlib.contextmanager
+    def _temporary_groups(self, groups_override: dict | None):
+        """If ``groups_override`` (a ``{letter: [4 team names]}`` dict) is
+        given, temporarily replace ``self.groups``, ``self._group_indices``
+        and ``self._group_team_pos`` with versions reflecting that
+        composition (in ``self.group_letters`` order), restoring the
+        originals afterwards. A no-op if ``groups_override`` is falsy."""
+        if not groups_override:
+            yield
+            return
+
+        original_groups = self.groups
+        original_indices = self._group_indices
+        original_team_pos = self._group_team_pos
+
+        new_groups = []
+        new_indices = []
+        new_team_pos = []
+        for letter in self.group_letters:
+            teams = groups_override[letter]
+            new_groups.append({"name": letter, "teams": list(teams)})
+            new_indices.append(np.array([self.team_idx[name] for name in teams], dtype=int))
+            new_team_pos.append({name: pos for pos, name in enumerate(teams)})
+
+        self.groups = new_groups
+        self._group_indices = new_indices
+        self._group_team_pos = new_team_pos
+        try:
+            yield
+        finally:
+            self.groups = original_groups
+            self._group_indices = original_indices
+            self._group_team_pos = original_team_pos
 
     # ------------------------------------------------------------------
     # Conditioning on actual results

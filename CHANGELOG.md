@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.5.0
+
+- Added a **draw phase**: the 48 teams are split into 4 pots of 12, following
+  the real 2026 World Cup draw procedure (hosts seeded to A1/B1/D1,
+  Spain/Argentina and France/England placed in opposite bracket halves,
+  confederation constraints with the UEFA exception). See `data/draw_pots.json`
+  and `app/simulation/draw.py`.
+- New **"Draw" page**: view the pots, the actual draw, and simulate a fresh
+  random draw (savable as a new scenario).
+- New virtual **"pre-draw" scenario**: marginalizes tournament projections
+  over many randomly simulated draws, so the actual draw's effect on each
+  team's odds can be seen by comparing "current" vs. "pre-draw".
+- Scenarios can now carry a (possibly partial) `"draw"` — `SimulationEngine.run()`
+  accepts a `groups` override, and partially-drawn scenarios are projected by
+  marginalizing over draws that complete the fixed part.
+- New API endpoints: `GET /api/draw/pots`, `POST /api/draw/simulate`,
+  `POST /api/draw/save`, `GET /api/draw/opponent_stats`.
+
 ## v0.4.0
 
 - Added **scenarios**: a scenario is a named set of fixture results. "Current"

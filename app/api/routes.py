@@ -425,6 +425,68 @@ def delete_snapshot(index: int):
     return jsonify({"ok": True})
 
 
+# ----------------------------------------------------------------------
+# Draw phase
+# ----------------------------------------------------------------------
+
+@api_bp.get("/draw/pots")
+def draw_pots():
+    from app.simulation.draw import load_draw_pots
+    return jsonify(load_draw_pots())
+
+
+@api_bp.post("/draw/simulate")
+def draw_simulate():
+    """Body (optional): {"fixed": {letter: [team_or_null, ...]}, "seed": int}.
+    Returns one randomly-completed draw."""
+    from app.simulation.draw import load_draw_pots, simulate_draw
+    body = request.get_json(silent=True) or {}
+    data = load_draw_pots()
+    import random
+    seed = body.get("seed")
+    rng = random.Random(seed) if seed is not None else random.Random()
+    draw = simulate_draw(data["pots"], data["confederations"], data["host_groups"],
+                          data["rival_pairs"], fixed=body.get("fixed"), rng=rng)
+    return jsonify({"draw": draw})
+
+
+@api_bp.post("/draw/save")
+def draw_save():
+    """Body: {"label": str, "draw": {letter: [...]}, "based_on": scenario_id,
+    "scenario": scenario_id (optional, to update an existing draw scenario)}."""
+    from app.simulation.draw import is_draw_complete
+    body = request.get_json(silent=True) or {}
+    draw = body.get("draw")
+    if not draw:
+        return jsonify({"error": "Missing 'draw'"}), 400
+    label = body.get("label") or ("Custom draw" if is_draw_complete(draw) else "Partial draw")
+    based_on = body.get("based_on") or "current"
+    base = data_store.load_scenario(based_on)
+    actuals = (base or {}).get("actuals") or data_store._empty_actuals()
+    scenario_id = body.get("scenario")
+    if scenario_id:
+        existing = data_store.load_scenario(scenario_id)
+        if existing is None:
+            return jsonify({"error": "Unknown scenario"}), 404
+        scenario = data_store.save_scenario(existing["label"], existing["actuals"], scenario_id=scenario_id, draw=draw)
+        _invalidate_results(scenario_id)
+    else:
+        import copy
+        scenario = data_store.save_scenario(label, copy.deepcopy(actuals), based_on=based_on, draw=draw)
+    return jsonify({"ok": True, "scenario": {k: v for k, v in scenario.items() if k != "actuals"}})
+
+
+@api_bp.get("/draw/opponent_stats")
+def draw_opponent_stats():
+    """Average groupmate probabilities over many random draws (optionally
+    completing a partial ``fixed`` draw passed as JSON body)."""
+    from app.simulation.draw import simulate_many_draws, opponent_stats
+    body = request.get_json(silent=True) or {}
+    n = max(10, min(int(request.args.get("n", 200)), 2000))
+    draws = simulate_many_draws(n, fixed=body.get("fixed"))
+    return jsonify(opponent_stats(draws))
+
+
 @api_bp.get("/compare")
 def compare():
     """Compare the current results against the most recently saved snapshot."""

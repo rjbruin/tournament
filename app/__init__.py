@@ -31,6 +31,43 @@ def set_simulation_results(username: str, results, scenario_id: str = "current")
     _simulation_results[key] = results
 
 
+# Number of independent draws to marginalize over for "pre-draw"/partial-draw
+# scenarios, and the number of tournament simulations run per draw.
+N_DRAWS = 50
+
+
+_PROB_KEYS = [
+    "group_advance_prob",
+    "round_of_16_prob",
+    "quarterfinal_prob",
+    "semifinal_prob",
+    "finalist_prob",
+    "winner_prob",
+]
+
+
+def _average_results(per_draw_results: list[dict]) -> dict:
+    """Average the per-team probability dicts across several `engine.run()`
+    results (one per simulated draw), producing a single results dict
+    suitable for caching. Non-probability keys (fixtures, bracket_matches,
+    ...) are taken from the last draw as a representative example."""
+    total_n = sum(r["n_simulations"] for r in per_draw_results)
+    total_elapsed = sum(r["elapsed_seconds"] for r in per_draw_results)
+    out = dict(per_draw_results[-1])
+    for key in _PROB_KEYS:
+        teams = set()
+        for r in per_draw_results:
+            teams.update(r.get(key, {}).keys())
+        out[key] = {
+            t: round(sum(r.get(key, {}).get(t, 0) for r in per_draw_results) / len(per_draw_results), 4)
+            for t in teams
+        }
+    out["n_simulations"] = total_n
+    out["elapsed_seconds"] = round(total_elapsed, 3)
+    out["n_draws"] = len(per_draw_results)
+    return out
+
+
 def get_or_run_results(username: str, scenario_id: str = "current", n: int = None):
     """Return cached simulation results for (account, scenario), running and
     caching a fresh simulation against that scenario's actuals if needed."""
@@ -39,10 +76,28 @@ def get_or_run_results(username: str, scenario_id: str = "current", n: int = Non
     if cached is not None:
         return cached
     from app import data_store
+    from app.simulation.draw import simulate_many_draws, is_draw_complete
+
     scenario = data_store.load_scenario(scenario_id)
     if scenario is None:
         return None
-    results = _engine.run(n or 100_000, actuals=scenario["actuals"])
+
+    n = n or 100_000
+    draw = scenario.get("draw")
+
+    if scenario.get("is_pre_draw") or (draw is not None and not is_draw_complete(draw)):
+        # Marginalize over many possible draws (fully random for "pre-draw",
+        # or completing the fixed/partial draw for a partial-draw scenario).
+        n_per_draw = max(100, n // N_DRAWS)
+        draws = simulate_many_draws(N_DRAWS, fixed=draw)
+        per_draw_results = [_engine.run(n_per_draw, actuals=scenario["actuals"], groups=d) for d in draws]
+        results = _average_results(per_draw_results)
+    elif draw is not None:
+        # Fully completed custom draw.
+        results = _engine.run(n, actuals=scenario["actuals"], groups=draw)
+    else:
+        results = _engine.run(n, actuals=scenario["actuals"])
+
     set_simulation_results(username, results, scenario_id)
     return results
 

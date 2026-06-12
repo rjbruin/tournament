@@ -191,6 +191,43 @@ def fixtures():
     )
 
 
+@web_bp.get("/draw")
+@login_required
+def draw():
+    from app.simulation.draw import load_draw_pots
+    engine = app_module.get_engine()
+    pots_data = load_draw_pots()
+
+    actual_groups = {g["name"]: g["teams"] for g in engine.groups}
+
+    n = current_user.settings.get("n_simulations")
+    current_results = app_module.get_or_run_results(current_user.username, "current", n=n)
+    pre_draw_results = app_module.get_or_run_results(current_user.username, "pre-draw", n=n)
+
+    comparison = []
+    if current_results and pre_draw_results:
+        for t in engine.team_names:
+            comparison.append({
+                "team": t,
+                "current_winner_prob": current_results["winner_prob"].get(t, 0),
+                "pre_draw_winner_prob": pre_draw_results["winner_prob"].get(t, 0),
+            })
+        comparison.sort(key=lambda r: r["current_winner_prob"], reverse=True)
+
+    scenario_list = [s for s in data_store.list_scenarios() if s.get("draw") is not None or s["id"] == "current"]
+
+    return render_template(
+        "draw.html",
+        pots=pots_data["pots"],
+        host_groups=pots_data["host_groups"],
+        rival_pairs=pots_data["rival_pairs"],
+        actual_groups=actual_groups,
+        group_letters=engine.group_letters,
+        comparison=comparison,
+        scenarios=scenario_list,
+    )
+
+
 @web_bp.get("/scenarios")
 @login_required
 def scenarios():

@@ -23,6 +23,7 @@ USERS_DATA_DIR = os.path.join(DATA_DIR, "users")
 SCENARIOS_DIR = os.path.join(DATA_DIR, "scenarios")
 
 CURRENT_SCENARIO_ID = "current"
+PRE_DRAW_SCENARIO_ID = "pre-draw"
 
 MAX_SNAPSHOTS = 20
 
@@ -183,9 +184,11 @@ def list_scenario_ids() -> list[str]:
     return ids
 
 
-def _scenario_qualities(actuals: dict) -> dict:
+def _scenario_qualities(actuals: dict, draw: dict | None = None) -> dict:
     """Compute simple boolean qualities of a scenario's actuals, used for
     filtering (e.g. "has the group stage finished?")."""
+    from app.simulation.draw import is_draw_complete
+
     group_results = actuals.get("group_results", {})
     knockout_results = actuals.get("knockout_results", {})
     n_group_matches = sum(len(v) for v in group_results.values())
@@ -195,6 +198,7 @@ def _scenario_qualities(actuals: dict) -> dict:
         "has_group_results": n_group_matches > 0,
         "has_knockout_results": len(knockout_results) > 0,
         "knockout_complete": "103" in knockout_results or 103 in knockout_results,
+        "draw_complete": is_draw_complete(draw) if draw is not None else True,
     }
 
 
@@ -210,7 +214,23 @@ def load_scenario(scenario_id: str | None) -> dict | None:
             "based_on": None,
             "created_at": None,
             "is_current": True,
-            **_scenario_qualities(actuals),
+            "is_pre_draw": False,
+            "draw": None,
+            **_scenario_qualities(actuals, draw=None),
+        }
+    if scenario_id == PRE_DRAW_SCENARIO_ID:
+        actuals = _empty_actuals()
+        return {
+            "id": PRE_DRAW_SCENARIO_ID,
+            "label": "Pre-draw (average over possible draws)",
+            "actuals": actuals,
+            "based_on": None,
+            "created_at": None,
+            "is_current": False,
+            "is_pre_draw": True,
+            "draw": None,
+            **_scenario_qualities(actuals, draw=None),
+            "draw_complete": False,
         }
     path = _scenario_path(scenario_id)
     if not os.path.exists(path):
@@ -220,33 +240,41 @@ def load_scenario(scenario_id: str | None) -> dict | None:
     data.setdefault("actuals", _empty_actuals())
     data["actuals"].setdefault("group_results", {})
     data["actuals"].setdefault("knockout_results", {})
+    data.setdefault("draw", None)
+    data.setdefault("is_pre_draw", False)
     data["is_current"] = False
-    data.update(_scenario_qualities(data["actuals"]))
+    data.update(_scenario_qualities(data["actuals"], draw=data.get("draw")))
     return data
 
 
 def list_scenarios() -> list[dict]:
     """Return metadata (without the bulky `actuals`) for every scenario,
-    "current" first."""
+    "current" first, followed by the virtual "pre-draw" scenario."""
     out = []
     current = load_scenario(CURRENT_SCENARIO_ID)
     out.append({k: v for k, v in current.items() if k != "actuals"})
+    pre_draw = load_scenario(PRE_DRAW_SCENARIO_ID)
+    out.append({k: v for k, v in pre_draw.items() if k != "actuals"})
     for sid in sorted(list_scenario_ids()):
         s = load_scenario(sid)
         if s is None:
             continue
         out.append({k: v for k, v in s.items() if k != "actuals"})
-    out.sort(key=lambda s: (not s["is_current"], -(s.get("created_at") or 0)))
+    out.sort(key=lambda s: (not s["is_current"], not s.get("is_pre_draw"), -(s.get("created_at") or 0)))
     return out
 
 
 def save_scenario(label: str, actuals: dict, based_on: str | None = None,
-                   scenario_id: str | None = None) -> dict:
-    """Create or update a (non-"current") scenario and persist it."""
+                   scenario_id: str | None = None, draw: dict | None = None) -> dict:
+    """Create or update a (non-"current") scenario and persist it.
+
+    ``draw`` (optional): a ``{letter: [pot1..pot4 team names]}`` dict
+    representing a (possibly partial) draw for this scenario. ``None``
+    means "no custom draw" (the scenario uses the real/actual groups)."""
     _ensure_scenarios_dir()
     scenario_id = scenario_id or uuid.uuid4().hex[:12]
-    if scenario_id == CURRENT_SCENARIO_ID:
-        raise ValueError("Cannot save over the 'current' scenario directly.")
+    if scenario_id in (CURRENT_SCENARIO_ID, PRE_DRAW_SCENARIO_ID):
+        raise ValueError(f"Cannot save over the '{scenario_id}' scenario directly.")
     existing = load_scenario(scenario_id)
     data = {
         "id": scenario_id,
@@ -254,6 +282,7 @@ def save_scenario(label: str, actuals: dict, based_on: str | None = None,
         "actuals": actuals,
         "based_on": based_on if existing is None else existing.get("based_on"),
         "created_at": existing["created_at"] if existing else time.time(),
+        "draw": draw if draw is not None else (existing.get("draw") if existing else None),
     }
     with open(_scenario_path(scenario_id), "w") as f:
         json.dump(data, f, indent=2)

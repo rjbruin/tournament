@@ -169,6 +169,25 @@ def team(name: str):
 
     all_team_names = sorted(t["name"] for t in engine.data["teams"])
 
+    # Winner-probability progression across scenarios (pre-draw -> ... -> current),
+    # using only already-computed (cached) results to keep the page fast.
+    scenario_list = data_store.list_scenarios()
+    ordered = [s for s in scenario_list if s.get("is_pre_draw")]
+    others = [s for s in scenario_list if not s.get("is_pre_draw") and not s.get("is_current")]
+    others.sort(key=lambda s: s.get("created_at") or 0)
+    ordered += others
+    ordered += [s for s in scenario_list if s.get("is_current")]
+
+    winner_prob_history = []
+    for s in ordered:
+        r = app_module.get_simulation_results(_username(), s["id"])
+        if r is None:
+            continue
+        winner_prob_history.append({
+            "label": s["label"],
+            "winner_prob": r.get("winner_prob", {}).get(name, 0),
+        })
+
     return render_template(
         "team.html",
         team=teams_by_name[name],
@@ -178,6 +197,7 @@ def team(name: str):
         bracket_for_team=bracket_for_team,
         results=results,
         scenario_id=scenario_id,
+        winner_prob_history=winner_prob_history,
     )
 
 
@@ -244,11 +264,12 @@ def draw():
     actual_groups = {g["name"]: g["teams"] for g in engine.groups}
 
     n = current_user.settings.get("n_simulations")
-    current_results = app_module.get_or_run_results(current_user.username, "current", n=n)
-    pre_draw_results = app_module.get_or_run_results(current_user.username, "pre-draw", n=n)
+    current_results = app_module.get_simulation_results(current_user.username, "current")
+    pre_draw_results = app_module.get_simulation_results(current_user.username, "pre-draw")
 
-    comparison = []
+    comparison = None
     if current_results and pre_draw_results:
+        comparison = []
         for t in engine.team_names:
             comparison.append({
                 "team": t,

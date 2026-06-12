@@ -101,6 +101,36 @@
 </div>
 {% endif %}
 
+{% if winner_prob_history and winner_prob_history|length > 1 %}
+<div class="card shadow-sm mt-4">
+  <div class="card-header fw-bold">Winner probability across scenarios</div>
+  <div class="card-body">
+    <canvas id="winner-prob-chart" height="80"></canvas>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+new Chart(document.getElementById('winner-prob-chart'), {
+  type: 'line',
+  data: {
+    labels: {{ winner_prob_history | map(attribute='label') | list | tojson }},
+    datasets: [{
+      label: '{{ team.name }} — winner probability',
+      data: {{ winner_prob_history | map(attribute='winner_prob') | list | tojson }}.map(v => v * 100),
+      borderColor: '#198754',
+      backgroundColor: 'rgba(25,135,84,0.15)',
+      tension: 0.2,
+      fill: true,
+    }]
+  },
+  options: {
+    scales: { y: { ticks: { callback: v => v + '%' } } },
+    plugins: { tooltip: { callbacks: { label: ctx => ctx.parsed.y.toFixed(2) + '%' } } }
+  }
+});
+</script>
+{% endif %}
+
 {% if results and results.opponent_probs and results.opponent_probs.get(team.name) %}
 <h4 class="mt-5 mb-3">Likely opponents by round</h4>
 <div class="row g-3 justify-content-center">

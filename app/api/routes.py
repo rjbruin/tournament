@@ -476,6 +476,31 @@ def draw_save():
     return jsonify({"ok": True, "scenario": {k: v for k, v in scenario.items() if k != "actuals"}})
 
 
+@api_bp.post("/draw/compare")
+def draw_compare():
+    """Compute (and cache) the actual-draw vs. pre-draw winner-probability
+    comparison. This can be slow the first time (it marginalizes over many
+    simulated draws), so the UI calls this on demand."""
+    import app as app_module
+    engine = app_module.get_engine()
+    n = current_user.settings.get("n_simulations") if current_user.is_authenticated else None
+    username = current_user.username if current_user.is_authenticated else None
+
+    current_results = app_module.get_or_run_results(username, "current", n=n)
+    pre_draw_results = app_module.get_or_run_results(username, "pre-draw", n=n)
+
+    comparison = []
+    if current_results and pre_draw_results:
+        for t in engine.team_names:
+            comparison.append({
+                "team": t,
+                "current_winner_prob": current_results["winner_prob"].get(t, 0),
+                "pre_draw_winner_prob": pre_draw_results["winner_prob"].get(t, 0),
+            })
+        comparison.sort(key=lambda r: r["current_winner_prob"], reverse=True)
+    return jsonify({"comparison": comparison})
+
+
 @api_bp.get("/draw/opponent_stats")
 def draw_opponent_stats():
     """Average groupmate probabilities over many random draws (optionally

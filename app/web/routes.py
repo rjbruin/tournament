@@ -95,6 +95,13 @@ def index():
         upcoming = [m for m in all_normalized if not m.get("played")]
         featured_fixture = upcoming[0] if upcoming else all_normalized[-1]
 
+    featured_group_table = None
+    if featured_fixture and featured_fixture.get("_group"):
+        g = next((g for g in groups if g["name"] == featured_fixture["_group"]), None)
+        if g:
+            raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
+            featured_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
+
     scenario_list = data_store.list_scenarios()
     active_scenario = data_store.load_scenario(scenario_id)
     last_updated_ts = data_store.actuals_last_updated()
@@ -113,6 +120,7 @@ def index():
         scenario_list=scenario_list,
         last_updated=last_updated,
         featured_fixture=featured_fixture,
+        featured_group_table=featured_group_table,
     )
 
 

@@ -32,27 +32,15 @@
     {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
   </div>
   <div class="card-body">
-    <div class="border rounded p-2">{{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none) }}</div>
-    {% if current_user.is_authenticated and not featured_fixture.played %}
-    <button type="button" class="btn btn-outline-primary btn-sm mt-3" id="explore-toggle-btn">🔍 Explore</button>
+    {% set can_explore = current_user.is_authenticated and not featured_fixture.played %}
+    <div class="border rounded p-2">{{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none, explore=can_explore) }}</div>
+    {% if can_explore %}
     <div id="explore-panel" class="d-none mt-3">
       <div class="small text-muted mb-2">
-        What if this match ended differently? Enter a score below and explore the hypothetical scenario.
+        What if this match ended differently? Edit the score below and explore the hypothetical scenario.
       </div>
-      <div class="border rounded p-2" id="explore-fixture">{{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none) }}</div>
-      <form id="hypothetical-form" class="row g-2 align-items-end mt-3">
-        <div class="col-auto">
-          <label class="form-label small mb-0">{{ featured_fixture.home_team }}</label>
-          <input type="number" min="0" class="form-control form-control-sm" name="home_goals" style="width:5rem" value="0">
-        </div>
-        <div class="col-auto">
-          <label class="form-label small mb-0">{{ featured_fixture.away_team }}</label>
-          <input type="number" min="0" class="form-control form-control-sm" name="away_goals" style="width:5rem" value="0">
-        </div>
-        <div class="col-auto">
-          <button type="submit" class="btn btn-primary btn-sm">Show hypothetical scenario</button>
-        </div>
-      </form>
+      <form id="hypothetical-form"></form>
+      <div class="border rounded p-2" id="explore-fixture">{{ fx.large_fixture(featured_fixture, editable=true, form_id="hypothetical-form") }}</div>
     </div>
     <script>
     document.getElementById('explore-toggle-btn')?.addEventListener('click', function () {
@@ -90,6 +78,60 @@
       }
     });
     </script>
+    {% endif %}
+
+    {% if featured_fixture._group %}
+    {% if featured_group_table %}
+    <hr class="mt-4">
+    <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings</div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Team</th>
+            <th class="text-end">GP</th>
+            <th class="text-end">GF</th>
+            <th class="text-end">GA</th>
+            <th class="text-end">GD</th>
+            <th class="text-end">P</th>
+            {% if results %}<th class="text-end">Advance</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in featured_group_table %}
+          <tr>
+            <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {{ fx.form_badge(row.name) }}</td>
+            <td class="text-end">{{ row.gp }}</td>
+            <td class="text-end">{{ row.gf }}</td>
+            <td class="text-end">{{ row.ga }}</td>
+            <td class="text-end">{{ row.gd }}</td>
+            <td class="text-end fw-bold">{{ row.pts }}</td>
+            {% if results %}
+            <td class="text-end">
+              {% set adv = row.advance_prob %}
+              <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                {{ "%.0f"|format(adv*100) }}%
+              </span>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+    {% else %}
+    <hr class="mt-4">
+    <div class="small text-muted fw-bold mb-2">Next opponent</div>
+    {% for side, cands in [(featured_fixture.get('home_candidates'), 'home'), (featured_fixture.get('away_candidates'), 'away')] %}
+      {% if cands %}
+      <div class="mb-2">
+        {% for cand, p in cands.items() %}
+        <span class="small text-muted me-3">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endfor %}
     {% endif %}
   </div>
 </div>

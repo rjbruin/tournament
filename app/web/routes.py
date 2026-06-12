@@ -217,11 +217,28 @@ def bracket():
         return render_template("bracket.html", results=results, rounds=None, scenario_id=scenario_id)
 
     bm = results["bracket_matches"]
+
+    # Order each round so that match `2i`/`2i+1` of one round visually feed
+    # match `i` of the next round (required by the bracket's connector-line
+    # drawing, which assumes that positional relationship). The raw
+    # r32/r16/.../final defs aren't necessarily in this order (e.g. R32
+    # matches 73/74 don't feed R16 match 89), so derive the display order by
+    # walking the bracket backwards from the final.
+    r16_by_match = {d["match"]: d for d in engine.r16_defs}
+    qf_by_match = {d["match"]: d for d in engine.qf_defs}
+    sf_by_match = {d["match"]: d for d in engine.sf_defs}
+    final_def = engine.final_def
+
+    order_sf = [final_def["home"], final_def["away"]]
+    order_qf = [x for m in order_sf for x in (sf_by_match[m]["home"], sf_by_match[m]["away"])]
+    order_r16 = [x for m in order_qf for x in (qf_by_match[m]["home"], qf_by_match[m]["away"])]
+    order_r32 = [x for m in order_r16 for x in (r16_by_match[m]["home"], r16_by_match[m]["away"])]
+
     rounds = [
-        ("Round of 32", [normalize_bracket_match(bm[m]) for m in range(73, 89)]),
-        ("Round of 16", [normalize_bracket_match(bm[m]) for m in range(89, 97)]),
-        ("Quarterfinals", [normalize_bracket_match(bm[m]) for m in range(97, 101)]),
-        ("Semifinals", [normalize_bracket_match(bm[m]) for m in (101, 102)]),
+        ("Round of 32", [normalize_bracket_match(bm[m]) for m in order_r32]),
+        ("Round of 16", [normalize_bracket_match(bm[m]) for m in order_r16]),
+        ("Quarterfinals", [normalize_bracket_match(bm[m]) for m in order_qf]),
+        ("Semifinals", [normalize_bracket_match(bm[m]) for m in order_sf]),
         ("Final", [normalize_bracket_match(bm[103])]),
     ]
     return render_template("bracket.html", results=results, rounds=rounds, scenario_id=scenario_id)

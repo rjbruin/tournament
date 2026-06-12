@@ -37,7 +37,11 @@
         </td>
         <td class="text-end">
           {% if in_modal %}
+          {% if active_scenario and s.id == active_scenario.id %}
+          <button type="button" class="btn btn-sm btn-primary" disabled>Active</button>
+          {% else %}
           <button type="button" class="btn btn-sm btn-outline-primary switch-scenario-btn" data-scenario-id="{{ s.id }}">Switch</button>
+          {% endif %}
           {% else %}
           <a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">Switch</a>
           {% endif %}
@@ -87,6 +91,7 @@
 <script>
 document.querySelectorAll('.switch-scenario-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
     const url = new URL(window.location.href);
     url.searchParams.set('s', btn.dataset.scenarioId);
     window.location = url.toString();

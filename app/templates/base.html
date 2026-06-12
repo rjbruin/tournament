@@ -62,7 +62,7 @@
     {% if active_scenario and not active_scenario.is_current and request.endpoint != 'web.index' %}
     <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span>🔀 Viewing scenario: <strong>{{ active_scenario.label }}</strong>{% if active_scenario.progress_label %} ({{ active_scenario.progress_label }}){% endif %}</span>
-      <a class="btn btn-sm btn-outline-dark" href="{{ url_for('web.index') }}">Back to current results</a>
+      <a class="btn btn-sm btn-outline-dark" href="{{ request.path }}?s=current">Switch to current results</a>
     </div>
     {% endif %}
     {% with messages = get_flashed_messages(with_categories=true) %}

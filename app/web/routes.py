@@ -27,13 +27,26 @@ def _results_for_scenario(scenario_id: str):
     return app_module.get_or_run_results(_username(), scenario_id, n=n)
 
 
+def _groups_for_results(engine, results):
+    """The group compositions matching `results` (which may have been
+    computed with a custom draw override). Falls back to the engine's
+    default/real groups if `results` doesn't carry a `group_finish`
+    (e.g. no simulation has run yet)."""
+    if results and results.get("group_finish"):
+        return [
+            {"name": letter, "teams": list(results["group_finish"][letter].keys())}
+            for letter in engine.group_letters
+        ]
+    return engine.groups
+
+
 @web_bp.get("/")
 def index():
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
-    groups = engine.groups
-    groups_by_name = {g["name"]: g for g in engine.groups}
+    groups = _groups_for_results(engine, results)
+    groups_by_name = {g["name"]: g for g in groups}
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
 
     group_tables = {}
@@ -77,7 +90,7 @@ def group(name: str):
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
-    group = next((g for g in engine.groups if g["name"] == name.upper()), None)
+    group = next((g for g in _groups_for_results(engine, results) if g["name"] == name.upper()), None)
     if group is None:
         return redirect(url_for("web.index"))
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
@@ -107,7 +120,7 @@ def team(name: str):
     if name not in teams_by_name:
         return redirect(url_for("web.team_default"))
 
-    team_group = next((g for g in engine.groups if name in g["teams"]), None)
+    team_group = next((g for g in _groups_for_results(engine, results) if name in g["teams"]), None)
 
     fixtures_for_team = []
     if results and results.get("fixtures") and team_group:

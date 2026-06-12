@@ -37,9 +37,9 @@
         </td>
         <td class="text-end">
           {% if in_modal %}
-          <button type="button" class="btn btn-sm btn-outline-primary switch-scenario-btn" data-scenario-id="{{ s.id }}">View</button>
+          <button type="button" class="btn btn-sm btn-outline-primary switch-scenario-btn" data-scenario-id="{{ s.id }}">Switch</button>
           {% else %}
-          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">View</a>
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">Switch</a>
           {% endif %}
           <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('web.scenario_compare', a=s.id) }}">Compare</a>
           {% if not s.is_current %}

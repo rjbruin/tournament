@@ -9,11 +9,18 @@ web_bp = Blueprint("web", __name__)
 
 
 def _scenario_id() -> str:
-    """Resolve the active scenario id from the `s` query param. Anonymous
+    """Resolve the active scenario id: the `s` query param (which also
+    persists the choice in the session for subsequent pages), falling back
+    to the session's last-selected scenario, then "current". Anonymous
     visitors are always pinned to the public "current" scenario."""
     if not current_user.is_authenticated:
         return "current"
-    return request.args.get("s") or "current"
+    from flask import session
+    s = request.args.get("s")
+    if s:
+        session["scenario_id"] = s
+        return s
+    return session.get("scenario_id") or "current"
 
 
 def _username():

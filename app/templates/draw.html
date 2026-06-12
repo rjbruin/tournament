@@ -134,7 +134,7 @@ document.getElementById('compute-comparison-btn')?.addEventListener('click', asy
       <tr>
         <td>{{ s.label }} {% if s.is_current %}<span class="badge bg-primary ms-1">current</span>{% endif %}</td>
         <td class="small text-muted">{% if s.draw_complete %}Draw complete{% else %}Draw incomplete{% endif %}</td>
-        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">View</a></td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">Switch</a></td>
       </tr>
       {% endfor %}
     </tbody>

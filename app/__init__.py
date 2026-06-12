@@ -255,7 +255,7 @@ def create_app():
         from app.form import compute_form
         if request.blueprint == "api" or request.endpoint in (None, "static") or (request.endpoint or "").startswith("auth."):
             return {}
-        scenario_id = request.args.get("s") or "current"
+        scenario_id = request.args.get("s") or session.get("scenario_id") or "current"
         scenario = data_store.load_scenario(scenario_id) or data_store.load_scenario("current")
         try:
             team_form = compute_form(scenario["actuals"], _engine)

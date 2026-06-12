@@ -32,7 +32,7 @@
     {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
   </div>
   <div class="card-body">
-    {% set can_explore = current_user.is_authenticated and not featured_fixture.played %}
+    {% set can_explore = current_user.is_authenticated and (not featured_fixture.played or featured_fixture.in_progress) %}
     {{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none, explore=can_explore, live=can_explore) }}
     {% if can_explore %}
     <div id="explore-panel" class="d-none mt-3">

@@ -100,7 +100,10 @@
       </div>
     </div>
     {% if match.played and not editable %}
-    <div class="text-center fw-bold mt-1">{{ match.home_goals }} - {{ match.away_goals }}</div>
+    <div class="text-center fw-bold mt-1">
+      {{ match.home_goals }} - {{ match.away_goals }}
+      {% if match.in_progress %}<span class="badge bg-danger ms-1">🔴 LIVE</span>{% endif %}
+    </div>
     {% endif %}
     {% if editable %}
     <div class="text-center mt-2">

@@ -13,7 +13,21 @@
         "home_goals": 2,
         "away_goals": 1
       }
+    ],
+    "B": [
+      {
+        "home": "Canada",
+        "away": "Bosnia and Herzegovina",
+        "home_goals": 1,
+        "away_goals": 0
+      }
     ]
   },
-  "knockout_results": {}
+  "knockout_results": {},
+  "live_matches": [
+    {
+      "home": "Canada",
+      "away": "Bosnia and Herzegovina"
+    }
+  ]
 }

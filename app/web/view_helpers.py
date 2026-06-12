@@ -3,8 +3,48 @@ Helpers that normalize engine output into the shapes expected by the
 unified fixture display macros (app/templates/_fixture_macros.html).
 """
 
+import json
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+_LETTERS = "ABCDEFGHIJKL"
+
+
+def _build_seed_labels() -> dict:
+    """Precompute, for each knockout match number (73-103), a pair of
+    human-readable seed labels for the home/away slots, e.g. "1A", "2B",
+    "3A/C/D/F", "W77"."""
+    with open(os.path.join(_DATA_DIR, "wc2026.json")) as f:
+        bracket = json.load(f)["bracket"]
+    with open(os.path.join(_DATA_DIR, "annex_c.json")) as f:
+        annex = json.load(f)
+
+    annex_poss: dict[int, set] = {m: set() for m in annex["match_order"]}
+    for groups in annex["lut"].values():
+        if not groups:
+            continue
+        for i, g in enumerate(groups):
+            annex_poss[annex["match_order"][i]].add(_LETTERS[g])
+
+    def slot_label(slot):
+        if isinstance(slot, list):
+            kind, val = slot
+            if kind == "W":
+                return f"1{val}"
+            if kind == "R":
+                return f"2{val}"
+            if kind == "T":
+                return "3" + "/".join(sorted(annex_poss.get(val, [])))
+            return "?"
+        return f"W{slot}"
+
+    defs = bracket["r32"] + bracket["r16"] + bracket["qf"] + bracket["sf"] + [bracket["final"]]
+    return {m["match"]: (slot_label(m["home"]), slot_label(m["away"])) for m in defs}
+
+
+SEED_LABELS = _build_seed_labels()
 
 
 def utc_sort_key(match: dict):
@@ -56,6 +96,7 @@ def normalize_bracket_match(m: dict) -> dict:
         "place": m.get("place"),
         "actual_winner": m.get("actual_winner"),
     }
+    out["seed_home"], out["seed_away"] = SEED_LABELS.get(m["match"], (None, None))
     home, away = m["home"], m["away"]
     if home.get("determined"):
         out["home_team"] = home["team"]

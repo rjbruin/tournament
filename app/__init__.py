@@ -189,7 +189,7 @@ def create_app():
         # The default "current" scenario (real tournament state) is public
         # so the app is useful while watching a game without an account.
         public_endpoints = {
-            "web.index", "web.group", "web.team", "web.team_default",
+            "web.index", "web.groups", "web.group", "web.team", "web.team_default",
             "web.bracket", "web.fixtures",
         }
         if request.endpoint in public_endpoints:
@@ -261,6 +261,6 @@ def create_app():
             team_form = compute_form(scenario["actuals"], _engine)
         except Exception:
             team_form = {}
-        return {"team_form": team_form}
+        return {"team_form": team_form, "active_scenario": scenario}
 
     return app

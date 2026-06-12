@@ -130,10 +130,20 @@
       </div>
       {% if match.away_prob is defined %}<span class="fixture-odds">{{ "%.0f"|format(match.away_prob*100) }}%</span>{% endif %}
     </div>
-    {% if match.date %}
-    <div class="text-muted small text-center mt-2 border-top pt-1">
-      {{ match|local_time }}
-      {% if match.venue %} &middot; {{ match.venue }}{% endif %}
+    {% if match.match or match.date %}
+    <div class="border-top pt-1 mt-2">
+      {% if match.match %}
+      <div class="text-muted small text-center">
+        <span class="fw-semibold">#{{ match.match }}</span>
+        {% if match.seed_home and match.seed_away %} &middot; {{ match.seed_home }} vs. {{ match.seed_away }}{% endif %}
+      </div>
+      {% endif %}
+      {% if match.date %}
+      <div class="text-muted small text-center">
+        {{ match|local_time }}
+        {% if match.venue %} &middot; {{ match.venue }}{% endif %}
+      </div>
+      {% endif %}
     </div>
     {% endif %}
   </div>

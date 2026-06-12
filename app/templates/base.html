@@ -18,22 +18,23 @@
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav me-auto">
           {% if current_user.is_authenticated %}
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('web.index') }}">Groups</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('web.index') }}">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('web.groups') }}">Groups</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.fixtures') }}">Fixtures</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.bracket') }}">Bracket</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.team_default') }}">Team</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('web.simulation_logic') }}">How it Works</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('web.chat') }}">Ask AI</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.simulations') }}">Simulations</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.draw') }}">Draw</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.scenarios') }}">Scenarios</a></li>
-          <li class="nav-item"><a class="nav-link" href="{{ url_for('web.settings') }}">Settings</a></li>
           {% endif %}
         </ul>
         <ul class="navbar-nav">
           {% if current_user.is_authenticated %}
           <li class="nav-item d-flex align-items-center">
             <span class="nav-link disabled text-white-50 py-2">Signed in as <strong class="text-white">{{ current_user.username }}</strong></span>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('web.settings') }}" title="Settings">⚙️</a>
           </li>
           <li class="nav-item">
             <form method="post" action="{{ url_for('auth.logout') }}" class="px-2 py-1">
@@ -51,6 +52,12 @@
   </nav>
 
   <div class="container mt-4">
+    {% if active_scenario and not active_scenario.is_current and request.endpoint != 'web.index' %}
+    <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span>🔀 Viewing scenario: <strong>{{ active_scenario.label }}</strong>{% if active_scenario.progress_label %} ({{ active_scenario.progress_label }}){% endif %}</span>
+      <a class="btn btn-sm btn-outline-dark" href="{{ url_for('web.index') }}">Back to current results</a>
+    </div>
+    {% endif %}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -67,6 +74,8 @@
   <footer class="text-center text-muted small py-4 mt-5">
     <div class="container">
       <hr class="mb-3">
+      <a href="{{ url_for('web.simulation_logic') }}" class="text-muted">How it Works</a>
+      &middot;
       &copy; {{ tournament.year if tournament is defined else 2026 }} WC Simulator &mdash; Monte Carlo projections for entertainment purposes only.
     </div>
   </footer>

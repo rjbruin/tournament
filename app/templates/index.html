@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "_fixture_macros.html" as fx with context %}
-{% block title %}WC 2026 — Groups{% endblock %}
+{% block title %}Home — WC 2026{% endblock %}
 {% block content %}
 
 <div class="hero-banner mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -8,37 +8,22 @@
     <h1 class="mb-0">{{ tournament.name }}</h1>
     <div class="hero-subtitle">{{ tournament.host_countries | join(" · ") }} — {{ tournament.year }}</div>
   </div>
-  {% if results %}
-  <span class="badge bg-light text-success fw-bold px-3 py-2">{{ "{:,}".format(results.n_simulations) }} simulations run</span>
-  <button id="sync-results-btn" class="btn btn-outline-light btn-sm">Update Results &amp; Re-simulate</button>
-  {% else %}
-  <a href="{{ url_for('web.simulations') }}" class="badge bg-light text-secondary fw-bold px-3 py-2 text-decoration-none">No simulation yet — click here to run one</a>
-  {% endif %}
+  <div class="text-end">
+    {% if active_scenario and active_scenario.is_current %}
+      {% if last_updated %}
+      <div class="small">Last updated {{ last_updated }}</div>
+      {% else %}
+      <div class="small">Showing current real results</div>
+      {% endif %}
+    {% else %}
+    <span class="badge bg-light text-dark fw-bold px-3 py-2">
+      Scenario: {{ active_scenario.label if active_scenario else scenario_id }}
+      {% if active_scenario and active_scenario.progress_label %} &middot; {{ active_scenario.progress_label }}{% endif %}
+    </span>
+    {% endif %}
+    <button type="button" class="btn btn-outline-light btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#scenario-modal">Switch scenario</button>
+  </div>
 </div>
-
-<script>
-document.getElementById('sync-results-btn')?.addEventListener('click', async function () {
-  const btn = this;
-  btn.disabled = true;
-  const original = btn.textContent;
-  btn.textContent = 'Updating…';
-  try {
-    const resp = await fetch(window.API_ROOT + '/results/sync', { method: 'POST' });
-    const data = await resp.json();
-    if (!resp.ok) {
-      alert(data.error || 'Failed to update results.');
-      btn.disabled = false;
-      btn.textContent = original;
-      return;
-    }
-    location.reload();
-  } catch (e) {
-    alert('Failed to update results: ' + e);
-    btn.disabled = false;
-    btn.textContent = original;
-  }
-});
-</script>
 
 {% if featured_fixture %}
 <div class="card shadow-sm mb-4" id="featured-fixture">
@@ -158,120 +143,185 @@ document.getElementById('sync-results-btn')?.addEventListener('click', async fun
 </div>
 {% endif %}
 
-{% for group in groups %}
-<div class="row mb-4" id="group-{{ group.name }}">
-  <div class="col-12">
-    <div class="card shadow-sm">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-bold">Group {{ group.name }}</span>
-        <a href="{{ url_for('web.group', name=group.name) }}" class="btn btn-outline-secondary btn-sm">Details</a>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-hover mb-0">
-          <thead class="table-dark">
-            <tr>
-              <th>Team</th>
-              <th class="text-end">GP</th>
-              <th class="text-end">GF</th>
-              <th class="text-end">GA</th>
-              <th class="text-end">GD</th>
-              <th class="text-end">P</th>
-              <th class="text-end">Elo</th>
-              {% if results %}<th class="text-end">Advance</th>{% endif %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in group_tables[group.name] %}
-            <tr>
-              <td>
-                <a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">
-                  {{ row.name|flag }} {{ row.name }}
-                </a> {{ fx.form_badge(row.name) }}
-              </td>
-              <td class="text-end">{{ row.gp }}</td>
-              <td class="text-end">{{ row.gf }}</td>
-              <td class="text-end">{{ row.ga }}</td>
-              <td class="text-end">{{ row.gd }}</td>
-              <td class="text-end fw-bold">{{ row.pts }}</td>
-              <td class="text-end text-muted">{{ row.elo }}</td>
-              {% if results %}
-              <td class="text-end">
-                {% set adv = row.advance_prob %}
-                <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                  {{ "%.0f"|format(adv*100) }}%
-                </span>
-              </td>
-              {% endif %}
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% if group_fixtures[group.name] %}
-      <div class="card-body border-top">
-        <div class="row g-2">
-          {% for m in group_fixtures[group.name] %}
-          <div class="col-12">
-            <div class="border rounded p-2">{{ fx.compact_fixture(m) }}</div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
+{% if current_user.is_authenticated %}
+<div class="row justify-content-center mb-4">
+  <div class="col-12 col-lg-8">
+    <h2 class="mb-1">Ask about the World Cup</h2>
+    {% set api_key = current_user.settings.get('openrouter_api_key') %}
+    {% if not api_key %}
+    <div class="alert alert-warning">
+      Ask AI requires an OpenRouter API key. <a href="{{ url_for('web.settings') }}">Set one up on the Settings page</a> to enable this feature.
     </div>
-  </div>
-</div>
-{% endfor %}
+    <div id="chat-box" class="border rounded p-3 mb-3 bg-light text-muted text-center" style="min-height:120px;">
+      Ask AI is disabled until an OpenRouter API key is configured.
+    </div>
+    <div class="input-group">
+      <input type="text" class="form-control" placeholder="e.g. Who is most likely to win the tournament?" disabled>
+      <button class="btn btn-primary" disabled>Ask</button>
+    </div>
+    {% else %}
+    <p class="text-muted mb-4">Ask any question about tournament probabilities. Powered by Claude.</p>
 
-{% if results and results.group_finish %}
-<div class="row mt-4">
-  <div class="col-12">
-    <div class="card shadow-sm">
-      <div class="card-header fw-bold">Best 3rd-placed teams (8 of 12 advance)</div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-hover mb-0">
-          <thead class="table-dark">
-            <tr>
-              <th>#</th>
-              <th>Team</th>
-              <th>Group</th>
-              <th class="text-end">Elo</th>
-              <th class="text-end">P(3rd)</th>
-              <th class="text-end">P(advance)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% set rows = [] %}
-            {% for group in groups %}
-              {% for tname in group.teams %}
-                {% set finish = results.group_finish[group.name][tname] %}
-                {% if rows.append((finish.third_prob, group.name, tname, finish)) %}{% endif %}
-              {% endfor %}
-            {% endfor %}
-            {% set sorted_rows = rows | sort(attribute=0, reverse=True) %}
-            {% for third_prob, gname, tname, finish in sorted_rows[:8] %}
-            {% set t = teams_by_name[tname] %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>
-                <a href="{{ url_for('web.team', name=tname) }}" class="text-decoration-none text-dark fw-semibold">{{ tname }}</a>
-              </td>
-              <td>{{ gname }}</td>
-              <td class="text-end text-muted">{{ t.elo }}</td>
-              <td class="text-end">{{ "%.1f"|format(third_prob*100) }}%</td>
-              <td class="text-end">
-                {% set adv = finish.advance_prob %}
-                <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                  {{ "%.0f"|format(adv*100) }}%
-                </span>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    {% if not results %}
+    <div class="alert alert-warning">
+      No simulation results yet. <button class="btn btn-sm btn-success ms-2" id="quick-sim">Run 50,000 simulations now</button>
+    </div>
+    {% endif %}
+
+    <div id="chat-box" class="border rounded p-3 mb-3 bg-light" style="min-height:300px; max-height:500px; overflow-y:auto;">
+      <div class="text-muted text-center small mt-4" id="placeholder">Your conversation will appear here.</div>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="question" class="form-control" placeholder="e.g. Who is most likely to win the tournament?" {% if not results %}disabled{% endif %}>
+      <button class="btn btn-primary" id="ask-btn" {% if not results %}disabled{% endif %}>Ask</button>
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-2" id="suggestions">
+      {% set qs = [
+        "Who is most likely to win the World Cup?",
+        "What are the chances of a Spain vs Argentina final?",
+        "Which African team has the best chances?",
+        "How likely is it that the USA advances from their group?",
+        "Who are the top 3 favourites?",
+        "What are England's chances of reaching the final?"
+      ] %}
+      {% for q in qs %}
+      <button class="btn btn-outline-secondary btn-sm suggestion" {% if not results %}disabled{% endif %}>{{ q }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ---------- Switch-scenario modal ---------- #}
+<div class="modal fade" id="scenario-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Scenarios</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% with scenarios = scenario_list, in_modal = true %}
+        {% include "_scenarios_content.html" %}
+        {% endwith %}
       </div>
     </div>
   </div>
 </div>
+
+{% endblock %}
+{% block scripts %}
+{% if current_user.is_authenticated and current_user.settings.get('openrouter_api_key') %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+const CHAT_HISTORY_KEY = 'wc2026-chat-history';
+
+function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveHistory(history) {
+  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
+}
+
+function appendMessage(role, text, save = true) {
+  const box = document.getElementById('chat-box');
+  const ph = document.getElementById('placeholder');
+  if (ph) ph.remove();
+  const div = document.createElement('div');
+  div.className = 'mb-3 ' + (role === 'user' ? 'text-end' : '');
+  const bubble = document.createElement('span');
+  bubble.className = 'd-inline-block px-3 py-2 rounded ' +
+    (role === 'user' ? 'bg-primary text-white' : 'bg-white border');
+  bubble.style.maxWidth = '85%';
+  if (role === 'assistant' && window.marked) {
+    bubble.classList.add('markdown-body');
+    bubble.innerHTML = marked.parse(text);
+  } else {
+    bubble.style.whiteSpace = 'pre-wrap';
+    bubble.textContent = text;
+  }
+  div.appendChild(bubble);
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+
+  if (save) {
+    const history = loadHistory();
+    history.push({role, text});
+    saveHistory(history);
+  }
+}
+
+// Restore prior conversation, if any.
+const savedHistory = loadHistory();
+if (savedHistory.length) {
+  savedHistory.forEach(msg => appendMessage(msg.role, msg.text, false));
+}
+
+async function ask(question) {
+  if (!question.trim()) return;
+
+  const MAX_HISTORY_TURNS = 20;
+  const history = loadHistory()
+    .slice(-MAX_HISTORY_TURNS)
+    .map(m => ({role: m.role, content: m.text}));
+
+  appendMessage('user', question);
+  document.getElementById('ask-btn').disabled = true;
+  document.getElementById('question').value = '';
+  const thinking = document.createElement('div');
+  thinking.id = 'thinking';
+  thinking.className = 'mb-3 text-muted small';
+  thinking.textContent = 'Thinking…';
+  document.getElementById('chat-box').appendChild(thinking);
+
+  try {
+    const res = await fetch(`${window.API_ROOT}/query`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question, history})
+    });
+    const data = await res.json();
+    document.getElementById('thinking')?.remove();
+    appendMessage('assistant', data.answer || data.error || 'No answer received.');
+  } catch(e) {
+    document.getElementById('thinking')?.remove();
+    appendMessage('assistant', 'Error: ' + e.message);
+  } finally {
+    document.getElementById('ask-btn').disabled = false;
+  }
+}
+
+document.getElementById('ask-btn')?.addEventListener('click', () => {
+  ask(document.getElementById('question').value);
+});
+document.getElementById('question')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') ask(e.target.value);
+});
+document.querySelectorAll('.suggestion').forEach(btn => {
+  btn.addEventListener('click', () => ask(btn.textContent));
+});
+
+const quickSim = document.getElementById('quick-sim');
+if (quickSim) {
+  quickSim.addEventListener('click', async () => {
+    quickSim.disabled = true;
+    quickSim.textContent = 'Running…';
+    await fetch(`${window.API_ROOT}/simulate`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({n: 50000})
+    });
+    window.location.reload();
+  });
+}
+</script>
 {% endif %}
 {% endblock %}

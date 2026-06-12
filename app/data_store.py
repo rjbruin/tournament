@@ -55,6 +55,12 @@ def load_actuals() -> dict:
     return data
 
 
+def actuals_last_updated() -> float | None:
+    if not os.path.exists(ACTUALS_PATH):
+        return None
+    return os.path.getmtime(ACTUALS_PATH)
+
+
 def save_actuals(data: dict) -> None:
     with open(ACTUALS_PATH, "w") as f:
         json.dump(data, f, indent=2)
@@ -202,6 +208,96 @@ def _scenario_qualities(actuals: dict, draw: dict | None = None) -> dict:
     }
 
 
+# ----------------------------------------------------------------------
+# Auto-labeling: describe how far the tournament has progressed for a
+# given set of actuals, e.g. "Group stage day 10 - 1/3 games played" or
+# "Round of 32 - all games played".
+# ----------------------------------------------------------------------
+
+_ROUND_INFO = [
+    ("Round of 32", range(73, 89)),
+    ("Round of 16", range(89, 97)),
+    ("Quarterfinals", range(97, 101)),
+    ("Semifinals", range(101, 103)),
+    ("Final", range(103, 104)),
+]
+
+
+def describe_progress(actuals: dict) -> str:
+    """Human-readable description of tournament progress, e.g.
+    "Group stage day 10 - 1/3 games played" or "Round of 32 - all games
+    played", based on which group/knockout matches have results."""
+    import app as app_module
+
+    engine = app_module.get_engine()
+    if engine is None:
+        return ""
+
+    schedule = engine.data.get("schedule", {})
+
+    # --- Group stage ---
+    group_results = actuals.get("group_results", {})
+    played_pairs = {}
+    for gname, entries in group_results.items():
+        played_pairs[gname] = {
+            frozenset((e.get("home"), e.get("away"))) for e in entries
+        }
+
+    by_day = {}  # date -> [total, played]
+    for g in engine.groups:
+        gname = g["name"]
+        sched_matches = schedule.get("groups", {}).get(gname, [])
+        played_set = played_pairs.get(gname, set())
+        for (i, j), sm in zip(GROUP_MATCH_PAIRS, sched_matches):
+            date = sm.get("date")
+            entry = by_day.setdefault(date, [0, 0])
+            entry[0] += 1
+            pair = frozenset((g["teams"][i], g["teams"][j]))
+            if pair in played_set:
+                entry[1] += 1
+
+    days = sorted(d for d in by_day if d)
+    total_group_played = sum(p for _, p in by_day.values())
+    total_group_matches = sum(t for t, _ in by_day.values())
+
+    if total_group_played < total_group_matches:
+        # Find the latest matchday with at least one played match (or day 1
+        # if none have been played yet).
+        day_index = 1
+        for i, d in enumerate(days, start=1):
+            if by_day[d][1] > 0:
+                day_index = i
+        total, played = by_day[days[day_index - 1]]
+        desc = "all games played" if played == total else f"{played}/{total} games played"
+        return f"Group stage day {day_index} - {desc}"
+
+    # --- Knockout stage ---
+    knockout_results = actuals.get("knockout_results", {})
+    played_ko = {int(k) for k in knockout_results.keys()}
+
+    if 103 in played_ko:
+        return "Tournament complete"
+
+    round_name = "Round of 32"
+    for name, rng in _ROUND_INFO:
+        total = len(rng)
+        played = sum(1 for m in rng if m in played_ko)
+        if played > 0:
+            round_name, r_total, r_played = name, total, played
+        if played < total:
+            r_total, r_played = total, played
+            round_name = name
+            break
+    else:
+        r_total, r_played = len(_ROUND_INFO[-1][1]), 0
+
+    desc = "all games played" if r_played == r_total else f"{r_played}/{r_total} games played"
+    return f"{round_name} - {desc}"
+
+
+from app.simulation.engine import GROUP_MATCH_PAIRS  # noqa: E402
+
+
 def load_scenario(scenario_id: str | None) -> dict | None:
     """Load a scenario's metadata + actuals. Returns None if not found."""
     scenario_id = scenario_id or CURRENT_SCENARIO_ID
@@ -217,6 +313,7 @@ def load_scenario(scenario_id: str | None) -> dict | None:
             "is_pre_draw": False,
             "draw": None,
             **_scenario_qualities(actuals, draw=None),
+            "progress_label": describe_progress(actuals),
         }
     if scenario_id == PRE_DRAW_SCENARIO_ID:
         actuals = _empty_actuals()
@@ -231,6 +328,7 @@ def load_scenario(scenario_id: str | None) -> dict | None:
             "draw": None,
             **_scenario_qualities(actuals, draw=None),
             "draw_complete": False,
+            "progress_label": "Pre-draw",
         }
     path = _scenario_path(scenario_id)
     if not os.path.exists(path):
@@ -244,6 +342,7 @@ def load_scenario(scenario_id: str | None) -> dict | None:
     data.setdefault("is_pre_draw", False)
     data["is_current"] = False
     data.update(_scenario_qualities(data["actuals"], draw=data.get("draw")))
+    data["progress_label"] = describe_progress(data["actuals"])
     return data
 
 
@@ -304,7 +403,7 @@ def archive_current_scenario(label: str | None = None) -> dict:
     before they're overwritten by a results sync. This lets users keep
     exploring "what the projections looked like before <date>'s results"."""
     actuals = load_actuals()
-    label = label or f"Real results as of {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}"
+    label = label or describe_progress(actuals) or f"Real results as of {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}"
     return save_scenario(label, actuals, based_on=CURRENT_SCENARIO_ID)
 
 

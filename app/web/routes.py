@@ -46,17 +46,12 @@ def index():
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
     groups = _groups_for_results(engine, results)
-    groups_by_name = {g["name"]: g for g in groups}
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
 
-    group_tables = {}
-    group_fixtures = {}
     all_normalized = []
     for g in groups:
         raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
-        group_tables[g["name"]] = compute_group_table(g, raw_fixtures, teams_by_name, results)
         normalized = [normalize_group_match(m) for m in raw_fixtures]
-        group_fixtures[g["name"]] = normalized
         for m, raw in zip(normalized, raw_fixtures):
             m["_group"] = g["name"]
             m["_sort_key"] = _utc_sort_key(raw)
@@ -71,17 +66,52 @@ def index():
         upcoming = [m for m in all_normalized if not m.get("played")]
         featured_fixture = upcoming[0] if upcoming else all_normalized[-1]
 
+    scenario_list = data_store.list_scenarios()
+    active_scenario = data_store.load_scenario(scenario_id)
+    last_updated_ts = data_store.actuals_last_updated()
+    last_updated = None
+    if last_updated_ts:
+        import time as _time
+        last_updated = _time.strftime("%Y-%m-%d %H:%M UTC", _time.gmtime(last_updated_ts))
+
     return render_template(
         "index.html",
         tournament=engine.data["tournament"],
+        teams_by_name=teams_by_name,
+        results=results,
+        scenario_id=scenario_id,
+        active_scenario=active_scenario,
+        scenario_list=scenario_list,
+        last_updated=last_updated,
+        featured_fixture=featured_fixture,
+    )
+
+
+@web_bp.get("/groups")
+def groups():
+    engine = app_module.get_engine()
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
+    groups = _groups_for_results(engine, results)
+    teams_by_name = {t["name"]: t for t in engine.data["teams"]}
+
+    group_tables = {}
+    group_fixtures = {}
+    for g in groups:
+        raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
+        group_tables[g["name"]] = compute_group_table(g, raw_fixtures, teams_by_name, results)
+        normalized = [normalize_group_match(m) for m in raw_fixtures]
+        normalized.sort(key=_utc_sort_key)
+        group_fixtures[g["name"]] = normalized
+
+    return render_template(
+        "groups.html",
         groups=groups,
-        groups_by_name=groups_by_name,
         teams_by_name=teams_by_name,
         group_tables=group_tables,
         group_fixtures=group_fixtures,
         results=results,
         scenario_id=scenario_id,
-        featured_fixture=featured_fixture,
     )
 
 
@@ -183,7 +213,7 @@ def fixtures():
             for m in fixtures_by_group.get(g["name"], []):
                 nm = normalize_group_match(m)
                 nm["header"] = f"Group {g['name']}"
-                nm["header_url"] = url_for("web.index") + f"#group-{g['name']}"
+                nm["header_url"] = url_for("web.groups") + f"#group-{g['name']}"
                 nm["sort_key"] = _utc_sort_key(m)
                 all_fixtures.append(nm)
         bm = results.get("bracket_matches", {})
@@ -318,12 +348,6 @@ def scenario_compare():
 @web_bp.get("/simulation-logic")
 def simulation_logic():
     return render_template("simulation_logic.html")
-
-
-@web_bp.get("/chat")
-def chat():
-    results = app_module.get_simulation_results(current_user.username)
-    return render_template("chat.html", results=results)
 
 
 @web_bp.get("/onboarding")

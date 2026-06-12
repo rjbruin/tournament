@@ -1,4 +1,19 @@
 {
-  "group_results": {},
+  "group_results": {
+    "A": [
+      {
+        "home": "Mexico",
+        "away": "South Africa",
+        "home_goals": 2,
+        "away_goals": 0
+      },
+      {
+        "home": "South Korea",
+        "away": "Czech Republic",
+        "home_goals": 2,
+        "away_goals": 1
+      }
+    ]
+  },
   "knockout_results": {}
 }

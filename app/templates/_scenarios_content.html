@@ -1,0 +1,96 @@
+{# Shared scenario list + create-new-scenario form. Included by scenarios.html
+   and by the "switch scenario" modal on the Home page. #}
+
+<p class="text-muted mb-3">
+  A scenario is a particular set of fixture results — past, present, or hypothetical.
+  "Current" always reflects the real tournament. Use "What if" scenarios to explore how
+  different results would change the projections.
+  {% if not in_modal %}
+  Append <code>?s=&lt;id&gt;</code> to any page's URL to view it for a particular scenario, or
+  <a href="{{ url_for('web.scenario_compare') }}">compare two scenarios head to head</a>.
+  {% endif %}
+</p>
+
+<div class="table-responsive mb-4">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in scenarios %}
+      <tr>
+        <td>
+          {{ s.label }}
+          {% if s.is_current %}<span class="badge bg-primary ms-1">current</span>{% endif %}
+          {% if s.progress_label %}<div class="small text-muted">{{ s.progress_label }}</div>{% endif %}
+        </td>
+        <td class="small text-muted">
+          {% if s.knockout_complete %}Knockout complete
+          {% elif s.has_knockout_results %}Knockout in progress
+          {% elif s.group_stage_complete %}Group stage complete
+          {% elif s.has_group_results %}Group stage in progress
+          {% else %}No results yet{% endif %}
+        </td>
+        <td class="text-end">
+          {% if in_modal %}
+          <button type="button" class="btn btn-sm btn-outline-primary switch-scenario-btn" data-scenario-id="{{ s.id }}">View</button>
+          {% else %}
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">View</a>
+          {% endif %}
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('web.scenario_compare', a=s.id) }}">Compare</a>
+          {% if not s.is_current %}
+          <form method="post" action="{{ url_for('web.scenarios_delete', scenario_id=s.id) }}" class="d-inline" onsubmit="return confirm('Delete this scenario?');">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header fw-bold">New "what if" scenario</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('web.scenarios_new') }}" class="row g-2 align-items-end">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+      <div class="col-12 col-md-6">
+        <label for="label{{ '_modal' if in_modal }}" class="form-label">Label</label>
+        <input type="text" class="form-control" id="label{{ '_modal' if in_modal }}" name="label" placeholder="e.g. Netherlands win the final" required>
+      </div>
+      <div class="col-12 col-md-4">
+        <label for="based_on{{ '_modal' if in_modal }}" class="form-label">Based on</label>
+        <select class="form-select" id="based_on{{ '_modal' if in_modal }}" name="based_on">
+          {% for s in scenarios %}
+          <option value="{{ s.id }}">{{ s.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <button type="submit" class="btn btn-success w-100">Create</button>
+      </div>
+    </form>
+    <p class="text-muted small mt-2 mb-0">
+      Creates a copy of the chosen scenario's results. You can then edit fixture results within it
+      (via the API) without affecting "current" or the original scenario.
+    </p>
+  </div>
+</div>
+
+{% if in_modal %}
+<script>
+document.querySelectorAll('.switch-scenario-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('s', btn.dataset.scenarioId);
+    window.location = url.toString();
+  });
+});
+</script>
+{% endif %}

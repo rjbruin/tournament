@@ -322,13 +322,6 @@ def draw():
     )
 
 
-@web_bp.get("/scenarios")
-@login_required
-def scenarios():
-    scenario_list = data_store.list_scenarios()
-    return render_template("scenarios.html", scenarios=scenario_list)
-
-
 @web_bp.post("/scenarios/new")
 @login_required
 def scenarios_new():
@@ -339,7 +332,7 @@ def scenarios_new():
     import copy
     scenario = data_store.fork_scenario(base_id, copy.deepcopy(actuals), label=label)
     flash(f"Created scenario '{scenario['label']}'.", "success")
-    return redirect(url_for("web.scenarios"))
+    return redirect(url_for("web.index"))
 
 
 @web_bp.post("/scenarios/<scenario_id>/delete")
@@ -349,7 +342,7 @@ def scenarios_delete(scenario_id):
         flash("Scenario deleted.", "success")
     else:
         flash("Could not delete that scenario.", "danger")
-    return redirect(url_for("web.scenarios"))
+    return redirect(url_for("web.index"))
 
 
 @web_bp.get("/scenarios/compare")

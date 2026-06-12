@@ -18,11 +18,12 @@ def _scenario_id() -> str:
     from flask import session
     s = request.args.get("s")
     if s:
-        if s == "current" and session.get("scenario_id") != "current":
-            # Switching back to "current" from another scenario: drop any
-            # cached results so they're recomputed against the latest
-            # data/actuals.json instead of showing a stale snapshot.
-            key = ((_username() or "_anon").lower(), "current")
+        if s != session.get("scenario_id"):
+            # Switching to a different scenario: drop any cached results for
+            # it so they're recomputed fresh (e.g. against the latest
+            # data/actuals.json for "current") rather than showing whatever
+            # was last computed for it, possibly under stale data.
+            key = ((_username() or "_anon").lower(), s)
             app_module._simulation_results.pop(key, None)
         session["scenario_id"] = s
         return s
@@ -38,6 +39,14 @@ def _results_for_scenario(scenario_id: str):
     if current_user.is_authenticated:
         n = current_user.settings.get("n_simulations")
     return app_module.get_or_run_results(_username(), scenario_id, n=n)
+
+
+def _is_pre_draw(scenario_id: str) -> bool:
+    """True if `scenario_id` is the virtual "pre-draw" scenario, for which
+    the draw hasn't taken place — group compositions (and therefore
+    fixtures) are just one arbitrary simulated draw and shouldn't be
+    displayed as if they were real."""
+    return scenario_id == data_store.PRE_DRAW_SCENARIO_ID
 
 
 def _groups_for_results(engine, results):
@@ -62,7 +71,7 @@ def index():
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
 
     all_normalized = []
-    for g in groups:
+    for g in (groups if not _is_pre_draw(scenario_id) else []):
         raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
         normalized = [normalize_group_match(m) for m in raw_fixtures]
         for m, raw in zip(normalized, raw_fixtures):
@@ -108,10 +117,11 @@ def groups():
     groups = _groups_for_results(engine, results)
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
 
+    pre_draw = _is_pre_draw(scenario_id)
     group_tables = {}
     group_fixtures = {}
     for g in groups:
-        raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
+        raw_fixtures = [] if pre_draw else (results or {}).get("fixtures", {}).get(g["name"], [])
         group_tables[g["name"]] = compute_group_table(g, raw_fixtures, teams_by_name, results)
         normalized = [normalize_group_match(m) for m in raw_fixtures]
         normalized.sort(key=_utc_sort_key)
@@ -166,7 +176,7 @@ def team(name: str):
     team_group = next((g for g in _groups_for_results(engine, results) if name in g["teams"]), None)
 
     fixtures_for_team = []
-    if results and results.get("fixtures") and team_group:
+    if results and results.get("fixtures") and team_group and not _is_pre_draw(scenario_id):
         for m in results["fixtures"].get(team_group["name"], []):
             if m.get("home") == name or m.get("away") == name:
                 fixtures_for_team.append(normalize_group_match(m))
@@ -257,7 +267,7 @@ def fixtures():
     results = _results_for_scenario(scenario_id)
     groups = engine.groups
     all_fixtures = []
-    if results is not None:
+    if results is not None and not _is_pre_draw(scenario_id):
         fixtures_by_group = results.get("fixtures", {})
         for g in groups:
             for m in fixtures_by_group.get(g["name"], []):

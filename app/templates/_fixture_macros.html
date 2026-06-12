@@ -177,13 +177,24 @@
   {{ label }}
   <span class="text-primary text-decoration-underline ms-2" style="cursor:pointer; font-weight:normal;"
         data-bs-toggle="collapse" data-bs-target="#{{ target_id }}" role="button"
-        aria-expanded="false" aria-controls="{{ target_id }}">Show</span>
+        aria-expanded="false" aria-controls="{{ target_id }}"
+        id="{{ target_id }}-toggle">Show</span>
 </div>
 <div class="collapse" id="{{ target_id }}">
   <div class="bg-light rounded p-2">
     {{ group_table(rows, none, show_form=false) }}
   </div>
 </div>
+<script>
+(function () {
+  var el = document.getElementById('{{ target_id }}');
+  var toggle = document.getElementById('{{ target_id }}-toggle');
+  if (el && toggle) {
+    el.addEventListener('shown.bs.collapse', function () { toggle.textContent = 'Hide'; });
+    el.addEventListener('hidden.bs.collapse', function () { toggle.textContent = 'Show'; });
+  }
+})();
+</script>
 {% endmacro %}
 
 

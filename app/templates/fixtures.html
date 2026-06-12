@@ -19,6 +19,11 @@
   <div class="col-12 col-lg-8">
     {% for m in all_fixtures %}
     {{ fx.large_fixture(m, header=m.header, header_url=m.header_url) }}
+    {% if m.group_table_before %}
+    <div class="mb-3" style="margin-top:-0.75rem;">
+      {{ fx.group_table_collapsed(m.group_table_before, "Group " + m.header.replace("Group ", "") + " standings — before this match") }}
+    </div>
+    {% endif %}
     {% endfor %}
   </div>
 </div>

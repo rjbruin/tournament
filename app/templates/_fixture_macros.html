@@ -133,16 +133,16 @@
 {# ---------- Group standings table ---------- #}
 {% macro group_table(rows, results, show_form=True) %}
 <div class="table-responsive">
-  <table class="table table-sm table-hover mb-0">
+  <table class="table table-sm table-hover mb-0 group-standings-table">
     <thead class="table-dark">
       <tr>
-        <th>Team</th>
-        <th class="text-end">GP</th>
-        <th class="text-end">GF</th>
-        <th class="text-end">GA</th>
-        <th class="text-end">GD</th>
-        <th class="text-end">P</th>
-        {% if results %}<th class="text-end">Advance</th>{% endif %}
+        <th style="width:40%">Team</th>
+        <th class="text-end" style="width:9%">GP</th>
+        <th class="text-end" style="width:9%">GF</th>
+        <th class="text-end" style="width:9%">GA</th>
+        <th class="text-end" style="width:9%">GD</th>
+        <th class="text-end" style="width:9%">P</th>
+        {% if results %}<th class="text-end" style="width:15%">Advance</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -166,6 +166,17 @@
       {% endfor %}
     </tbody>
   </table>
+</div>
+{% endmacro %}
+
+
+{# ---------- "Old" standings (before a live match's kickoff): compact,
+   no advance odds, no form badges, permanently collapsed (not
+   interactive). ---------- #}
+{% macro group_table_collapsed(rows, label) %}
+<div class="small text-muted fw-bold mb-2">{{ label }}</div>
+<div class="bg-light rounded p-2 opacity-75" style="font-size:0.85em;">
+  {{ group_table(rows, none, show_form=false) }}
 </div>
 {% endmacro %}
 

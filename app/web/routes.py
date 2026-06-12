@@ -8,6 +8,34 @@ from app.web.view_helpers import normalize_group_match, normalize_bracket_match,
 web_bp = Blueprint("web", __name__)
 
 
+def _is_live(match: dict) -> bool:
+    """A match is "live" if it's flagged in_progress, or if the current
+    time is within 2 hours of its scheduled kickoff."""
+    if match.get("in_progress"):
+        return True
+    from datetime import datetime, timedelta, timezone
+    start = _utc_sort_key(match)
+    if start == datetime.min:
+        return False
+    now = datetime.now(timezone.utc)
+    return start <= now <= start + timedelta(hours=2)
+
+
+def _group_table_before(g, raw_fixtures, live_match, teams_by_name, results):
+    """Standings for group `g` as they were before `live_match` (a
+    normalized match dict) was played."""
+    import copy
+    before_fixtures = []
+    for m in raw_fixtures:
+        if {m.get("home"), m.get("away")} == {live_match.get("home_team"), live_match.get("away_team")}:
+            m = copy.deepcopy(m)
+            m["played"] = False
+            m.pop("home_goals", None)
+            m.pop("away_goals", None)
+        before_fixtures.append(m)
+    return compute_group_table(g, before_fixtures, teams_by_name, results)
+
+
 def _scenario_id() -> str:
     """Resolve the active scenario id: the `s` query param (which also
     persists the choice in the session for subsequent pages), falling back
@@ -115,6 +143,8 @@ def index():
             if match:
                 featured_fixture = match
 
+    featured_is_live = bool(featured_fixture) and _is_live(featured_fixture)
+
     featured_group_table = None
     featured_group_table_before = None
     if featured_fixture and featured_fixture.get("_group"):
@@ -123,29 +153,8 @@ def index():
             raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
             featured_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
 
-            if featured_fixture.get("in_progress"):
-                import copy
-                before_fixtures = []
-                for m in raw_fixtures:
-                    if {m.get("home"), m.get("away")} == {featured_fixture.get("home_team"), featured_fixture.get("away_team")}:
-                        m = copy.deepcopy(m)
-                        m["played"] = False
-                        m.pop("home_goals", None)
-                        m.pop("away_goals", None)
-                    before_fixtures.append(m)
-                featured_group_table_before = compute_group_table(g, before_fixtures, teams_by_name, results)
-
-    featured_is_live = False
-    if featured_fixture:
-        if featured_fixture.get("in_progress"):
-            featured_is_live = True
-        else:
-            from datetime import datetime, timedelta, timezone
-            start = _utc_sort_key(featured_fixture)
-            if start != datetime.min:
-                now = datetime.now(timezone.utc)
-                if start <= now <= start + timedelta(hours=2):
-                    featured_is_live = True
+            if featured_is_live:
+                featured_group_table_before = _group_table_before(g, raw_fixtures, featured_fixture, teams_by_name, results)
 
     scenario_list = data_store.list_scenarios()
     active_scenario = data_store.load_scenario(scenario_id)
@@ -328,15 +337,19 @@ def fixtures():
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
     groups = engine.groups
+    teams_by_name = {t["name"]: t for t in engine.data["teams"]}
     all_fixtures = []
     if results is not None and not _is_pre_draw(scenario_id):
         fixtures_by_group = results.get("fixtures", {})
         for g in groups:
-            for m in fixtures_by_group.get(g["name"], []):
+            raw_fixtures = fixtures_by_group.get(g["name"], [])
+            for m in raw_fixtures:
                 nm = normalize_group_match(m)
                 nm["header"] = f"Group {g['name']}"
                 nm["header_url"] = url_for("web.groups") + f"#group-{g['name']}"
                 nm["sort_key"] = _utc_sort_key(m)
+                if _is_live(nm):
+                    nm["group_table_before"] = _group_table_before(g, raw_fixtures, nm, teams_by_name, results)
                 all_fixtures.append(nm)
         bm = results.get("bracket_matches", {})
         for m in engine.all_knockout_defs:

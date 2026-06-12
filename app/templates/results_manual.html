@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Enter results manually — WC 2026{% endblock %}
+{% block content %}
+
+<h2 class="mb-1">Enter results manually</h2>
+<p class="text-muted mb-4">
+  Use this page to enter group-stage results by hand — handy if the live results feed is slow
+  or wrong. Saving here replaces the <strong>current</strong> scenario's results. If the
+  official results feed later disagrees with what you entered here, you'll be notified.
+</p>
+
+<form id="manual-results-form">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Group</th>
+          <th>Home</th>
+          <th class="text-center" style="width:5rem;">Score</th>
+          <th></th>
+          <th class="text-center" style="width:5rem;">Score</th>
+          <th>Away</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in all_fixtures %}
+        <tr data-group="{{ m.group }}" data-home="{{ m.home_team }}" data-away="{{ m.away_team }}">
+          <td>{{ m.group }}</td>
+          <td>{{ m.home_team|flag }} {{ m.home_team }}</td>
+          <td>
+            <input type="number" min="0" class="form-control form-control-sm text-center" name="home_goals"
+                   value="{{ m.home_goals if m.played else '' }}">
+          </td>
+          <td class="text-center text-muted">-</td>
+          <td>
+            <input type="number" min="0" class="form-control form-control-sm text-center" name="away_goals"
+                   value="{{ m.away_goals if m.played else '' }}">
+          </td>
+          <td>{{ m.away_team|flag }} {{ m.away_team }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <button type="submit" class="btn btn-success" id="save-manual-btn">Save as current results</button>
+  <a href="{{ url_for('web.index') }}" class="btn btn-outline-secondary">Cancel</a>
+  <div id="manual-save-status" class="mt-2 text-muted small"></div>
+</form>
+
+<script>
+document.getElementById('manual-results-form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const btn = document.getElementById('save-manual-btn');
+  const status = document.getElementById('manual-save-status');
+  btn.disabled = true;
+  const rows = [...document.querySelectorAll('#manual-results-form tbody tr')];
+  let saved = 0;
+  for (const row of rows) {
+    const home_goals = row.querySelector('[name="home_goals"]').value;
+    const away_goals = row.querySelector('[name="away_goals"]').value;
+    if (home_goals === '' || away_goals === '') continue;
+    status.textContent = `Saving ${saved + 1} / ${rows.length}...`;
+    const resp = await fetch(`${window.API_ROOT}/actuals/group_result?s=current`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        group: row.dataset.group,
+        home: row.dataset.home,
+        away: row.dataset.away,
+        home_goals: parseInt(home_goals, 10),
+        away_goals: parseInt(away_goals, 10),
+      })
+    });
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      status.textContent = 'Error: ' + (data.error || 'failed to save a result.');
+      btn.disabled = false;
+      return;
+    }
+    saved++;
+  }
+  // Remember this as the "manually entered" baseline for comparison against
+  // the next official-results sync.
+  await fetch(`${window.API_ROOT}/actuals/manual_snapshot`, {method: 'POST'});
+  status.textContent = 'Saved. Redirecting...';
+  window.location = "{{ url_for('web.index', s='current') }}";
+});
+</script>
+
+{% endblock %}

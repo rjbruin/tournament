@@ -11,6 +11,14 @@
   {% endif %}
 </p>
 
+{% if in_modal %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <button type="button" id="sync-results-btn" class="btn btn-outline-primary btn-sm">🔄 Update results &amp; re-simulate</button>
+  <a href="{{ url_for('web.results_manual') }}" class="btn btn-outline-secondary btn-sm">✏️ Enter results manually</a>
+</div>
+<div id="sync-results-status" class="small mb-3"></div>
+{% endif %}
+
 <div class="table-responsive mb-4">
   <table class="table table-hover align-middle">
     <thead>
@@ -89,6 +97,41 @@
 
 {% if in_modal %}
 <script>
+document.getElementById('sync-results-btn')?.addEventListener('click', async function () {
+  const btn = this;
+  const status = document.getElementById('sync-results-status');
+  btn.disabled = true;
+  btn.textContent = 'Updating...';
+  document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
+  try {
+    const resp = await fetch(`${window.API_ROOT}/results/sync`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}',
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      status.innerHTML = `<span class="text-danger">${data.error || 'Update failed.'}</span>`;
+      document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+      btn.disabled = false;
+      btn.textContent = '🔄 Update results & re-simulate';
+      return;
+    }
+    const mc = (data.sync && data.sync.manual_comparison) || {status: 'none'};
+    if (mc.status === 'match') {
+      sessionStorage.setItem('wc2026-notice', '✅ Live results now match your manually-entered results — the manual scenario has been replaced by the updated current results.');
+    } else if (mc.status === 'mismatch') {
+      sessionStorage.setItem('wc2026-notice', '⚠️ Live results differ from your manually-entered results. The official results are now "current"; your manual entry is kept as a separate scenario for comparison.');
+    } else {
+      sessionStorage.setItem('wc2026-notice', '🔄 Results updated and re-simulated.');
+    }
+    window.location = window.location.pathname + '?s=current';
+  } catch (e) {
+    status.innerHTML = `<span class="text-danger">Update failed: ${e}</span>`;
+    document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+    btn.disabled = false;
+    btn.textContent = '🔄 Update results & re-simulate';
+  }
+});
+
 document.querySelectorAll('.switch-scenario-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');

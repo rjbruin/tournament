@@ -112,6 +112,20 @@ def sync_results():
     results = engine.run(n, actuals=actuals)
     app_module.set_simulation_results(g.user.username, results, "current")
 
+    # If the user previously entered results manually (because the official
+    # results feed was slow/incorrect), compare that manual snapshot against
+    # the freshly-synced official actuals.
+    manual_comparison = {"status": "none"}
+    manual = data_store.load_scenario(data_store.MANUAL_SCENARIO_ID)
+    if manual is not None:
+        if manual["actuals"].get("group_results") == actuals.get("group_results") and \
+                manual["actuals"].get("knockout_results") == actuals.get("knockout_results"):
+            data_store.delete_scenario(data_store.MANUAL_SCENARIO_ID)
+            manual_comparison = {"status": "match"}
+        else:
+            manual_comparison = {"status": "mismatch"}
+    sync_info["manual_comparison"] = manual_comparison
+
     return jsonify({
         "ok": True,
         "sync": sync_info,
@@ -393,6 +407,78 @@ def _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork):
         data_store.save_scenario(existing["label"], actuals, scenario_id=target_id)
     _invalidate_results(target_id)
     return jsonify({"ok": True, "scenario_id": target_id, "actuals": actuals})
+
+
+@api_bp.post("/scenarios/hypothetical")
+def create_hypothetical_scenario():
+    """Create (replacing any existing) the single "what if" scenario by
+    applying one group-result edit on top of the currently-active scenario's
+    actuals, then run a simulation for it and make it the active scenario.
+
+    Body: {"group": "A", "home": "Mexico", "away": "South Africa",
+           "home_goals": 2, "away_goals": 1, "base": "current"}
+    """
+    from flask import session
+    body = request.get_json() or {}
+    required = ("group", "home", "away", "home_goals", "away_goals")
+    if any(k not in body for k in required):
+        return jsonify({"error": f"Missing fields, required: {required}"}), 400
+
+    engine = app_module.get_engine()
+    gname = body["group"].upper()
+    if gname not in engine.group_pos:
+        return jsonify({"error": "Unknown group"}), 404
+
+    base_id = body.get("base") or _scenario_id()
+    base = data_store.load_scenario(base_id)
+    if base is None:
+        return jsonify({"error": "Unknown scenario"}), 404
+
+    import copy
+    actuals = copy.deepcopy(base["actuals"])
+    matches = actuals["group_results"].setdefault(gname, [])
+    matches = [
+        m for m in matches
+        if {m.get("home"), m.get("away")} != {body["home"], body["away"]}
+    ]
+    matches.append({
+        "home": body["home"],
+        "away": body["away"],
+        "home_goals": int(body["home_goals"]),
+        "away_goals": int(body["away_goals"]),
+    })
+    actuals["group_results"][gname] = matches
+
+    # Only one "what if" scenario at a time.
+    data_store.delete_hypothetical_scenario()
+    scenario_id = data_store.HYPOTHETICAL_SCENARIO_ID
+    key = ((g.user.username or "_anon").lower(), scenario_id)
+    app_module._simulation_results.pop(key, None)
+
+    label = f"What if: {body['home']} {body['home_goals']}-{body['away_goals']} {body['away']}"
+    scenario = data_store.save_scenario(label, actuals, based_on=base_id,
+                                         scenario_id=scenario_id, draw=base.get("draw"),
+                                         is_hypothetical=True)
+
+    n = g.user.settings.get("n_simulations", auth.DEFAULT_USER_SETTINGS["n_simulations"])
+    results = app_module.get_or_run_results(g.user.username, scenario_id, n=n)
+
+    session["scenario_id"] = scenario_id
+    return jsonify({
+        "ok": True,
+        "scenario": {k: v for k, v in scenario.items() if k != "actuals"},
+        "group_advance_prob": (results or {}).get("group_advance_prob", {}),
+        "winner_prob": (results or {}).get("winner_prob", {}),
+    })
+
+
+@api_bp.post("/actuals/manual_snapshot")
+def save_manual_snapshot():
+    """Remember the current real-world actuals as the "manually entered"
+    baseline, used later by /results/sync to detect whether official results
+    match what was entered by hand."""
+    scenario = data_store.save_manual_snapshot()
+    return jsonify({"ok": True, "scenario": {k: v for k, v in scenario.items() if k != "actuals"}})
 
 
 @api_bp.post("/actuals/reset")

@@ -32,50 +32,61 @@
     {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
   </div>
   <div class="card-body">
-    <div class="border rounded p-2">{{ fx.large_fixture(featured_fixture) }}</div>
-    {% if current_user.is_authenticated %}
-    <form id="featured-score-form" class="row g-2 align-items-end mt-3">
-      <div class="col-auto">
-        <label class="form-label small mb-0">{{ featured_fixture.home_team }}</label>
-        <input type="number" min="0" class="form-control form-control-sm" name="home_goals" style="width:5rem"
-               value="{{ featured_fixture.home_goals if featured_fixture.played else '' }}">
+    <div class="border rounded p-2">{{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none) }}</div>
+    {% if current_user.is_authenticated and not featured_fixture.played %}
+    <button type="button" class="btn btn-outline-primary btn-sm mt-3" id="explore-toggle-btn">🔍 Explore</button>
+    <div id="explore-panel" class="d-none mt-3">
+      <div class="small text-muted mb-2">
+        What if this match ended differently? Enter a score below and explore the hypothetical scenario.
       </div>
-      <div class="col-auto">
-        <label class="form-label small mb-0">{{ featured_fixture.away_team }}</label>
-        <input type="number" min="0" class="form-control form-control-sm" name="away_goals" style="width:5rem"
-               value="{{ featured_fixture.away_goals if featured_fixture.played else '' }}">
-      </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-success btn-sm">Save score</button>
-      </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-outline-secondary btn-sm" name="fork" value="1">Save as "what if"</button>
-      </div>
-    </form>
+      <div class="border rounded p-2" id="explore-fixture">{{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none) }}</div>
+      <form id="hypothetical-form" class="row g-2 align-items-end mt-3">
+        <div class="col-auto">
+          <label class="form-label small mb-0">{{ featured_fixture.home_team }}</label>
+          <input type="number" min="0" class="form-control form-control-sm" name="home_goals" style="width:5rem" value="0">
+        </div>
+        <div class="col-auto">
+          <label class="form-label small mb-0">{{ featured_fixture.away_team }}</label>
+          <input type="number" min="0" class="form-control form-control-sm" name="away_goals" style="width:5rem" value="0">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary btn-sm">Show hypothetical scenario</button>
+        </div>
+      </form>
+    </div>
     <script>
-    document.getElementById('featured-score-form')?.addEventListener('submit', async function (e) {
+    document.getElementById('explore-toggle-btn')?.addEventListener('click', function () {
+      document.getElementById('explore-panel')?.classList.toggle('d-none');
+    });
+    document.getElementById('hypothetical-form')?.addEventListener('submit', async function (e) {
       e.preventDefault();
       const fd = new FormData(this);
-      const fork = (e.submitter && e.submitter.name === 'fork');
-      const params = new URLSearchParams({s: '{{ scenario_id }}'});
-      if (fork) params.set('fork', 'true');
-      const resp = await fetch(`${window.API_ROOT}/actuals/group_result?${params}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          group: '{{ featured_fixture._group }}',
-          home: '{{ featured_fixture.home_team }}',
-          away: '{{ featured_fixture.away_team }}',
-          home_goals: parseInt(fd.get('home_goals') || '0', 10),
-          away_goals: parseInt(fd.get('away_goals') || '0', 10),
-        })
-      });
-      const data = await resp.json();
-      if (!resp.ok) { alert(data.error || 'Failed to save score.'); return; }
-      if (data.scenario && data.scenario.id) {
+      const btn = this.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.textContent = 'Computing...';
+      document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
+      try {
+        const resp = await fetch(`${window.API_ROOT}/scenarios/hypothetical`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            group: '{{ featured_fixture._group }}',
+            home: '{{ featured_fixture.home_team }}',
+            away: '{{ featured_fixture.away_team }}',
+            home_goals: parseInt(fd.get('home_goals') || '0', 10),
+            away_goals: parseInt(fd.get('away_goals') || '0', 10),
+            base: '{{ scenario_id }}',
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) { alert(data.error || 'Failed to compute hypothetical scenario.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = 'Show hypothetical scenario'; return; }
+        sessionStorage.setItem('wc2026-notice', '🔮 Showing a hypothetical "what if" scenario. It will be discarded once you switch to another scenario.');
         window.location = `${window.location.pathname}?s=${data.scenario.id}`;
-      } else {
-        window.location.reload();
+      } catch (err) {
+        alert('Failed: ' + err);
+        document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+        btn.disabled = false;
+        btn.textContent = 'Show hypothetical scenario';
       }
     });
     </script>

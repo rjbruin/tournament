@@ -49,7 +49,7 @@
 
 
 {# ---------- Large fixture card: header + odds row + meta line ---------- #}
-{% macro large_fixture(match, header=None, header_url=None) %}
+{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None) %}
 <div class="card shadow-sm fixture-card mb-3">
   {% if header %}
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
@@ -63,6 +63,9 @@
         <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
         <div class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }}</div>
         {% if match.home_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.home_prob*100) }}%</div>{% endif %}
+        {% if show_advance and match.home_team and advance_prob is not none %}
+        <div class="small text-muted mt-1">Advance from group: {{ "%.0f"|format(advance_prob.get(match.home_team, 0)*100) }}%</div>
+        {% endif %}
         {% else %}
         {% for cand, p in (match.home_candidates or {}).items() %}
         <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
@@ -77,6 +80,9 @@
         <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
         <div class="fw-semibold">{{ match.away_team }} {{ form_badge(match.away_team) }}</div>
         {% if match.away_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.away_prob*100) }}%</div>{% endif %}
+        {% if show_advance and match.away_team and advance_prob is not none %}
+        <div class="small text-muted mt-1">Advance from group: {{ "%.0f"|format(advance_prob.get(match.away_team, 0)*100) }}%</div>
+        {% endif %}
         {% else %}
         {% for cand, p in (match.away_candidates or {}).items() %}
         <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>

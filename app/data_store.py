@@ -311,6 +311,8 @@ def load_scenario(scenario_id: str | None) -> dict | None:
             "created_at": None,
             "is_current": True,
             "is_pre_draw": False,
+            "is_hypothetical": False,
+            "is_manual": False,
             "draw": None,
             **_scenario_qualities(actuals, draw=None),
             "progress_label": describe_progress(actuals),
@@ -325,6 +327,8 @@ def load_scenario(scenario_id: str | None) -> dict | None:
             "created_at": None,
             "is_current": False,
             "is_pre_draw": True,
+            "is_hypothetical": False,
+            "is_manual": False,
             "draw": None,
             **_scenario_qualities(actuals, draw=None),
             "draw_complete": False,
@@ -340,6 +344,8 @@ def load_scenario(scenario_id: str | None) -> dict | None:
     data["actuals"].setdefault("knockout_results", {})
     data.setdefault("draw", None)
     data.setdefault("is_pre_draw", False)
+    data.setdefault("is_hypothetical", False)
+    data.setdefault("is_manual", False)
     data["is_current"] = False
     data.update(_scenario_qualities(data["actuals"], draw=data.get("draw")))
     data["progress_label"] = describe_progress(data["actuals"])
@@ -364,7 +370,8 @@ def list_scenarios() -> list[dict]:
 
 
 def save_scenario(label: str, actuals: dict, based_on: str | None = None,
-                   scenario_id: str | None = None, draw: dict | None = None) -> dict:
+                   scenario_id: str | None = None, draw: dict | None = None,
+                   is_hypothetical: bool | None = None, is_manual: bool | None = None) -> dict:
     """Create or update a (non-"current") scenario and persist it.
 
     ``draw`` (optional): a ``{letter: [pot1..pot4 team names]}`` dict
@@ -382,10 +389,36 @@ def save_scenario(label: str, actuals: dict, based_on: str | None = None,
         "based_on": based_on if existing is None else existing.get("based_on"),
         "created_at": existing["created_at"] if existing else time.time(),
         "draw": draw if draw is not None else (existing.get("draw") if existing else None),
+        "is_hypothetical": is_hypothetical if is_hypothetical is not None else (existing.get("is_hypothetical", False) if existing else False),
+        "is_manual": is_manual if is_manual is not None else (existing.get("is_manual", False) if existing else False),
     }
     with open(_scenario_path(scenario_id), "w") as f:
         json.dump(data, f, indent=2)
     return load_scenario(scenario_id)
+
+
+# Fixed ids for the single-slot "what if" (hypothetical) and "manually
+# entered current results" scenarios.
+HYPOTHETICAL_SCENARIO_ID = "hypothetical"
+MANUAL_SCENARIO_ID = "manual"
+
+
+def find_hypothetical_scenario() -> dict | None:
+    return load_scenario(HYPOTHETICAL_SCENARIO_ID) if os.path.exists(_scenario_path(HYPOTHETICAL_SCENARIO_ID)) else None
+
+
+def delete_hypothetical_scenario() -> bool:
+    return delete_scenario(HYPOTHETICAL_SCENARIO_ID)
+
+
+def save_manual_snapshot() -> dict:
+    """Copy the current real-world actuals into the single "manual"
+    scenario, used to remember what was manually entered so it can later be
+    compared against freshly-synced official results."""
+    import copy
+    actuals = copy.deepcopy(load_actuals())
+    return save_scenario("Manually entered results", actuals, based_on=CURRENT_SCENARIO_ID,
+                          scenario_id=MANUAL_SCENARIO_ID, is_manual=True)
 
 
 def delete_scenario(scenario_id: str) -> bool:

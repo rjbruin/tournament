@@ -18,13 +18,20 @@ def _scenario_id() -> str:
     from flask import session
     s = request.args.get("s")
     if s:
-        if s != session.get("scenario_id"):
+        previous = session.get("scenario_id")
+        if s != previous:
             # Switching to a different scenario: drop any cached results for
             # it so they're recomputed fresh (e.g. against the latest
             # data/actuals.json for "current") rather than showing whatever
             # was last computed for it, possibly under stale data.
             key = ((_username() or "_anon").lower(), s)
             app_module._simulation_results.pop(key, None)
+            # Only one hypothetical "what if" scenario exists at a time, and
+            # it's discarded as soon as the user navigates away from it.
+            if previous == data_store.HYPOTHETICAL_SCENARIO_ID and s != previous:
+                data_store.delete_hypothetical_scenario()
+                old_key = ((_username() or "_anon").lower(), data_store.HYPOTHETICAL_SCENARIO_ID)
+                app_module._simulation_results.pop(old_key, None)
         session["scenario_id"] = s
         return s
     return session.get("scenario_id") or "current"
@@ -291,6 +298,33 @@ def fixtures():
         all_fixtures=all_fixtures,
         results=results,
         scenario_id=scenario_id,
+    )
+
+
+@web_bp.get("/results/manual")
+@login_required
+def results_manual():
+    """A page listing every group-stage fixture with editable score fields,
+    for manually entering real-world results when the football-data.org feed
+    is slow or incorrect. Saving here overwrites "current"."""
+    engine = app_module.get_engine()
+    actuals = data_store.load_actuals()
+    results = app_module.get_or_run_results(_username(), "current",
+                                              n=current_user.settings.get("n_simulations"))
+
+    all_fixtures = []
+    fixtures_by_group = (results or {}).get("fixtures", {})
+    for g in engine.groups:
+        for m in fixtures_by_group.get(g["name"], []):
+            nm = normalize_group_match(m)
+            nm["group"] = g["name"]
+            nm["sort_key"] = _utc_sort_key(m)
+            all_fixtures.append(nm)
+    all_fixtures.sort(key=lambda f: f["sort_key"])
+
+    return render_template(
+        "results_manual.html",
+        all_fixtures=all_fixtures,
     )
 
 

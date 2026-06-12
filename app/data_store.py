@@ -42,7 +42,7 @@ _SUMMARY_KEYS = [
 
 
 def _empty_actuals():
-    return {"group_results": {}, "knockout_results": {}}
+    return {"group_results": {}, "knockout_results": {}, "live_matches": []}
 
 
 def load_actuals() -> dict:
@@ -52,6 +52,7 @@ def load_actuals() -> dict:
         data = json.load(f)
     data.setdefault("group_results", {})
     data.setdefault("knockout_results", {})
+    data.setdefault("live_matches", [])
     return data
 
 
@@ -342,6 +343,7 @@ def load_scenario(scenario_id: str | None) -> dict | None:
     data.setdefault("actuals", _empty_actuals())
     data["actuals"].setdefault("group_results", {})
     data["actuals"].setdefault("knockout_results", {})
+    data["actuals"].setdefault("live_matches", [])
     data.setdefault("draw", None)
     data.setdefault("is_pre_draw", False)
     data.setdefault("is_hypothetical", False)
@@ -371,7 +373,8 @@ def list_scenarios() -> list[dict]:
 
 def save_scenario(label: str, actuals: dict, based_on: str | None = None,
                    scenario_id: str | None = None, draw: dict | None = None,
-                   is_hypothetical: bool | None = None, is_manual: bool | None = None) -> dict:
+                   is_hypothetical: bool | None = None, is_manual: bool | None = None,
+                   featured_match: dict | None = None) -> dict:
     """Create or update a (non-"current") scenario and persist it.
 
     ``draw`` (optional): a ``{letter: [pot1..pot4 team names]}`` dict
@@ -391,6 +394,7 @@ def save_scenario(label: str, actuals: dict, based_on: str | None = None,
         "draw": draw if draw is not None else (existing.get("draw") if existing else None),
         "is_hypothetical": is_hypothetical if is_hypothetical is not None else (existing.get("is_hypothetical", False) if existing else False),
         "is_manual": is_manual if is_manual is not None else (existing.get("is_manual", False) if existing else False),
+        "featured_match": featured_match if featured_match is not None else (existing.get("featured_match") if existing else None),
     }
     with open(_scenario_path(scenario_id), "w") as f:
         json.dump(data, f, indent=2)

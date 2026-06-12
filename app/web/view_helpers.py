@@ -70,6 +70,7 @@ def normalize_group_match(match: dict) -> dict:
         "local_timezone": match.get("local_timezone"),
         "venue": match.get("venue"),
         "place": match.get("place"),
+        "in_progress": match.get("in_progress", False),
     }
     if match.get("played"):
         out["home_goals"] = match["home_goals"]

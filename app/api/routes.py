@@ -456,9 +456,10 @@ def create_hypothetical_scenario():
     app_module._simulation_results.pop(key, None)
 
     label = f"What if: {body['home']} {body['home_goals']}-{body['away_goals']} {body['away']}"
+    featured_match = {"group": gname, "home": body["home"], "away": body["away"]}
     scenario = data_store.save_scenario(label, actuals, based_on=base_id,
                                          scenario_id=scenario_id, draw=base.get("draw"),
-                                         is_hypothetical=True)
+                                         is_hypothetical=True, featured_match=featured_match)
 
     n = g.user.settings.get("n_simulations", auth.DEFAULT_USER_SETTINGS["n_simulations"])
     results = app_module.get_or_run_results(g.user.username, scenario_id, n=n)
@@ -470,6 +471,56 @@ def create_hypothetical_scenario():
         "group_advance_prob": (results or {}).get("group_advance_prob", {}),
         "winner_prob": (results or {}).get("winner_prob", {}),
     })
+
+
+@api_bp.post("/actuals/live_score")
+def post_live_score():
+    """Record a live (in-progress) scoreline for a group match.
+
+    Body: {"group": "A", "home": "Mexico", "away": "South Africa",
+           "home_goals": 2, "away_goals": 1}
+
+    Same `s`/`fork` query params as /actuals/group_result. Updates the
+    group result with the given score AND marks the match as "in progress"
+    in actuals["live_matches"], so it propagates into standings/brackets but
+    is flagged as not-yet-final for display purposes."""
+    body = request.get_json()
+    required = ("group", "home", "away", "home_goals", "away_goals")
+    if not body or any(k not in body for k in required):
+        return jsonify({"error": f"Missing fields, required: {required}"}), 400
+
+    engine = app_module.get_engine()
+    gname = body["group"].upper()
+    if gname not in engine.group_pos:
+        return jsonify({"error": "Unknown group"}), 404
+
+    base_scenario_id = _scenario_id()
+    target_id, actuals, do_fork = _load_actuals_for_edit()
+    if actuals is None:
+        return jsonify({"error": "Unknown scenario"}), 404
+
+    matches = actuals["group_results"].setdefault(gname, [])
+    matches = [
+        m for m in matches
+        if {m.get("home"), m.get("away")} != {body["home"], body["away"]}
+    ]
+    matches.append({
+        "home": body["home"],
+        "away": body["away"],
+        "home_goals": int(body["home_goals"]),
+        "away_goals": int(body["away_goals"]),
+    })
+    actuals["group_results"][gname] = matches
+
+    live_matches = actuals.setdefault("live_matches", [])
+    live_matches = [
+        lm for lm in live_matches
+        if {lm.get("home"), lm.get("away")} != {body["home"], body["away"]}
+    ]
+    live_matches.append({"home": body["home"], "away": body["away"]})
+    actuals["live_matches"] = live_matches
+
+    return _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork)
 
 
 @api_bp.post("/actuals/manual_snapshot")

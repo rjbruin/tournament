@@ -100,7 +100,7 @@ class SimulationEngine:
 
             results = self._simulate_knockout(n, group_order, group_key, fixed_knockout_winners)
 
-            results["fixtures"] = self._build_group_fixtures(actuals.get("group_results", {}))
+            results["fixtures"] = self._build_group_fixtures(actuals.get("group_results", {}), actuals.get("live_matches"))
             results["bracket_matches"] = results.pop("_bracket_matches")
             for m in results["bracket_matches"].values():
                 mn = m["match"]
@@ -244,7 +244,10 @@ class SimulationEngine:
     # Group fixtures (display + odds)
     # ------------------------------------------------------------------
 
-    def _build_group_fixtures(self, group_results: dict) -> dict:
+    def _build_group_fixtures(self, group_results: dict, live_matches: list | None = None) -> dict:
+        live_keys = set()
+        for entry in (live_matches or []):
+            live_keys.add(frozenset((entry.get("home"), entry.get("away"))))
         fixtures = {}
         for gi, g in enumerate(self.groups):
             gname = g["name"]
@@ -266,6 +269,8 @@ class SimulationEngine:
                         match["home_goals"] = int(entry["away_goals"])
                         match["away_goals"] = int(entry["home_goals"])
                     match["played"] = True
+                    if frozenset((home_name, away_name)) in live_keys:
+                        match["in_progress"] = True
                 else:
                     elo_h = float(self.team_elos[self.team_idx[home_name]])
                     elo_a = float(self.team_elos[self.team_idx[away_name]])

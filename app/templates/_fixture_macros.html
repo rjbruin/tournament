@@ -49,7 +49,7 @@
 
 
 {# ---------- Large fixture card: header + odds row + meta line ---------- #}
-{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, editable=False, explore=False, form_id=None) %}
+{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, editable=False, explore=False, form_id=None, live=False, submit_label=None) %}
 <div class="card shadow-sm fixture-card mb-3">
   {% if header %}
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
@@ -104,9 +104,9 @@
     {% endif %}
     {% if editable %}
     <div class="text-center mt-2">
-      <button type="submit" {% if form_id %}form="{{ form_id }}"{% endif %} class="btn btn-primary btn-sm">Show hypothetical scenario</button>
+      <button type="submit" {% if form_id %}form="{{ form_id }}"{% endif %} class="btn btn-primary btn-sm">{{ submit_label or "Show hypothetical scenario" }}</button>
     </div>
-    {% elif match.date or explore %}
+    {% elif match.date or explore or live %}
     <div class="text-muted small text-center mt-2">
       {% if match.date %}
       {{ match|local_time }}
@@ -116,9 +116,53 @@
       {% if match.date %} &middot; {% endif %}
       <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="explore-toggle-btn">🔍 Explore</span>
       {% endif %}
+      {% if live %}
+      {% if match.date or explore %} &middot; {% endif %}
+      <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="live-score-toggle-btn">📡 Edit live score</span>
+      {% endif %}
     </div>
     {% endif %}
   </div>
+</div>
+{% endmacro %}
+
+
+{# ---------- Group standings table ---------- #}
+{% macro group_table(rows, results) %}
+<div class="table-responsive">
+  <table class="table table-sm table-hover mb-0">
+    <thead class="table-dark">
+      <tr>
+        <th>Team</th>
+        <th class="text-end">GP</th>
+        <th class="text-end">GF</th>
+        <th class="text-end">GA</th>
+        <th class="text-end">GD</th>
+        <th class="text-end">P</th>
+        {% if results %}<th class="text-end">Advance</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {{ form_badge(row.name) }}</td>
+        <td class="text-end">{{ row.gp }}</td>
+        <td class="text-end">{{ row.gf }}</td>
+        <td class="text-end">{{ row.ga }}</td>
+        <td class="text-end">{{ row.gd }}</td>
+        <td class="text-end fw-bold">{{ row.pts }}</td>
+        {% if results %}
+        <td class="text-end">
+          {% set adv = row.advance_prob %}
+          <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+            {{ "%.0f"|format(adv*100) }}%
+          </span>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endmacro %}
 

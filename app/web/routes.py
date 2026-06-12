@@ -86,21 +86,54 @@ def index():
             m["_sort_key"] = _utc_sort_key(raw)
             all_normalized.append(m)
 
-    # The "current/next fixture" card: prefer a fixture without a result yet
-    # (i.e. upcoming or in progress), otherwise fall back to the most
-    # recently played one.
+    # The "current/next fixture" card: prefer an in-progress (live) match,
+    # then a fixture without a result yet (upcoming), otherwise fall back to
+    # the most recently played one.
     featured_fixture = None
     if all_normalized:
         all_normalized.sort(key=lambda m: m["_sort_key"])
+        live = [m for m in all_normalized if m.get("in_progress")]
         upcoming = [m for m in all_normalized if not m.get("played")]
-        featured_fixture = upcoming[0] if upcoming else all_normalized[-1]
+        if live:
+            featured_fixture = live[0]
+        elif upcoming:
+            featured_fixture = upcoming[0]
+        else:
+            featured_fixture = all_normalized[-1]
+
+    # For the hypothetical scenario, feature the match that was edited
+    # (rather than the next-upcoming match), so the Up Next card shows the
+    # effects of the "what if" scoreline in the group table.
+    if scenario_id == data_store.HYPOTHETICAL_SCENARIO_ID:
+        active_scenario_data = data_store.load_scenario(scenario_id)
+        fm = (active_scenario_data or {}).get("featured_match")
+        if fm:
+            match = next((m for m in all_normalized
+                          if m.get("_group") == fm.get("group")
+                          and {m.get("home_team"), m.get("away_team")} == {fm.get("home"), fm.get("away")}),
+                         None)
+            if match:
+                featured_fixture = match
 
     featured_group_table = None
+    featured_group_table_before = None
     if featured_fixture and featured_fixture.get("_group"):
         g = next((g for g in groups if g["name"] == featured_fixture["_group"]), None)
         if g:
             raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
             featured_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
+
+            if featured_fixture.get("in_progress"):
+                import copy
+                before_fixtures = []
+                for m in raw_fixtures:
+                    if {m.get("home"), m.get("away")} == {featured_fixture.get("home_team"), featured_fixture.get("away_team")}:
+                        m = copy.deepcopy(m)
+                        m["played"] = False
+                        m.pop("home_goals", None)
+                        m.pop("away_goals", None)
+                    before_fixtures.append(m)
+                featured_group_table_before = compute_group_table(g, before_fixtures, teams_by_name, results)
 
     scenario_list = data_store.list_scenarios()
     active_scenario = data_store.load_scenario(scenario_id)
@@ -120,6 +153,7 @@ def index():
         scenario_list=scenario_list,
         last_updated=last_updated,
         featured_fixture=featured_fixture,
+        featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
     )
 

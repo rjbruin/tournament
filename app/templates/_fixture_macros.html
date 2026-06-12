@@ -170,13 +170,19 @@
 {% endmacro %}
 
 
-{# ---------- "Old" standings (before a live match's kickoff): compact,
-   no advance odds, no form badges, permanently collapsed (not
-   interactive). ---------- #}
-{% macro group_table_collapsed(rows, label) %}
-<div class="small text-muted fw-bold mb-2">{{ label }}</div>
-<div class="bg-light rounded p-2 opacity-75" style="font-size:0.85em;">
-  {{ group_table(rows, none, show_form=false) }}
+{# ---------- "Old" standings (before a live match's kickoff): no advance
+   odds, no form badges, collapsed behind a toggle button. ---------- #}
+{% macro group_table_collapsed(rows, label, target_id) %}
+<div class="small text-muted fw-bold mb-2">
+  {{ label }}
+  <span class="text-primary text-decoration-underline ms-2" style="cursor:pointer; font-weight:normal;"
+        data-bs-toggle="collapse" data-bs-target="#{{ target_id }}" role="button"
+        aria-expanded="false" aria-controls="{{ target_id }}">Show</span>
+</div>
+<div class="collapse" id="{{ target_id }}">
+  <div class="bg-light rounded p-2">
+    {{ group_table(rows, none, show_form=false) }}
+  </div>
 </div>
 {% endmacro %}
 

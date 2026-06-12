@@ -33,7 +33,7 @@ def set_simulation_results(username: str, results, scenario_id: str = "current")
 
 # Number of independent draws to marginalize over for "pre-draw"/partial-draw
 # scenarios, and the number of tournament simulations run per draw.
-N_DRAWS = 50
+N_DRAWS = 12
 
 
 _PROB_KEYS = [

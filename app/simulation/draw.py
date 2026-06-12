@@ -55,6 +55,16 @@ def simulate_draw(pots: list[list[str]], confederations: dict, host_groups: dict
     rng = rng or random
     fixed = fixed or {}
 
+    for overall_attempt in range(_MAX_ATTEMPTS):
+        try:
+            return _attempt_draw(pots, confederations, host_groups, rival_pairs, fixed, rng)
+        except RuntimeError:
+            if overall_attempt == _MAX_ATTEMPTS - 1:
+                raise
+            continue
+
+
+def _attempt_draw(pots, confederations, host_groups, rival_pairs, fixed, rng):
     # groups[letter][pot_index] = team name or None
     groups: dict[str, list[str | None]] = {
         letter: list(fixed.get(letter, [None, None, None, None])) for letter in GROUP_LETTERS
@@ -83,7 +93,7 @@ def simulate_draw(pots: list[list[str]], confederations: dict, host_groups: dict
                     placed.add(team)
             empty_slots = [letter for letter in GROUP_LETTERS if groups[letter][0] is None]
 
-            for attempt in range(_MAX_ATTEMPTS):
+            for attempt in range(200):
                 shuffled = remaining_teams[:]
                 slots = empty_slots[:]
                 rng.shuffle(shuffled)

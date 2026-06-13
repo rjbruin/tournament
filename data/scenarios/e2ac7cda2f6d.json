@@ -1,0 +1,38 @@
+{
+  "id": "e2ac7cda2f6d",
+  "label": "Group stage day 2 - 1/2 games played",
+  "actuals": {
+    "group_results": {
+      "A": [
+        {
+          "home": "Mexico",
+          "away": "South Africa",
+          "home_goals": 2,
+          "away_goals": 0
+        },
+        {
+          "home": "South Korea",
+          "away": "Czech Republic",
+          "home_goals": 2,
+          "away_goals": 1
+        }
+      ],
+      "B": [
+        {
+          "home": "Canada",
+          "away": "Bosnia and Herzegovina",
+          "home_goals": 1,
+          "away_goals": 1
+        }
+      ]
+    },
+    "knockout_results": {},
+    "live_matches": []
+  },
+  "based_on": "current",
+  "created_at": 1781355581.257317,
+  "draw": null,
+  "is_hypothetical": false,
+  "is_manual": false,
+  "featured_match": null
+}

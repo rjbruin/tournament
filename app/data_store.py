@@ -299,6 +299,91 @@ def describe_progress(actuals: dict) -> str:
 from app.simulation.engine import GROUP_MATCH_PAIRS  # noqa: E402
 
 
+def ordered_match_checkpoints(engine) -> list[dict]:
+    """All 103 matches (72 group + 31 knockout), ordered chronologically by
+    their scheduled date/time, each tagged with a 1-based ``index``."""
+    schedule = engine.data.get("schedule", {})
+    checkpoints = []
+    for g in engine.groups:
+        gname = g["name"]
+        sched_matches = schedule.get("groups", {}).get(gname, [])
+        for (i, j), sm in zip(GROUP_MATCH_PAIRS, sched_matches):
+            checkpoints.append({
+                "kind": "group",
+                "group": gname,
+                "home": g["teams"][i],
+                "away": g["teams"][j],
+                "sort_key": (sm.get("date") or "", sm.get("local_time") or ""),
+            })
+    for mno_str, sm in schedule.get("knockout", {}).items():
+        checkpoints.append({
+            "kind": "knockout",
+            "match_no": int(mno_str),
+            "sort_key": (sm.get("date") or "", sm.get("local_time") or ""),
+        })
+    checkpoints.sort(key=lambda c: c["sort_key"])
+    for idx, cp in enumerate(checkpoints, start=1):
+        cp["index"] = idx
+    return checkpoints
+
+
+def match_scenario_id(index: int) -> str:
+    return f"match-{index}"
+
+
+def ensure_match_scenarios() -> list[str]:
+    """Ensure a "what the projections looked like right after match N"
+    scenario exists for every match that has a recorded result, building
+    them up incrementally in chronological order. Returns the ids of any
+    newly-created scenarios."""
+    import copy
+    import app as app_module
+    from app.simulation.engine import ROUND_NAMES
+
+    engine = app_module.get_engine()
+    if engine is None:
+        return []
+
+    actuals = load_actuals()
+    group_results = actuals.get("group_results", {})
+    knockout_results = actuals.get("knockout_results", {})
+
+    played_pairs = {}
+    for gname, entries in group_results.items():
+        for e in entries:
+            played_pairs[(gname, frozenset((e.get("home"), e.get("away"))))] = e
+
+    created = []
+    running_group: dict = {}
+    running_ko: dict = {}
+    for cp in ordered_match_checkpoints(engine):
+        if cp["kind"] == "group":
+            entry = played_pairs.get((cp["group"], frozenset((cp["home"], cp["away"]))))
+            if entry is None:
+                continue
+            running_group.setdefault(cp["group"], []).append(entry)
+            label = f"After {cp['home']} vs {cp['away']} (Group {cp['group']})"
+        else:
+            mno = cp["match_no"]
+            winner = knockout_results.get(str(mno), knockout_results.get(mno))
+            if winner is None:
+                continue
+            running_ko[mno] = winner
+            label = f"After match {mno} ({ROUND_NAMES.get(mno, '')})"
+
+        sid = match_scenario_id(cp["index"])
+        if os.path.exists(_scenario_path(sid)):
+            continue
+        snapshot = {
+            "group_results": copy.deepcopy(running_group),
+            "knockout_results": dict(running_ko),
+            "live_matches": [],
+        }
+        save_scenario(label, snapshot, based_on=CURRENT_SCENARIO_ID, scenario_id=sid, is_auto_match=True)
+        created.append(sid)
+    return created
+
+
 def load_scenario(scenario_id: str | None) -> dict | None:
     """Load a scenario's metadata + actuals. Returns None if not found."""
     scenario_id = scenario_id or CURRENT_SCENARIO_ID
@@ -348,6 +433,7 @@ def load_scenario(scenario_id: str | None) -> dict | None:
     data.setdefault("is_pre_draw", False)
     data.setdefault("is_hypothetical", False)
     data.setdefault("is_manual", False)
+    data.setdefault("is_auto_match", False)
     data.setdefault("featured_match", None)
     data["is_current"] = False
     data.update(_scenario_qualities(data["actuals"], draw=data.get("draw")))
@@ -365,7 +451,7 @@ def list_scenarios() -> list[dict]:
     out.append({k: v for k, v in pre_draw.items() if k != "actuals"})
     for sid in sorted(list_scenario_ids()):
         s = load_scenario(sid)
-        if s is None:
+        if s is None or s.get("is_auto_match"):
             continue
         out.append({k: v for k, v in s.items() if k != "actuals"})
     out.sort(key=lambda s: (not s["is_current"], not s.get("is_pre_draw"), -(s.get("created_at") or 0)))
@@ -375,6 +461,7 @@ def list_scenarios() -> list[dict]:
 def save_scenario(label: str, actuals: dict, based_on: str | None = None,
                    scenario_id: str | None = None, draw: dict | None = None,
                    is_hypothetical: bool | None = None, is_manual: bool | None = None,
+                   is_auto_match: bool | None = None,
                    featured_match: dict | None = None) -> dict:
     """Create or update a (non-"current") scenario and persist it.
 
@@ -395,6 +482,7 @@ def save_scenario(label: str, actuals: dict, based_on: str | None = None,
         "draw": draw if draw is not None else (existing.get("draw") if existing else None),
         "is_hypothetical": is_hypothetical if is_hypothetical is not None else (existing.get("is_hypothetical", False) if existing else False),
         "is_manual": is_manual if is_manual is not None else (existing.get("is_manual", False) if existing else False),
+        "is_auto_match": is_auto_match if is_auto_match is not None else (existing.get("is_auto_match", False) if existing else False),
         "featured_match": featured_match if featured_match is not None else (existing.get("featured_match") if existing else None),
     }
     with open(_scenario_path(scenario_id), "w") as f:

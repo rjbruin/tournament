@@ -140,5 +140,6 @@ def fetch_and_apply_official_results(engine) -> dict:
 
     if updated:
         data_store.save_actuals(actuals)
+        data_store.ensure_match_scenarios()
 
     return {"updated": updated, "skipped": skipped}

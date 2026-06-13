@@ -263,24 +263,59 @@ def team(name: str):
 
     all_team_names = sorted(t["name"] for t in engine.data["teams"])
 
-    # Winner-probability progression across scenarios (pre-draw -> ... -> current),
-    # using only already-computed (cached) results to keep the page fast.
-    scenario_list = data_store.list_scenarios()
-    ordered = [s for s in scenario_list if s.get("is_pre_draw")]
-    others = [s for s in scenario_list if not s.get("is_pre_draw") and not s.get("is_current")]
-    others.sort(key=lambda s: s.get("created_at") or 0)
-    ordered += others
-    ordered += [s for s in scenario_list if s.get("is_current")]
+    # Odds progression across tournament checkpoints: "Start" (pre-draw),
+    # then "After group match #N" for each of this team's group matches, then
+    # "After <knockout round>" for each round the team has actually played.
+    data_store.ensure_match_scenarios()
+    checkpoints = data_store.ordered_match_checkpoints(engine)
 
-    winner_prob_history = []
-    for s in ordered:
-        r = app_module.get_simulation_results(_username(), s["id"])
+    actuals_now = data_store.load_actuals()
+    played_group_pairs = set()
+    for gname, entries in actuals_now.get("group_results", {}).items():
+        for e in entries:
+            played_group_pairs.add((gname, frozenset((e.get("home"), e.get("away")))))
+    ko_played = set()
+    for k in actuals_now.get("knockout_results", {}).keys():
+        ko_played.add(int(k))
+
+    n = current_user.settings.get("n_simulations") if current_user.is_authenticated else None
+
+    _empty_odds = {"group_advance_prob": None, "winner_prob": None}
+
+    def _odds_for_scenario(sid):
+        if sid is None:
+            return None
+        r = app_module.get_or_run_results(_username(), sid, n=n)
         if r is None:
-            continue
-        winner_prob_history.append({
-            "label": s["label"],
+            return None
+        return {
+            "group_advance_prob": r.get("group_advance_prob", {}).get(name, 0),
             "winner_prob": r.get("winner_prob", {}).get(name, 0),
-        })
+        }
+
+    odds_history = [{"label": "Start", **(_odds_for_scenario(data_store.PRE_DRAW_SCENARIO_ID) or _empty_odds)}]
+
+    if team_group:
+        team_group_matches = [
+            cp for cp in checkpoints
+            if cp["kind"] == "group" and cp["group"] == team_group["name"]
+            and name in (cp["home"], cp["away"])
+        ]
+        for i, cp in enumerate(team_group_matches, start=1):
+            played = (cp["group"], frozenset((cp["home"], cp["away"]))) in played_group_pairs
+            sid = data_store.match_scenario_id(cp["index"]) if played else None
+            odds_history.append({"label": f"After group match {i}", **(_odds_for_scenario(sid) or _empty_odds)})
+
+    round_order = ["Round of 32", "Round of 16", "Quarterfinal", "Semifinal", "Final"]
+    bracket_by_round = {m["round"]: m for m in bracket_for_team}
+    for rname in round_order:
+        m = bracket_by_round.get(rname)
+        sid = None
+        if m and m.get("match") in ko_played:
+            cp = next((c for c in checkpoints if c["kind"] == "knockout" and c["match_no"] == m["match"]), None)
+            if cp:
+                sid = data_store.match_scenario_id(cp["index"])
+        odds_history.append({"label": f"After {rname}", **(_odds_for_scenario(sid) or _empty_odds)})
 
     return render_template(
         "team.html",
@@ -291,7 +326,7 @@ def team(name: str):
         bracket_for_team=bracket_for_team,
         results=results,
         scenario_id=scenario_id,
-        winner_prob_history=winner_prob_history,
+        odds_history=odds_history,
     )
 
 
@@ -605,18 +640,3 @@ def change_password():
     return redirect(url_for("web.settings"))
 
 
-@web_bp.get("/simulations")
-def simulations():
-    results = app_module.get_simulation_results(current_user.username)
-    snapshots = list(enumerate(data_store.load_snapshots(current_user.username)))
-    snapshots.reverse()  # most recent first
-    return render_template("simulations.html", results=results, snapshots=snapshots)
-
-
-@web_bp.get("/simulations/<int:index>")
-def simulation_detail(index: int):
-    engine = app_module.get_engine()
-    snapshot = data_store.get_snapshot(current_user.username, index)
-    if snapshot is None:
-        return redirect(url_for("web.simulations"))
-    return render_template("simulation_detail.html", snapshot=snapshot, index=index, engine=engine)

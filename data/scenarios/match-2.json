@@ -1,0 +1,31 @@
+{
+  "id": "match-2",
+  "label": "After South Korea vs Czech Republic (Group A)",
+  "actuals": {
+    "group_results": {
+      "A": [
+        {
+          "home": "Mexico",
+          "away": "South Africa",
+          "home_goals": 2,
+          "away_goals": 0
+        },
+        {
+          "home": "South Korea",
+          "away": "Czech Republic",
+          "home_goals": 2,
+          "away_goals": 1
+        }
+      ]
+    },
+    "knockout_results": {},
+    "live_matches": []
+  },
+  "based_on": "current",
+  "created_at": 1781355942.5063932,
+  "draw": null,
+  "is_hypothetical": false,
+  "is_manual": false,
+  "is_auto_match": true,
+  "featured_match": null
+}

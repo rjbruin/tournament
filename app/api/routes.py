@@ -402,6 +402,7 @@ def _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork):
                          "actuals": actuals})
     if target_id == "current":
         data_store.save_actuals(actuals)
+        data_store.ensure_match_scenarios()
     else:
         existing = data_store.load_scenario(target_id)
         data_store.save_scenario(existing["label"], actuals, scenario_id=target_id)

@@ -87,17 +87,25 @@
       </div>
       <form id="live-score-form"></form>
       <div id="live-score-fixture">{{ fx.large_fixture(featured_fixture, editable=true, form_id="live-score-form", submit_label="Save live score") }}</div>
+      {% if featured_fixture.in_progress %}
+      <div class="text-center mt-2">
+        <button type="button" id="finish-live-btn" class="btn btn-outline-danger btn-sm">Finish match</button>
+      </div>
+      {% endif %}
     </div>
     <script>
     document.getElementById('live-score-toggle-btn')?.addEventListener('click', function () {
       document.getElementById('live-score-panel')?.classList.toggle('d-none');
     });
-    document.getElementById('live-score-form')?.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const fd = new FormData(this);
-      const btn = document.querySelector('button[type=submit][form="live-score-form"]');
+    async function saveLiveScore(finished) {
+      const form = document.getElementById('live-score-form');
+      const fd = new FormData(form);
+      const btn = finished
+        ? document.getElementById('finish-live-btn')
+        : document.querySelector('button[type=submit][form="live-score-form"]');
+      const originalText = btn.textContent;
       btn.disabled = true;
-      btn.textContent = 'Saving...';
+      btn.textContent = finished ? 'Finishing...' : 'Saving...';
       document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
       try {
         const resp = await fetch(`${window.API_ROOT}/actuals/live_score${window.location.search}`, {
@@ -109,17 +117,25 @@
             away: '{{ featured_fixture.away_team }}',
             home_goals: parseInt(fd.get('home_goals') || '0', 10),
             away_goals: parseInt(fd.get('away_goals') || '0', 10),
+            finished: !!finished,
           })
         });
         const data = await resp.json();
-        if (!resp.ok) { alert(data.error || 'Failed to save live score.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = 'Save live score'; return; }
+        if (!resp.ok) { alert(data.error || 'Failed to save live score.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = originalText; return; }
         window.location.reload();
       } catch (err) {
         alert('Failed: ' + err);
         document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
         btn.disabled = false;
-        btn.textContent = 'Save live score';
+        btn.textContent = originalText;
       }
+    }
+    document.getElementById('live-score-form')?.addEventListener('submit', function (e) {
+      e.preventDefault();
+      saveLiveScore(false);
+    });
+    document.getElementById('finish-live-btn')?.addEventListener('click', function () {
+      saveLiveScore(true);
     });
     </script>
     {% endif %}

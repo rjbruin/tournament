@@ -80,6 +80,7 @@ def fetch_and_apply_official_results(engine) -> dict:
 
     actuals = data_store.load_actuals()
     group_results = actuals.setdefault("group_results", {})
+    live_matches = actuals.setdefault("live_matches", [])
 
     # Build a lookup of team -> group, from the engine/tournament data.
     team_group = {}
@@ -126,6 +127,16 @@ def fetch_and_apply_official_results(engine) -> dict:
         }
         existing.append(entry)
         updated.append({"group": gname, **entry})
+
+        # A FINISHED match is no longer "live", even if it was previously
+        # marked in_progress.
+        before = len(live_matches)
+        live_matches[:] = [
+            lm for lm in live_matches
+            if {lm.get("home"), lm.get("away")} != {home, away}
+        ]
+        if len(live_matches) != before:
+            updated[-1]["finished_live"] = True
 
     if updated:
         data_store.save_actuals(actuals)

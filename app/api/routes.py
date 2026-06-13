@@ -480,6 +480,10 @@ def post_live_score():
     Body: {"group": "A", "home": "Mexico", "away": "South Africa",
            "home_goals": 2, "away_goals": 1}
 
+    Optional ``"finished": true`` marks the match as final instead of
+    in-progress (removes it from ``live_matches`` rather than adding it) —
+    used by the "Finish match" action.
+
     Same `s`/`fork` query params as /actuals/group_result. Updates the
     group result with the given score AND marks the match as "in progress"
     in actuals["live_matches"], so it propagates into standings/brackets but
@@ -517,7 +521,8 @@ def post_live_score():
         lm for lm in live_matches
         if {lm.get("home"), lm.get("away")} != {body["home"], body["away"]}
     ]
-    live_matches.append({"home": body["home"], "away": body["away"]})
+    if not body.get("finished"):
+        live_matches.append({"home": body["home"], "away": body["away"]})
     actuals["live_matches"] = live_matches
 
     return _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork)

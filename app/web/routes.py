@@ -337,7 +337,6 @@ def fixtures():
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
     groups = engine.groups
-    teams_by_name = {t["name"]: t for t in engine.data["teams"]}
     all_fixtures = []
     if results is not None and not _is_pre_draw(scenario_id):
         fixtures_by_group = results.get("fixtures", {})
@@ -348,8 +347,6 @@ def fixtures():
                 nm["header"] = f"Group {g['name']}"
                 nm["header_url"] = url_for("web.groups") + f"#group-{g['name']}"
                 nm["sort_key"] = _utc_sort_key(m)
-                if _is_live(nm):
-                    nm["group_table_before"] = _group_table_before(g, raw_fixtures, nm, teams_by_name, results)
                 all_fixtures.append(nm)
         bm = results.get("bracket_matches", {})
         for m in engine.all_knockout_defs:

@@ -63,6 +63,16 @@
             </select>
             <div class="form-text">Used as the default team on the Team page and the Scenarios comparison page.</div>
           </div>
+          <div class="mb-3">
+            <label for="favorite_team" class="form-label">Favorite team</label>
+            <select class="form-select" id="favorite_team" name="favorite_team">
+              <option value="">None</option>
+              {% for t in all_team_names %}
+              <option value="{{ t }}" {% if settings.favorite_team == t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Featured prominently at the top of the Teams page.</div>
+          </div>
         </div>
       </div>
 

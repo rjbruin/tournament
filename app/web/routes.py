@@ -227,6 +227,23 @@ def group(name: str):
     )
 
 
+@web_bp.get("/teams")
+def teams():
+    engine = app_module.get_engine()
+    teams_sorted = sorted(engine.data["teams"], key=lambda t: -t["elo"])
+
+    favorite_team = None
+    if current_user.is_authenticated:
+        favorite_team = current_user.settings.get("favorite_team") or None
+    favorite = next((t for t in teams_sorted if t["name"] == favorite_team), None)
+
+    return render_template(
+        "teams.html",
+        teams=teams_sorted,
+        favorite=favorite,
+    )
+
+
 @web_bp.get("/team")
 def team_default():
     default_team = "Netherlands"
@@ -596,6 +613,7 @@ def settings_save():
         display_timezone=request.form.get("display_timezone", "").strip() or auth.DEFAULT_USER_SETTINGS["display_timezone"],
         n_simulations=n_simulations,
         default_team=request.form.get("default_team", "").strip() or auth.DEFAULT_USER_SETTINGS["default_team"],
+        favorite_team=request.form.get("favorite_team", "").strip(),
         onboarded=True,
     )
 

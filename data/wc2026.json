@@ -15,289 +15,337 @@
       "name": "Spain",
       "elo": 2090,
       "confederation": "UEFA",
-      "code": "ESP"
+      "code": "ESP",
+      "fifa_rank": 1
     },
     {
       "name": "Argentina",
       "elo": 2080,
       "confederation": "CONMEBOL",
-      "code": "ARG"
+      "code": "ARG",
+      "fifa_rank": 2
     },
     {
       "name": "France",
       "elo": 2060,
       "confederation": "UEFA",
-      "code": "FRA"
+      "code": "FRA",
+      "fifa_rank": 3
     },
     {
       "name": "Brazil",
       "elo": 2020,
       "confederation": "CONMEBOL",
-      "code": "BRA"
+      "code": "BRA",
+      "fifa_rank": 4
     },
     {
       "name": "England",
       "elo": 2010,
       "confederation": "UEFA",
-      "code": "ENG"
+      "code": "ENG",
+      "fifa_rank": 5
     },
     {
       "name": "Portugal",
       "elo": 2000,
       "confederation": "UEFA",
-      "code": "POR"
+      "code": "POR",
+      "fifa_rank": 6
     },
     {
       "name": "Netherlands",
       "elo": 1990,
       "confederation": "UEFA",
-      "code": "NED"
+      "code": "NED",
+      "fifa_rank": 7
     },
     {
       "name": "Germany",
       "elo": 1965,
       "confederation": "UEFA",
-      "code": "GER"
+      "code": "GER",
+      "fifa_rank": 8
     },
     {
       "name": "Belgium",
       "elo": 1960,
       "confederation": "UEFA",
-      "code": "BEL"
+      "code": "BEL",
+      "fifa_rank": 9
     },
     {
       "name": "Croatia",
       "elo": 1930,
       "confederation": "UEFA",
-      "code": "CRO"
+      "code": "CRO",
+      "fifa_rank": 10
     },
     {
       "name": "Colombia",
       "elo": 1920,
       "confederation": "CONMEBOL",
-      "code": "COL"
+      "code": "COL",
+      "fifa_rank": 11
     },
     {
       "name": "Morocco",
       "elo": 1910,
       "confederation": "CAF",
-      "code": "MAR"
+      "code": "MAR",
+      "fifa_rank": 12
     },
     {
       "name": "Uruguay",
       "elo": 1900,
       "confederation": "CONMEBOL",
-      "code": "URU"
+      "code": "URU",
+      "fifa_rank": 13
     },
     {
       "name": "Switzerland",
       "elo": 1880,
       "confederation": "UEFA",
-      "code": "SUI"
+      "code": "SUI",
+      "fifa_rank": 14
     },
     {
       "name": "Japan",
       "elo": 1880,
       "confederation": "AFC",
-      "code": "JPN"
+      "code": "JPN",
+      "fifa_rank": 15
     },
     {
       "name": "Austria",
       "elo": 1865,
       "confederation": "UEFA",
-      "code": "AUT"
+      "code": "AUT",
+      "fifa_rank": 16
     },
     {
       "name": "Senegal",
       "elo": 1860,
       "confederation": "CAF",
-      "code": "SEN"
+      "code": "SEN",
+      "fifa_rank": 17
     },
     {
       "name": "Norway",
       "elo": 1850,
       "confederation": "UEFA",
-      "code": "NOR"
+      "code": "NOR",
+      "fifa_rank": 18
     },
     {
       "name": "USA",
       "elo": 1850,
       "confederation": "CONCACAF",
-      "code": "USA"
+      "code": "USA",
+      "fifa_rank": 19
     },
     {
       "name": "South Korea",
       "elo": 1840,
       "confederation": "AFC",
-      "code": "KOR"
+      "code": "KOR",
+      "fifa_rank": 20
     },
     {
       "name": "Turkey",
       "elo": 1840,
       "confederation": "UEFA",
-      "code": "TUR"
+      "code": "TUR",
+      "fifa_rank": 21
     },
     {
       "name": "Ecuador",
       "elo": 1830,
       "confederation": "CONMEBOL",
-      "code": "ECU"
+      "code": "ECU",
+      "fifa_rank": 22
     },
     {
       "name": "Sweden",
       "elo": 1820,
       "confederation": "UEFA",
-      "code": "SWE"
+      "code": "SWE",
+      "fifa_rank": 23
     },
     {
       "name": "Mexico",
       "elo": 1820,
       "confederation": "CONCACAF",
-      "code": "MEX"
+      "code": "MEX",
+      "fifa_rank": 24
     },
     {
       "name": "Canada",
       "elo": 1800,
       "confederation": "CONCACAF",
-      "code": "CAN"
+      "code": "CAN",
+      "fifa_rank": 25
     },
     {
       "name": "Czech Republic",
       "elo": 1780,
       "confederation": "UEFA",
-      "code": "CZE"
+      "code": "CZE",
+      "fifa_rank": 29
     },
     {
       "name": "Ivory Coast",
       "elo": 1780,
       "confederation": "CAF",
-      "code": "CIV"
+      "code": "CIV",
+      "fifa_rank": 30
     },
     {
       "name": "Paraguay",
       "elo": 1780,
       "confederation": "CONMEBOL",
-      "code": "PAR"
+      "code": "PAR",
+      "fifa_rank": 31
     },
     {
       "name": "Algeria",
       "elo": 1770,
       "confederation": "CAF",
-      "code": "ALG"
+      "code": "ALG",
+      "fifa_rank": 32
     },
     {
       "name": "Bosnia and Herzegovina",
       "elo": 1760,
       "confederation": "UEFA",
-      "code": "BIH"
+      "code": "BIH",
+      "fifa_rank": 33
     },
     {
       "name": "Iran",
       "elo": 1790,
       "confederation": "AFC",
-      "code": "IRN"
+      "code": "IRN",
+      "fifa_rank": 26
     },
     {
       "name": "Australia",
       "elo": 1790,
       "confederation": "AFC",
-      "code": "AUS"
+      "code": "AUS",
+      "fifa_rank": 27
     },
     {
       "name": "Scotland",
       "elo": 1790,
       "confederation": "UEFA",
-      "code": "SCO"
+      "code": "SCO",
+      "fifa_rank": 28
     },
     {
       "name": "Ghana",
       "elo": 1730,
       "confederation": "CAF",
-      "code": "GHA"
+      "code": "GHA",
+      "fifa_rank": 36
     },
     {
       "name": "Egypt",
       "elo": 1750,
       "confederation": "CAF",
-      "code": "EGY"
+      "code": "EGY",
+      "fifa_rank": 34
     },
     {
       "name": "Tunisia",
       "elo": 1750,
       "confederation": "CAF",
-      "code": "TUN"
+      "code": "TUN",
+      "fifa_rank": 35
     },
     {
       "name": "South Africa",
       "elo": 1720,
       "confederation": "CAF",
-      "code": "RSA"
+      "code": "RSA",
+      "fifa_rank": 37
     },
     {
       "name": "Iraq",
       "elo": 1700,
       "confederation": "AFC",
-      "code": "IRQ"
+      "code": "IRQ",
+      "fifa_rank": 38
     },
     {
       "name": "DR Congo",
       "elo": 1690,
       "confederation": "CAF",
-      "code": "COD"
+      "code": "COD",
+      "fifa_rank": 42
     },
     {
       "name": "Panama",
       "elo": 1700,
       "confederation": "CONCACAF",
-      "code": "PAN"
+      "code": "PAN",
+      "fifa_rank": 39
     },
     {
       "name": "Uzbekistan",
       "elo": 1700,
       "confederation": "AFC",
-      "code": "UZB"
+      "code": "UZB",
+      "fifa_rank": 40
     },
     {
       "name": "Saudi Arabia",
       "elo": 1700,
       "confederation": "AFC",
-      "code": "KSA"
+      "code": "KSA",
+      "fifa_rank": 41
     },
     {
       "name": "Cape Verde",
       "elo": 1680,
       "confederation": "CAF",
-      "code": "CPV"
+      "code": "CPV",
+      "fifa_rank": 43
     },
     {
       "name": "Qatar",
       "elo": 1650,
       "confederation": "AFC",
-      "code": "QAT"
+      "code": "QAT",
+      "fifa_rank": 44
     },
     {
       "name": "Jordan",
       "elo": 1650,
       "confederation": "AFC",
-      "code": "JOR"
+      "code": "JOR",
+      "fifa_rank": 45
     },
     {
       "name": "Curacao",
       "elo": 1640,
       "confederation": "CONCACAF",
-      "code": "CUW"
+      "code": "CUW",
+      "fifa_rank": 46
     },
     {
       "name": "Haiti",
       "elo": 1620,
       "confederation": "CONCACAF",
-      "code": "HAI"
+      "code": "HAI",
+      "fifa_rank": 47
     },
     {
       "name": "New Zealand",
       "elo": 1600,
       "confederation": "OFC",
-      "code": "NZL"
+      "code": "NZL",
+      "fifa_rank": 48
     }
   ],
   "groups": [

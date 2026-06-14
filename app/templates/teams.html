@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "_fixture_macros.html" as fx with context %}
+{% block title %}Teams — WC 2026{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">Teams</h2>
+
+{% if favorite %}
+<div class="card shadow-sm mb-4 border-success">
+  <div class="card-header fw-bold bg-success-subtle">⭐ Your favorite team</div>
+  <div class="card-body">
+    <a href="{{ url_for('web.team', name=favorite.name) }}" class="text-decoration-none text-dark">
+      <h4 class="mb-1">{{ favorite.name|flag }} {{ favorite.name }} {{ fx.form_badge(favorite.name) }}</h4>
+    </a>
+    <div class="text-muted">
+      Elo {{ favorite.elo }} &middot; FIFA rank #{{ favorite.fifa_rank }} &middot; {{ favorite.confederation }}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th class="text-end">Elo</th>
+          <th class="text-end">FIFA rank</th>
+          <th>Confederation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in teams %}
+        <tr {% if favorite and t.name == favorite.name %}class="table-success"{% endif %}>
+          <td>{{ loop.index }}</td>
+          <td>
+            <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none text-dark">
+              {{ t.name|flag }} {{ t.name }} {{ fx.form_badge(t.name) }}
+            </a>
+          </td>
+          <td class="text-end">{{ t.elo }}</td>
+          <td class="text-end">#{{ t.fifa_rank }}</td>
+          <td>{{ t.confederation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

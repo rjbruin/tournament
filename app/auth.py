@@ -51,6 +51,7 @@ DEFAULT_USER_SETTINGS = {
     "display_timezone": "UTC",
     "n_simulations": 100_000,
     "default_team": "Netherlands",
+    "favorite_team": "",
     "onboarded": False,
 }
 

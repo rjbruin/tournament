@@ -8,7 +8,7 @@
     <h1 class="mb-0">{{ tournament.name }}</h1>
     <div class="hero-subtitle">{{ tournament.host_countries | join(" · ") }} — {{ tournament.year }}</div>
   </div>
-  <div class="text-end">
+  <div class="d-flex flex-wrap align-items-center justify-content-end gap-2 text-end" style="min-width: 0;">
     {% if active_scenario and active_scenario.is_current %}
       {% if last_updated %}
       <div class="small">Last updated {{ last_updated }}</div>
@@ -16,12 +16,12 @@
       <div class="small">Showing current real results</div>
       {% endif %}
     {% else %}
-    <span class="badge bg-light text-dark fw-bold px-3 py-2">
+    <span class="badge bg-light text-dark fw-bold px-3 py-2 text-wrap" style="min-width: 0; word-break: break-word;">
       Scenario: {{ active_scenario.label if active_scenario else scenario_id }}
       {% if active_scenario and active_scenario.progress_label %} &middot; {{ active_scenario.progress_label }}{% endif %}
     </span>
     {% endif %}
-    <button type="button" class="btn btn-outline-light btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#scenario-modal">Switch scenario</button>
+    <button type="button" class="btn btn-outline-light btn-sm flex-shrink-0" data-bs-toggle="modal" data-bs-target="#scenario-modal">Switch scenario</button>
   </div>
 </div>
 

@@ -1441,38 +1441,38 @@
       },
       "74": {
         "date": "2026-06-29",
-        "local_time": "12:00",
-        "local_timezone": "America/Chicago",
-        "venue": "NRG Stadium",
-        "place": "Houston, TX"
-      },
-      "75": {
-        "date": "2026-06-29",
         "local_time": "16:30",
         "local_timezone": "America/New_York",
         "venue": "Gillette Stadium",
         "place": "Foxborough, MA"
       },
-      "76": {
+      "75": {
         "date": "2026-06-29",
         "local_time": "19:00",
         "local_timezone": "America/Monterrey",
         "venue": "Estadio BBVA",
         "place": "Guadalupe, Mexico"
       },
-      "77": {
-        "date": "2026-06-30",
+      "76": {
+        "date": "2026-06-29",
         "local_time": "12:00",
         "local_timezone": "America/Chicago",
-        "venue": "AT&T Stadium",
-        "place": "Arlington, TX"
+        "venue": "NRG Stadium",
+        "place": "Houston, TX"
       },
-      "78": {
+      "77": {
         "date": "2026-06-30",
         "local_time": "17:00",
         "local_timezone": "America/New_York",
         "venue": "MetLife Stadium",
         "place": "East Rutherford, NJ"
+      },
+      "78": {
+        "date": "2026-06-30",
+        "local_time": "12:00",
+        "local_timezone": "America/Chicago",
+        "venue": "AT&T Stadium",
+        "place": "Arlington, TX"
       },
       "79": {
         "date": "2026-06-30",
@@ -1490,31 +1490,31 @@
       },
       "81": {
         "date": "2026-07-01",
-        "local_time": "13:00",
-        "local_timezone": "America/Los_Angeles",
-        "venue": "Lumen Field",
-        "place": "Seattle, WA"
-      },
-      "82": {
-        "date": "2026-07-01",
         "local_time": "17:00",
         "local_timezone": "America/Los_Angeles",
         "venue": "Levi's Stadium",
         "place": "Santa Clara, CA"
       },
-      "83": {
-        "date": "2026-07-02",
-        "local_time": "12:00",
+      "82": {
+        "date": "2026-07-01",
+        "local_time": "13:00",
         "local_timezone": "America/Los_Angeles",
-        "venue": "SoFi Stadium",
-        "place": "Inglewood, CA"
+        "venue": "Lumen Field",
+        "place": "Seattle, WA"
       },
-      "84": {
+      "83": {
         "date": "2026-07-02",
         "local_time": "19:00",
         "local_timezone": "America/Toronto",
         "venue": "BMO Field",
         "place": "Toronto, Canada"
+      },
+      "84": {
+        "date": "2026-07-02",
+        "local_time": "12:00",
+        "local_timezone": "America/Los_Angeles",
+        "venue": "SoFi Stadium",
+        "place": "Inglewood, CA"
       },
       "85": {
         "date": "2026-07-02",
@@ -1525,38 +1525,38 @@
       },
       "86": {
         "date": "2026-07-03",
-        "local_time": "13:00",
-        "local_timezone": "America/Chicago",
-        "venue": "AT&T Stadium",
-        "place": "Arlington, TX"
-      },
-      "87": {
-        "date": "2026-07-03",
         "local_time": "18:00",
         "local_timezone": "America/New_York",
         "venue": "Hard Rock Stadium",
         "place": "Miami Gardens, FL"
       },
-      "88": {
+      "87": {
         "date": "2026-07-03",
         "local_time": "20:30",
         "local_timezone": "America/Chicago",
         "venue": "Arrowhead Stadium",
         "place": "Kansas City, MO"
       },
-      "89": {
-        "date": "2026-07-04",
-        "local_time": "12:00",
+      "88": {
+        "date": "2026-07-03",
+        "local_time": "13:00",
         "local_timezone": "America/Chicago",
-        "venue": "NRG Stadium",
-        "place": "Houston, TX"
+        "venue": "AT&T Stadium",
+        "place": "Arlington, TX"
       },
-      "90": {
+      "89": {
         "date": "2026-07-04",
         "local_time": "17:00",
         "local_timezone": "America/New_York",
         "venue": "Lincoln Financial Field",
         "place": "Philadelphia, PA"
+      },
+      "90": {
+        "date": "2026-07-04",
+        "local_time": "12:00",
+        "local_timezone": "America/Chicago",
+        "venue": "NRG Stadium",
+        "place": "Houston, TX"
       },
       "91": {
         "date": "2026-07-05",

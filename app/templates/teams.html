@@ -6,8 +6,8 @@
 <h2 class="mb-4">Teams</h2>
 
 {% if favorite %}
-<div class="card shadow-sm mb-4 border-success">
-  <div class="card-header fw-bold bg-success-subtle">⭐ Your favorite team</div>
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold">⭐ Your favorite team</div>
   <div class="card-body">
     <a href="{{ url_for('web.team', name=favorite.name) }}" class="text-decoration-none text-dark">
       <h4 class="mb-1">{{ favorite.name|flag }} {{ favorite.name }}</h4>

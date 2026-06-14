@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.7.2
+
+- New **Teams page** (replacing the "Team" nav entry): lists all teams
+  ranked by current Elo (base Elo adjusted by form), with FIFA rank,
+  confederation, form badge, and a rank-change badge showing movement
+  vs. the base FIFA ranking.
+- New **favorite team** setting, featured prominently at the top of the
+  Teams page.
+
 ## v0.7.1
 
 - Fixed the "Switch scenario" button disappearing off-screen on mobile

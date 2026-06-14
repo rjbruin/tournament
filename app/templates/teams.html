@@ -28,6 +28,8 @@
           <th>Team</th>
           <th class="text-end">Elo</th>
           <th class="text-end">FIFA rank</th>
+          <th class="text-end">Knockout odds</th>
+          <th class="text-end">Win odds</th>
           <th>Confederation</th>
         </tr>
       </thead>
@@ -49,6 +51,8 @@
           </td>
           <td class="text-end">{{ t.current_elo|round|int }} {{ fx.form_badge(t.name) }}</td>
           <td class="text-end">#{{ t.fifa_rank }}</td>
+          <td class="text-end">{% if t.group_advance_prob is not none %}{{ "%.1f"|format(t.group_advance_prob*100) }}%{% else %}—{% endif %}</td>
+          <td class="text-end">{% if t.winner_prob is not none %}{{ "%.1f"|format(t.winner_prob*100) }}%{% else %}—{% endif %}</td>
           <td>{{ t.confederation }}</td>
         </tr>
         {% endfor %}

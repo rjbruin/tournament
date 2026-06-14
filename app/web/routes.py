@@ -248,9 +248,12 @@ def teams():
         engine.data["teams"],
         key=lambda t: -(t["elo"] + team_form.get(t["name"], 0)),
     )
+    results = _results_for_scenario(scenario_id)
     for i, t in enumerate(teams_sorted, start=1):
         t["current_elo"] = t["elo"] + team_form.get(t["name"], 0)
         t["rank_change"] = base_rank[t["name"]] - i
+        t["group_advance_prob"] = (results or {}).get("group_advance_prob", {}).get(t["name"])
+        t["winner_prob"] = (results or {}).get("winner_prob", {}).get(t["name"])
 
     favorite_team = None
     if current_user.is_authenticated:

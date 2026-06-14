@@ -19,9 +19,9 @@
   {% else %}
     <span class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }} - {{ match.away_team }} {{ form_badge(match.away_team) }}</span>
     <span class="float-end small text-muted">
-      {{ match.home_team|flag }} {{ "%.0f"|format(match.home_prob*100) }}%
-      {% if match.draw_prob is defined %} / &#9898; {{ "%.0f"|format(match.draw_prob*100) }}%{% endif %}
-      / {{ "%.0f"|format(match.away_prob*100) }}% {{ match.away_team|flag }}
+      {{ match.home_team|flag }} {{ match.home_prob|pct(0) }}
+      {% if match.draw_prob is defined %} / &#9898; {{ match.draw_prob|pct(0) }}{% endif %}
+      / {{ match.away_prob|pct(0) }} {{ match.away_team|flag }}
     </span>
   {% endif %}
 {% endmacro %}
@@ -39,8 +39,8 @@
     <div class="fixture-side fixture-side-tbd text-{{ align }}">
       {% for cand in side.candidates[:5] %}
       <div class="small text-muted">
-        {% if align == 'end' %}{{ "%.0f"|format(side.candidate_probs[cand]*100 if side.candidate_probs is defined else 0) }}% {{ cand }} {{ cand|flag }}
-        {% else %}{{ cand|flag }} {{ cand }} {{ "%.0f"|format(side.candidate_probs[cand]*100 if side.candidate_probs is defined else 0) }}%{% endif %}
+        {% if align == 'end' %}{{ (side.candidate_probs[cand] if side.candidate_probs is defined else 0)|pct(0) }} {{ cand }} {{ cand|flag }}
+        {% else %}{{ cand|flag }} {{ cand }} {{ (side.candidate_probs[cand] if side.candidate_probs is defined else 0)|pct(0) }}{% endif %}
       </div>
       {% endfor %}
     </div>
@@ -65,20 +65,20 @@
         {% if editable %}
         <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
         {% else %}
-        {% if match.home_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.home_prob*100) }}%</div>{% endif %}
+        {% if match.home_prob is defined %}<div class="fixture-odds">{{ match.home_prob|pct(0) }}</div>{% endif %}
         {% if show_advance and match.home_team and advance_prob is not none %}
-        <div class="small text-muted mt-1">Advance from group: {{ "%.0f"|format(advance_prob.get(match.home_team, 0)*100) }}%</div>
+        <div class="small text-muted mt-1">Advance from group: {{ advance_prob.get(match.home_team, 0)|pct(0) }}</div>
         {% endif %}
         {% endif %}
         {% else %}
         {% for cand, p in (match.home_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
         {% endfor %}
         {% endif %}
       </div>
       <div class="col-2">
         {% if editable %}<div class="fw-bold">-</div>
-        {% elif match.draw_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.draw_prob*100) }}%</div>{% else %}<div class="fw-bold">vs</div>{% endif %}
+        {% elif match.draw_prob is defined %}<div class="fixture-odds">{{ match.draw_prob|pct(0) }}</div>{% else %}<div class="fw-bold">vs</div>{% endif %}
       </div>
       <div class="col-5">
         {% if match.away_team %}
@@ -87,14 +87,14 @@
         {% if editable %}
         <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
         {% else %}
-        {% if match.away_prob is defined %}<div class="fixture-odds">{{ "%.0f"|format(match.away_prob*100) }}%</div>{% endif %}
+        {% if match.away_prob is defined %}<div class="fixture-odds">{{ match.away_prob|pct(0) }}</div>{% endif %}
         {% if show_advance and match.away_team and advance_prob is not none %}
-        <div class="small text-muted mt-1">Advance from group: {{ "%.0f"|format(advance_prob.get(match.away_team, 0)*100) }}%</div>
+        <div class="small text-muted mt-1">Advance from group: {{ advance_prob.get(match.away_team, 0)|pct(0) }}</div>
         {% endif %}
         {% endif %}
         {% else %}
         {% for cand, p in (match.away_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
         {% endfor %}
         {% endif %}
       </div>
@@ -158,7 +158,7 @@
         <td class="text-end">
           {% set adv = row.advance_prob %}
           <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-            {{ "%.0f"|format(adv*100) }}%
+            {{ adv|pct(0) }}
           </span>
         </td>
         {% endif %}
@@ -210,11 +210,11 @@
         {{ form_badge(match.home_team) }}
         {% else %}
         {% for cand, p in (match.home_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
         {% endfor %}
         {% endif %}
       </div>
-      {% if match.home_prob is defined %}<span class="fixture-odds">{{ "%.0f"|format(match.home_prob*100) }}%</span>{% endif %}
+      {% if match.home_prob is defined %}<span class="fixture-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}
     </div>
     <div class="d-flex justify-content-between align-items-center">
       <div>
@@ -224,11 +224,11 @@
         {{ form_badge(match.away_team) }}
         {% else %}
         {% for cand, p in (match.away_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</div>
+        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
         {% endfor %}
         {% endif %}
       </div>
-      {% if match.away_prob is defined %}<span class="fixture-odds">{{ "%.0f"|format(match.away_prob*100) }}%</span>{% endif %}
+      {% if match.away_prob is defined %}<span class="fixture-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}
     </div>
     {% if match.match or match.date %}
     <div class="border-top pt-1 mt-2">

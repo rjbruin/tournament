@@ -50,7 +50,7 @@
               <td class="text-end">
                 {% set adv = row.advance_prob %}
                 <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                  {{ "%.0f"|format(adv*100) }}%
+                  {{ adv|pct(0) }}
                 </span>
               </td>
               {% endif %}
@@ -116,11 +116,11 @@
               </td>
               <td>{{ gname }}</td>
               <td class="text-end text-muted">{{ t.elo }}</td>
-              <td class="text-end">{{ "%.1f"|format(third_prob*100) }}%</td>
+              <td class="text-end">{{ third_prob|pct }}</td>
               <td class="text-end">
                 {% set adv = finish.advance_prob %}
                 <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                  {{ "%.0f"|format(adv*100) }}%
+                  {{ adv|pct(0) }}
                 </span>
               </td>
             </tr>

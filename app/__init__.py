@@ -221,6 +221,19 @@ def create_app():
 
     app.jinja_env.filters["flag"] = flag_emoji
 
+    @app.template_filter("pct")
+    def pct_filter(value, decimals=1):
+        """Format a probability (0-1) as a percentage, using a checkmark
+        for certainties (exactly 100%) and a red cross for impossibilities
+        (exactly 0%)."""
+        if value is None:
+            return "—"
+        if value >= 1:
+            return "✅"
+        if value <= 0:
+            return "❌"
+        return f"{value * 100:.{decimals}f}%"
+
     @app.template_filter("local_time")
     def local_time(match, settings_tz=None, fmt="%a %d %b, %H:%M"):
         """Convert a fixture's local kickoff (date + local_time +

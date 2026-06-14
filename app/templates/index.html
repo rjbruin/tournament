@@ -160,7 +160,7 @@
       {% if cands %}
       <div class="mb-2">
         {% for cand, p in cands.items() %}
-        <span class="small text-muted me-3">{{ cand|flag }} {{ cand }} ({{ "%.0f"|format(p*100) }}%)</span>
+        <span class="small text-muted me-3">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</span>
         {% endfor %}
       </div>
       {% endif %}
@@ -181,7 +181,7 @@
       <span class="trophy">🏆</span>
       <div class="crown-label">Most Likely Champion</div>
       <div class="team-name">{{ team }}</div>
-      <div class="team-prob">{{ "%.1f"|format(prob*100) }}%</div>
+      <div class="team-prob">{{ prob|pct }}</div>
       <div class="text-muted small mt-1">to lift the trophy</div>
     </div>
   </div>
@@ -194,7 +194,7 @@
     <div class="podium-card">
       <span class="rank-badge rank-{{ rank }}">{{ rank }}</span>
       <div class="team-name">{{ team }}</div>
-      <div class="team-prob">{{ "%.1f"|format(prob*100) }}%</div>
+      <div class="team-prob">{{ prob|pct }}</div>
       <div class="text-muted small">win probability</div>
     </div>
   </div>
@@ -209,7 +209,7 @@
     <div class="podium-card podium-card-sm">
       <span class="rank-badge rank-other">{{ rank }}</span>
       <div class="team-name small">{{ team }}</div>
-      <div class="team-prob-sm">{{ "%.1f"|format(prob*100) }}%</div>
+      <div class="team-prob-sm">{{ prob|pct }}</div>
     </div>
   </div>
   {% endfor %}

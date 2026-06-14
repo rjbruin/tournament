@@ -49,12 +49,12 @@
         </ol>
         <h6>{{ team }} odds</h6>
         <ul class="list-unstyled mb-0 small">
-          <li>Group advance: <strong>{{ "%.1f"|format(summary.team_odds.group_advance_prob * 100) }}%</strong></li>
-          <li>Round of 16: <strong>{{ "%.1f"|format(summary.team_odds.round_of_16_prob * 100) }}%</strong></li>
-          <li>Quarterfinal: <strong>{{ "%.1f"|format(summary.team_odds.quarterfinal_prob * 100) }}%</strong></li>
-          <li>Semifinal: <strong>{{ "%.1f"|format(summary.team_odds.semifinal_prob * 100) }}%</strong></li>
-          <li>Final: <strong>{{ "%.1f"|format(summary.team_odds.finalist_prob * 100) }}%</strong></li>
-          <li>Winner: <strong>{{ "%.1f"|format(summary.team_odds.winner_prob * 100) }}%</strong></li>
+          <li>Group advance: <strong>{{ summary.team_odds.group_advance_prob|pct }}</strong></li>
+          <li>Round of 16: <strong>{{ summary.team_odds.round_of_16_prob|pct }}</strong></li>
+          <li>Quarterfinal: <strong>{{ summary.team_odds.quarterfinal_prob|pct }}</strong></li>
+          <li>Semifinal: <strong>{{ summary.team_odds.semifinal_prob|pct }}</strong></li>
+          <li>Final: <strong>{{ summary.team_odds.finalist_prob|pct }}</strong></li>
+          <li>Winner: <strong>{{ summary.team_odds.winner_prob|pct }}</strong></li>
         </ul>
       </div>
     </div>

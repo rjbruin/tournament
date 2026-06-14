@@ -27,18 +27,18 @@
           {% if results %}
           <dt class="col-6">Advance from group</dt>
           <dd class="col-6 text-end">
-            <strong>{{ "%.1f"|format(results.group_advance_prob.get(tname,0)*100) }}%</strong>
+            <strong>{{ results.group_advance_prob.get(tname,0)|pct }}</strong>
           </dd>
           <dt class="col-6">Reach Round of 16</dt>
-          <dd class="col-6 text-end">{{ "%.1f"|format(results.round_of_16_prob.get(tname,0)*100) }}%</dd>
+          <dd class="col-6 text-end">{{ results.round_of_16_prob.get(tname,0)|pct }}</dd>
           <dt class="col-6">Reach Quarter-final</dt>
-          <dd class="col-6 text-end">{{ "%.1f"|format(results.quarterfinal_prob.get(tname,0)*100) }}%</dd>
+          <dd class="col-6 text-end">{{ results.quarterfinal_prob.get(tname,0)|pct }}</dd>
           <dt class="col-6">Reach Semi-final</dt>
-          <dd class="col-6 text-end">{{ "%.1f"|format(results.semifinal_prob.get(tname,0)*100) }}%</dd>
+          <dd class="col-6 text-end">{{ results.semifinal_prob.get(tname,0)|pct }}</dd>
           <dt class="col-6">Reach Final</dt>
-          <dd class="col-6 text-end">{{ "%.1f"|format(results.finalist_prob.get(tname,0)*100) }}%</dd>
+          <dd class="col-6 text-end">{{ results.finalist_prob.get(tname,0)|pct }}</dd>
           <dt class="col-6 text-success fw-bold">Win tournament</dt>
-          <dd class="col-6 text-end text-success fw-bold">{{ "%.1f"|format(results.winner_prob.get(tname,0)*100) }}%</dd>
+          <dd class="col-6 text-end text-success fw-bold">{{ results.winner_prob.get(tname,0)|pct }}</dd>
           {% endif %}
         </dl>
       </div>

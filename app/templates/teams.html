@@ -10,10 +10,10 @@
   <div class="card-header fw-bold bg-success-subtle">⭐ Your favorite team</div>
   <div class="card-body">
     <a href="{{ url_for('web.team', name=favorite.name) }}" class="text-decoration-none text-dark">
-      <h4 class="mb-1">{{ favorite.name|flag }} {{ favorite.name }} {{ fx.form_badge(favorite.name) }}</h4>
+      <h4 class="mb-1">{{ favorite.name|flag }} {{ favorite.name }}</h4>
     </a>
     <div class="text-muted">
-      Elo {{ favorite.elo }} &middot; FIFA rank #{{ favorite.fifa_rank }} &middot; {{ favorite.confederation }}
+      Elo {{ favorite.current_elo|round|int }} {{ fx.form_badge(favorite.name) }} &middot; FIFA rank #{{ favorite.fifa_rank }} &middot; {{ favorite.confederation }}
     </div>
   </div>
 </div>
@@ -34,13 +34,20 @@
       <tbody>
         {% for t in teams %}
         <tr {% if favorite and t.name == favorite.name %}class="table-success"{% endif %}>
-          <td>{{ loop.index }}</td>
+          <td>
+            {{ loop.index }}
+            {% if t.rank_change > 0 %}
+            <span class="badge rounded-pill bg-success" style="font-size:0.65em;" title="Up {{ t.rank_change }} from base FIFA ranking">&#9650;{{ t.rank_change }}</span>
+            {% elif t.rank_change < 0 %}
+            <span class="badge rounded-pill bg-danger" style="font-size:0.65em;" title="Down {{ -t.rank_change }} from base FIFA ranking">&#9660;{{ -t.rank_change }}</span>
+            {% endif %}
+          </td>
           <td>
             <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none text-dark">
-              {{ t.name|flag }} {{ t.name }} {{ fx.form_badge(t.name) }}
+              {{ t.name|flag }} {{ t.name }}
             </a>
           </td>
-          <td class="text-end">{{ t.elo }}</td>
+          <td class="text-end">{{ t.current_elo|round|int }} {{ fx.form_badge(t.name) }}</td>
           <td class="text-end">#{{ t.fifa_rank }}</td>
           <td>{{ t.confederation }}</td>
         </tr>

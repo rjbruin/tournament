@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash, session
 from flask_login import current_user, login_required
 
 import app as app_module
@@ -229,8 +229,28 @@ def group(name: str):
 
 @web_bp.get("/teams")
 def teams():
+    from app import data_store
+    from app.form import compute_form
+
     engine = app_module.get_engine()
-    teams_sorted = sorted(engine.data["teams"], key=lambda t: -t["elo"])
+
+    scenario_id = request.args.get("s") or session.get("scenario_id") or "current"
+    scenario = data_store.load_scenario(scenario_id) or data_store.load_scenario("current")
+    try:
+        team_form = compute_form(scenario["actuals"], engine)
+    except Exception:
+        team_form = {}
+
+    base_order = sorted(engine.data["teams"], key=lambda t: -t["elo"])
+    base_rank = {t["name"]: i + 1 for i, t in enumerate(base_order)}
+
+    teams_sorted = sorted(
+        engine.data["teams"],
+        key=lambda t: -(t["elo"] + team_form.get(t["name"], 0)),
+    )
+    for i, t in enumerate(teams_sorted, start=1):
+        t["current_elo"] = t["elo"] + team_form.get(t["name"], 0)
+        t["rank_change"] = base_rank[t["name"]] - i
 
     favorite_team = None
     if current_user.is_authenticated:

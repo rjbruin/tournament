@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.7.1
+
+- Fixed the "Switch scenario" button disappearing off-screen on mobile
+  when the active scenario's label is long.
+- Fixed shuffled date/time/venue/place data for several Round of 32
+  knockout matches (73-90 range) so they match the official 2026 World
+  Cup schedule.
+- Removed a stale "live" flag for a group-stage fixture that already had
+  a final score recorded.
+
 ## v0.6.0
 
 - Added support for marking a group-stage fixture as **"in progress"** with

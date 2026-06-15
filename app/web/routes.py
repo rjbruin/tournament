@@ -516,7 +516,7 @@ def scenarios_new():
     import copy
     scenario = data_store.fork_scenario(base_id, copy.deepcopy(actuals), label=label)
     flash(f"Created scenario '{scenario['label']}'.", "success")
-    return redirect(url_for("web.index"))
+    return redirect(url_for("web.settings"))
 
 
 @web_bp.post("/scenarios/<scenario_id>/delete")

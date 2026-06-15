@@ -60,6 +60,20 @@ If you're putting this behind nginx/Apache, proxy `/tournament/` to
 app process — no `ProxyPass`-rewrite of paths is needed since the app emits
 prefixed URLs itself.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The suite (`tests/`) uses the real tournament data (`data/wc2026.json`) but
+builds its own scenarios — it never touches the on-disk runtime data. Coverage
+focuses on the natural-language group-qualification explanations
+(`app/qualification.py`): unit tests drive the decision-tree logic through a
+fake engine for exact, deterministic assertions, and integration tests run the
+real simulation engine on constructed group states.
+
 ## Releases
 
 `scripts/release.sh <version>` bumps `VERSION`, tags the commit, pushes it,

@@ -13,7 +13,7 @@ username:
           "openrouter_api_key": "",
           "openrouter_model": "anthropic/claude-sonnet-4.5",
           "display_timezone": "UTC",
-          "n_simulations": 100000
+          "n_simulations": 250000
         },
         "created_at": 1234567890.0
       },
@@ -49,7 +49,7 @@ DEFAULT_USER_SETTINGS = {
     "openrouter_api_key": "",
     "openrouter_model": "anthropic/claude-sonnet-4.5",
     "display_timezone": "UTC",
-    "n_simulations": 100_000,
+    "n_simulations": 250_000,
     "default_team": "Netherlands",
     "favorite_team": "",
     "onboarded": False,

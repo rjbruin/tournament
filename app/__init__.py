@@ -82,7 +82,7 @@ def get_or_run_results(username: str, scenario_id: str = "current", n: int = Non
     if scenario is None:
         return None
 
-    n = n or 100_000
+    n = n or 250_000
     draw = scenario.get("draw")
 
     if scenario.get("is_pre_draw") or (draw is not None and not is_draw_complete(draw)):

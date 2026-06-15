@@ -21,6 +21,42 @@ def _is_live(match: dict) -> bool:
     return start <= now <= start + timedelta(hours=2)
 
 
+def _results_up_to_date(engine) -> bool:
+    """True if every match whose kickoff is already in the past has a
+    recorded result. When a started match is still missing its result, a
+    results update is warranted (returns False)."""
+    from datetime import datetime, timezone
+    from app.simulation.engine import GROUP_MATCH_PAIRS
+
+    now = datetime.now(timezone.utc)
+    actuals = data_store.load_actuals()
+    schedule = engine.data.get("schedule", {})
+
+    played_pairs = {
+        gname: {frozenset((e.get("home"), e.get("away"))) for e in entries}
+        for gname, entries in actuals.get("group_results", {}).items()
+    }
+    for g in engine.groups:
+        gname = g["name"]
+        sched = schedule.get("groups", {}).get(gname, [])
+        for (i, j), sm in zip(GROUP_MATCH_PAIRS, sched):
+            kickoff = _utc_sort_key(sm)
+            if kickoff == datetime.min or kickoff > now:
+                continue
+            if frozenset((g["teams"][i], g["teams"][j])) not in played_pairs.get(gname, set()):
+                return False
+
+    ko_results = actuals.get("knockout_results", {})
+    for mno_str, sm in schedule.get("knockout", {}).items():
+        kickoff = _utc_sort_key(sm)
+        if kickoff == datetime.min or kickoff > now:
+            continue
+        if mno_str not in ko_results and int(mno_str) not in ko_results:
+            return False
+
+    return True
+
+
 def _group_table_before(g, raw_fixtures, live_match, teams_by_name, results):
     """Standings for group `g` as they were before `live_match` (a
     normalized match dict) was played."""
@@ -173,6 +209,7 @@ def index():
         active_scenario=active_scenario,
         scenario_list=scenario_list,
         last_updated=last_updated,
+        results_up_to_date=_results_up_to_date(engine),
         featured_fixture=featured_fixture,
         featured_is_live=featured_is_live,
         featured_group_table_before=featured_group_table_before,

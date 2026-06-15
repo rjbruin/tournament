@@ -526,7 +526,7 @@ def scenarios_delete(scenario_id):
         flash("Scenario deleted.", "success")
     else:
         flash("Could not delete that scenario.", "danger")
-    return redirect(url_for("web.index"))
+    return redirect(url_for("web.settings"))
 
 
 @web_bp.get("/scenarios/compare")

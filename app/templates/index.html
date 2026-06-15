@@ -11,7 +11,7 @@
   <div class="d-flex flex-wrap align-items-center justify-content-end gap-2 text-end" style="min-width: 0;">
     {% if active_scenario and active_scenario.is_current %}
       {% if last_updated %}
-      <div class="small">Last updated {{ last_updated }}</div>
+      <div class="small">Last updated: {% if active_scenario.progress_label %}{{ active_scenario.progress_label }} {% endif %}({{ last_updated }})</div>
       {% else %}
       <div class="small">Showing current real results</div>
       {% endif %}

@@ -162,7 +162,7 @@ def index():
     last_updated = None
     if last_updated_ts:
         import time as _time
-        last_updated = _time.strftime("%Y-%m-%d %H:%M UTC", _time.gmtime(last_updated_ts))
+        last_updated = _time.strftime("%d-%m %H:%M", _time.gmtime(last_updated_ts))
 
     return render_template(
         "index.html",

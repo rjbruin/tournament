@@ -618,6 +618,7 @@ def settings():
         settings=current_user.settings,
         global_settings=data_store.load_global_settings(),
         all_team_names=all_team_names,
+        scenario_list=data_store.list_scenarios(),
     )
 
 

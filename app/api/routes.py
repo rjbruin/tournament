@@ -134,6 +134,15 @@ def sync_results():
     })
 
 
+@api_bp.post("/scenarios/update")
+def update_scenarios():
+    """Rebuild the canonical set of auto-generated scenarios — one per unique
+    state of the tournament (before the first match, then after each played
+    match) — pruning any that no longer match the real results."""
+    result = data_store.update_scenarios()
+    return jsonify({"ok": True, **result})
+
+
 @api_bp.get("/stats")
 def stats():
     results, err = _require_results()

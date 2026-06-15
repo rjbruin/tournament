@@ -21,9 +21,10 @@
       {% if active_scenario and active_scenario.progress_label %} &middot; {{ active_scenario.progress_label }}{% endif %}
     </span>
     {% endif %}
-    <button type="button" class="btn btn-outline-light btn-sm flex-shrink-0" data-bs-toggle="modal" data-bs-target="#scenario-modal">Switch scenario</button>
+    <button type="button" id="update-results-btn" class="btn btn-outline-light btn-sm flex-shrink-0">🔄 Update results</button>
   </div>
 </div>
+<div id="update-results-status" class="small text-end mb-3"></div>
 
 {% if featured_fixture %}
 <div class="card shadow-sm mb-4" id="featured-fixture">
@@ -281,25 +282,47 @@
 </div>
 {% endif %}
 
-{# ---------- Switch-scenario modal ---------- #}
-<div class="modal fade" id="scenario-modal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Scenarios</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        {% with scenarios = scenario_list, in_modal = true %}
-        {% include "_scenarios_content.html" %}
-        {% endwith %}
-      </div>
-    </div>
-  </div>
-</div>
-
 {% endblock %}
 {% block scripts %}
+<script>
+// "Update results" — fetch official results, merge, and re-simulate (the
+// same action as the manage-scenarios "Update results & re-simulate" button).
+document.getElementById('update-results-btn')?.addEventListener('click', async function () {
+  const btn = this;
+  const status = document.getElementById('update-results-status');
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Updating…';
+  document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
+  try {
+    const resp = await fetch(`${window.API_ROOT}/results/sync`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}',
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      status.innerHTML = `<span class="text-danger">${data.error || 'Update failed.'}</span>`;
+      document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+      btn.disabled = false;
+      btn.textContent = original;
+      return;
+    }
+    const mc = (data.sync && data.sync.manual_comparison) || {status: 'none'};
+    if (mc.status === 'match') {
+      sessionStorage.setItem('wc2026-notice', '✅ Live results now match your manually-entered results — the manual scenario has been replaced by the updated current results.');
+    } else if (mc.status === 'mismatch') {
+      sessionStorage.setItem('wc2026-notice', '⚠️ Live results differ from your manually-entered results. The official results are now "current"; your manual entry is kept as a separate scenario for comparison.');
+    } else {
+      sessionStorage.setItem('wc2026-notice', '🔄 Results updated and re-simulated.');
+    }
+    window.location = window.location.pathname + '?s=current';
+  } catch (e) {
+    status.innerHTML = `<span class="text-danger">Update failed: ${e}</span>`;
+    document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+</script>
 {% if current_user.is_authenticated and current_user.settings.get('openrouter_api_key') %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>

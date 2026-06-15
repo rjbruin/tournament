@@ -160,6 +160,15 @@ def create_app():
 
     _engine = SimulationEngine(tournament_data)
 
+    # Rebuild the canonical set of auto-generated scenarios (one per unique
+    # state of the tournament). Cheap when already up to date; also what
+    # repopulates the set right after the one-time scenario purge migration.
+    try:
+        from app import data_store
+        data_store.update_scenarios()
+    except Exception:
+        pass
+
     from app.web.routes import web_bp
     from app.web.auth_routes import auth_bp
     from app.api.routes import api_bp

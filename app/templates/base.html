@@ -52,7 +52,7 @@
   <div id="scenario-loading-overlay" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.7); z-index: 2000;">
     <div class="text-center">
       <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-      <div class="mt-2 fw-bold">Switching scenario…</div>
+      <div class="mt-2 fw-bold">Working…</div>
     </div>
   </div>
 
@@ -111,6 +111,7 @@
     // Base path for API calls — respects an URL_PREFIX/SCRIPT_NAME the app
     // may be mounted under (e.g. when reverse-proxied at /tournament).
     window.API_ROOT = '{{ url_for("api.health") }}'.replace(/\/health$/, '');
+    window.HOME_URL = '{{ url_for("web.index") }}';
   </script>
   {% block scripts %}{% endblock %}
 </body>

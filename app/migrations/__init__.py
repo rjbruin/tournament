@@ -44,6 +44,7 @@ STATE_PATH = os.path.join(DATA_DIR, ".migrations.json")
 # the order they must be applied. Append new migrations to the end.
 REGISTRY = [
     "m0001_live_matches_and_featured_match",
+    "m0002_purge_scenarios",
 ]
 
 

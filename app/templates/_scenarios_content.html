@@ -54,7 +54,7 @@
           <a class="btn btn-sm btn-outline-primary" href="{{ url_for('web.index', s=s.id) }}">Switch</a>
           {% endif %}
           <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('web.scenario_compare', a=s.id) }}">Compare</a>
-          {% if not s.is_current %}
+          {% if not s.is_current and not s.is_pre_draw and not s.is_auto_match %}
           <form method="post" action="{{ url_for('web.scenarios_delete', scenario_id=s.id) }}" class="d-inline" onsubmit="return confirm('Delete this scenario?');">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
@@ -135,9 +135,9 @@ document.getElementById('sync-results-btn')?.addEventListener('click', async fun
 document.querySelectorAll('.switch-scenario-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
-    const url = new URL(window.location.href);
-    url.searchParams.set('s', btn.dataset.scenarioId);
-    window.location = url.toString();
+    const home = new URL(window.HOME_URL || '/', window.location.origin);
+    home.searchParams.set('s', btn.dataset.scenarioId);
+    window.location = home.toString();
   });
 });
 </script>

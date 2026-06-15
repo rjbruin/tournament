@@ -327,22 +327,46 @@ def ordered_match_checkpoints(engine) -> list[dict]:
     return checkpoints
 
 
+# The "before the first match" baseline scenario: the real draw is known
+# but no matches have been played yet. It's the index-0 member of the
+# auto-generated "match-N" family (which otherwise snapshots the state right
+# after each played match N).
+BEFORE_FIRST_MATCH_SCENARIO_ID = "match-0"
+
+
 def match_scenario_id(index: int) -> str:
     return f"match-{index}"
 
 
-def ensure_match_scenarios() -> list[str]:
-    """Ensure a "what the projections looked like right after match N"
-    scenario exists for every match that has a recorded result, building
-    them up incrementally in chronological order. Returns the ids of any
-    newly-created scenarios."""
+def _is_auto_match_id(scenario_id: str) -> bool:
+    """True for the ids of the auto-generated canonical "state of the
+    tournament" scenarios (match-0 = before the first match, match-N =
+    after played match N)."""
+    if not scenario_id.startswith("match-"):
+        return False
+    return scenario_id[len("match-"):].isdigit()
+
+
+def update_scenarios() -> dict:
+    """Ensure exactly the canonical set of auto-generated scenarios exists,
+    one per unique state of the tournament:
+
+      - ``match-0``  — "Before the first match" (real draw, no results yet);
+      - ``match-N``  — the state right after each played match N, built up
+                       incrementally in chronological order.
+
+    Any stale ``match-*`` scenario whose match no longer has a recorded
+    result is pruned, so the set always mirrors the real results exactly.
+    Non-auto scenarios (user "what if"s, the live/hypothetical slot, the
+    manual baseline) are left untouched. Returns ``{created, removed}``.
+    """
     import copy
     import app as app_module
     from app.simulation.engine import ROUND_NAMES
 
     engine = app_module.get_engine()
     if engine is None:
-        return []
+        return {"created": [], "removed": []}
 
     actuals = load_actuals()
     group_results = actuals.get("group_results", {})
@@ -354,6 +378,16 @@ def ensure_match_scenarios() -> list[str]:
             played_pairs[(gname, frozenset((e.get("home"), e.get("away"))))] = e
 
     created = []
+    desired = {BEFORE_FIRST_MATCH_SCENARIO_ID}
+
+    # match-0: before the first match (real draw, no results yet).
+    if not os.path.exists(_scenario_path(BEFORE_FIRST_MATCH_SCENARIO_ID)):
+        save_scenario("Before the first match",
+                      {"group_results": {}, "knockout_results": {}, "live_matches": []},
+                      based_on=CURRENT_SCENARIO_ID,
+                      scenario_id=BEFORE_FIRST_MATCH_SCENARIO_ID, is_auto_match=True)
+        created.append(BEFORE_FIRST_MATCH_SCENARIO_ID)
+
     running_group: dict = {}
     running_ko: dict = {}
     for cp in ordered_match_checkpoints(engine):
@@ -372,6 +406,7 @@ def ensure_match_scenarios() -> list[str]:
             label = f"After match {mno} ({ROUND_NAMES.get(mno, '')})"
 
         sid = match_scenario_id(cp["index"])
+        desired.add(sid)
         if os.path.exists(_scenario_path(sid)):
             continue
         snapshot = {
@@ -381,7 +416,21 @@ def ensure_match_scenarios() -> list[str]:
         }
         save_scenario(label, snapshot, based_on=CURRENT_SCENARIO_ID, scenario_id=sid, is_auto_match=True)
         created.append(sid)
-    return created
+
+    # Prune stale auto-match scenarios (a result was removed/changed).
+    removed = []
+    for sid in list_scenario_ids():
+        if _is_auto_match_id(sid) and sid not in desired:
+            delete_scenario(sid)
+            removed.append(sid)
+
+    return {"created": created, "removed": removed}
+
+
+def ensure_match_scenarios() -> list[str]:
+    """Backwards-compatible wrapper around :func:`update_scenarios`; returns
+    just the ids of newly-created scenarios."""
+    return update_scenarios()["created"]
 
 
 def load_scenario(scenario_id: str | None) -> dict | None:
@@ -441,21 +490,32 @@ def load_scenario(scenario_id: str | None) -> dict | None:
     return data
 
 
+def _matches_played(actuals: dict) -> int:
+    """Number of completed matches (group + knockout) in a set of actuals."""
+    gr = actuals.get("group_results", {})
+    kr = actuals.get("knockout_results", {})
+    return sum(len(v) for v in gr.values()) + len(kr)
+
+
 def list_scenarios() -> list[dict]:
-    """Return metadata (without the bulky `actuals`) for every scenario,
-    "current" first, followed by the virtual "pre-draw" scenario."""
-    out = []
-    current = load_scenario(CURRENT_SCENARIO_ID)
-    out.append({k: v for k, v in current.items() if k != "actuals"})
-    pre_draw = load_scenario(PRE_DRAW_SCENARIO_ID)
-    out.append({k: v for k, v in pre_draw.items() if k != "actuals"})
-    for sid in sorted(list_scenario_ids()):
+    """Return metadata (without the bulky ``actuals``) for every scenario,
+    ordered from most matches played to least. "Current" (the live real
+    results) is always pinned first; "pre-draw" sorts last."""
+    scenarios = [load_scenario(CURRENT_SCENARIO_ID), load_scenario(PRE_DRAW_SCENARIO_ID)]
+    for sid in list_scenario_ids():
         s = load_scenario(sid)
-        if s is None or s.get("is_auto_match"):
-            continue
-        out.append({k: v for k, v in s.items() if k != "actuals"})
-    out.sort(key=lambda s: (not s["is_current"], not s.get("is_pre_draw"), -(s.get("created_at") or 0)))
-    return out
+        if s is not None:
+            scenarios.append(s)
+
+    for s in scenarios:
+        s["matches_played"] = _matches_played(s["actuals"])
+
+    scenarios.sort(key=lambda s: (
+        not s["is_current"],          # current first
+        s.get("is_pre_draw", False),  # pre-draw last
+        -s["matches_played"],         # most matches played to least
+    ))
+    return [{k: v for k, v in s.items() if k != "actuals"} for s in scenarios]
 
 
 def save_scenario(label: str, actuals: dict, based_on: str | None = None,

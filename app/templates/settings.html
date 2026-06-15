@@ -96,6 +96,20 @@
     </form>
 
     <div class="card shadow-sm mt-4">
+      <div class="card-header fw-bold">Scenarios</div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Scenarios are managed automatically — there's one for each state of the
+          tournament (before the first match, then after every match played). You normally
+          don't need to touch them; use "Update results" on the Home page to pull in the
+          latest official results. This panel is here if you want to inspect, compare, or
+          create "what if" scenarios.
+        </p>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#scenario-modal">Manage scenarios</button>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
       <div class="card-header fw-bold">Account</div>
       <div class="card-body">
         <p class="mb-2"><strong>Username:</strong> {{ current_user.username }}</p>
@@ -134,6 +148,23 @@
           </div>
           <button type="submit" class="btn btn-success">Update password</button>
         </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ---------- Manage-scenarios modal ---------- #}
+<div class="modal fade" id="scenario-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Scenarios</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% with scenarios = scenario_list, in_modal = true %}
+        {% include "_scenarios_content.html" %}
+        {% endwith %}
       </div>
     </div>
   </div>

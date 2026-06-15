@@ -240,6 +240,113 @@ class SimulationEngine:
 
         return pts, gf, ga
 
+    def _simulate_group_capture(self, n: int, tidx: np.ndarray, fixed_pairs: dict):
+        """Like :meth:`_simulate_group` but also returns the per-simulation
+        scoreline of every match: ``scorelines[(i, j)] = (goals_i, goals_j)``,
+        each an ``(n,)`` array."""
+        pts = np.zeros((n, 4), dtype=int)
+        gf = np.zeros((n, 4), dtype=int)
+        ga = np.zeros((n, 4), dtype=int)
+        scorelines = {}
+
+        for i, j in GROUP_MATCH_PAIRS:
+            if (i, j) in fixed_pairs:
+                gi_val, gj_val = fixed_pairs[(i, j)]
+                goals_i = np.full(n, gi_val, dtype=int)
+                goals_j = np.full(n, gj_val, dtype=int)
+            else:
+                la, lb = compute_lambdas_vec(self.team_elos[tidx[i]], self.team_elos[tidx[j]])
+                goals_i = np.random.poisson(la, n)
+                goals_j = np.random.poisson(lb, n)
+
+            gf[:, i] += goals_i
+            gf[:, j] += goals_j
+            ga[:, i] += goals_j
+            ga[:, j] += goals_i
+
+            win_i = goals_i > goals_j
+            win_j = goals_j > goals_i
+            draw = goals_i == goals_j
+            pts[:, i] += 3 * win_i + draw
+            pts[:, j] += 3 * win_j + draw
+
+            scorelines[(i, j)] = (goals_i, goals_j)
+
+        return pts, gf, ga, scorelines
+
+    def simulate_group_outcomes(self, n: int, actuals: dict | None, group_name: str) -> dict:
+        """Monte-Carlo a tournament conditioned on ``actuals`` and return, for
+        ``group_name``, the raw per-simulation data needed to reason about
+        qualification:
+
+          - ``matches``: one dict per *unplayed* match of the group (in
+            schedule order), with ``home``/``away`` team names and the (n,)
+            arrays ``result`` (+1 home win, 0 draw, -1 away win) and ``gd``
+            (home goals minus away goals);
+          - ``outcomes``: ``{team_name: {"first", "second", "advanced"}}`` of
+            (n,) boolean arrays — whether that team finishes 1st / 2nd / reaches
+            the knockouts (top-2 or one of the 8 best third-placed teams).
+
+        The third-place race is resolved against every other group (simulated
+        too), so ``advanced`` correctly depends on results elsewhere.
+        """
+        actuals = actuals or {"group_results": {}, "knockout_results": {}}
+        fixed_group_results = self._resolve_fixed_group_results(actuals.get("group_results", {}))
+        target_gi = self.group_pos[group_name]
+
+        group_order = np.empty((n, self.n_groups, 4), dtype=int)
+        group_key = np.empty((n, self.n_groups, 4), dtype=np.int64)
+        scorelines = None
+        for gi, tidx in enumerate(self._group_indices):
+            gname = self.group_letters[gi]
+            fixed_pairs = fixed_group_results.get(gname, {})
+            if gi == target_gi:
+                pts, gf, ga, scorelines = self._simulate_group_capture(n, tidx, fixed_pairs)
+            else:
+                pts, gf, ga = self._simulate_group(n, tidx, fixed_pairs)
+            gd = gf - ga
+            key = pts.astype(np.int64) * 1_000_000 + gd.astype(np.int64) * 1_000 + gf.astype(np.int64)
+            order = np.argsort(-key, axis=1, kind="stable")
+            for pos in range(4):
+                group_order[:, gi, pos] = tidx[order[:, pos]]
+                group_key[:, gi, pos] = np.take_along_axis(key, order[:, pos:pos+1], axis=1)[:, 0]
+
+        # Which groups' third-placed team is among the best 8 (and so qualifies).
+        third_key = group_key[:, :, 2]
+        order3 = np.argsort(-third_key, axis=1, kind="stable")
+        top8 = order3[:, :8]
+        sim_range = np.arange(n)
+        third_qualifies = np.zeros((n, self.n_groups), dtype=bool)
+        for k in range(8):
+            third_qualifies[sim_range, top8[:, k]] = True
+
+        tidx = self._group_indices[target_gi]
+        fixed_pairs = fixed_group_results.get(group_name, {})
+        matches = []
+        for (i, j) in GROUP_MATCH_PAIRS:
+            if (i, j) in fixed_pairs:
+                continue
+            goals_i, goals_j = scorelines[(i, j)]
+            gd_ij = (goals_i - goals_j).astype(int)
+            matches.append({
+                "home": self.team_names[tidx[i]],
+                "away": self.team_names[tidx[j]],
+                "result": np.sign(gd_ij).astype(int),
+                "gd": gd_ij,
+            })
+
+        outcomes = {}
+        for pos in range(4):
+            team_i = int(tidx[pos])
+            name = self.team_names[team_i]
+            first = group_order[:, target_gi, 0] == team_i
+            second = group_order[:, target_gi, 1] == team_i
+            third = group_order[:, target_gi, 2] == team_i
+            advanced = first | second | (third & third_qualifies[:, target_gi])
+            outcomes[name] = {"first": first, "second": second, "advanced": advanced}
+
+        return {"matches": matches, "outcomes": outcomes, "n": n}
+
     # ------------------------------------------------------------------
     # Group fixtures (display + odds)
     # ------------------------------------------------------------------

@@ -133,6 +133,51 @@ def _groups_for_results(engine, results):
     return engine.groups
 
 
+def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
+    """Build natural-language "what's at stake" notes for the two teams in the
+    featured group fixture, explaining what each needs to reach the knockouts.
+
+    Only produced on the final group matchday (a team's last group game), when
+    the question "what do they need?" is crisp. Returns a list of explanation
+    dicts (see app/qualification.py), possibly empty."""
+    from app import qualification
+
+    if not featured_fixture or not featured_fixture.get("_group"):
+        return []
+    if featured_fixture.get("played") and not featured_fixture.get("in_progress"):
+        return []
+
+    gname = featured_fixture["_group"]
+    cutoff = featured_fixture["_sort_key"]
+    group_matches = [m for m in all_normalized if m.get("_group") == gname]
+    unplayed = [m for m in group_matches if m["_sort_key"] >= cutoff]
+    # Final matchday only: the two last group games (disjoint pairs).
+    if not (1 <= len(unplayed) <= 2):
+        return []
+
+    # Reconstruct the state *before* this matchday: every match scheduled
+    # earlier (in any group) is kept; this matchday's games are reopened.
+    scenario = data_store.load_scenario(scenario_id) or {}
+    actuals = scenario.get("actuals") or data_store._empty_actuals()
+    before = {"group_results": {}, "knockout_results": {}, "live_matches": []}
+    before_pairs = {(m["_group"], frozenset((m["home_team"], m["away_team"])))
+                    for m in all_normalized if m["_sort_key"] < cutoff}
+    for g, entries in actuals.get("group_results", {}).items():
+        kept = [e for e in entries
+                if (g, frozenset((e.get("home"), e.get("away")))) in before_pairs]
+        if kept:
+            before["group_results"][g] = kept
+
+    notes = []
+    for team in (featured_fixture.get("home_team"), featured_fixture.get("away_team")):
+        if not team:
+            continue
+        expl = qualification.explain_qualification_cached(engine, before, gname, team, "advances")
+        if expl:
+            notes.append(expl)
+    return notes
+
+
 @web_bp.get("/")
 def index():
     engine = app_module.get_engine()
@@ -192,6 +237,13 @@ def index():
             if featured_is_live:
                 featured_group_table_before = _group_table_before(g, raw_fixtures, featured_fixture, teams_by_name, results)
 
+    qualification_notes = []
+    if featured_fixture and not _is_pre_draw(scenario_id):
+        try:
+            qualification_notes = _qualification_notes(engine, scenario_id, featured_fixture, all_normalized)
+        except Exception:
+            qualification_notes = []
+
     scenario_list = data_store.list_scenarios()
     active_scenario = data_store.load_scenario(scenario_id)
     last_updated_ts = data_store.actuals_last_updated()
@@ -214,6 +266,7 @@ def index():
         featured_is_live=featured_is_live,
         featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
+        qualification_notes=qualification_notes,
     )
 
 

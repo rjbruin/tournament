@@ -171,6 +171,30 @@
       {% endif %}
     {% endfor %}
     {% endif %}
+
+    {% if qualification_notes %}
+    <hr class="mt-4">
+    <div class="small text-muted fw-bold mb-2">What's at stake</div>
+    {% for note in qualification_notes %}
+    <div class="qual-note mb-2">
+      <span class="me-1">
+        {%- if note.status == 'certain' %}✅
+        {%- elif note.status == 'impossible' %}❌
+        {%- else %}🎯{% endif %}
+      </span>
+      <span>
+        <strong>{{ note.team|flag }} {{ note.team }}</strong> — {{ note.summary }}
+      </span>
+      {% if note.lines %}
+      <ul class="small text-muted mb-0 mt-1">
+        {% for line in note.lines %}
+        <li>{{ line }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
   </div>
 </div>
 {% endif %}

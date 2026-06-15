@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.7.4
+
+- Scenarios are now an auto-maintained backend feature: one canonical
+  scenario per tournament state (before the first match, then after each
+  played match), rebuilt automatically. A one-time purge clears the old
+  ad-hoc scenarios.
+- The homepage hero button is now "Update results" (runs the results
+  sync); scenario management moved to a "Manage scenarios" modal on the
+  Settings page.
+- The "Update results" button is disabled and reads "Results up to date"
+  when every match that has already kicked off has a recorded result; it
+  re-enables as soon as a started match is missing its result.
+- The homepage "Last updated" notice now includes the scenario progress
+  label, e.g. "Last updated: Group stage day 4 - all games played
+  (15-06 07:28)".
+- Scenario list in the Manage scenarios modal is ordered from most
+  matches played to least.
+
 ## v0.7.3
 
 - Odds/probability displays now show ✅ for exactly 100% and ❌ for

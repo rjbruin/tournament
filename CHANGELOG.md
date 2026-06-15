@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.3
+
+- Odds/probability displays now show ✅ for exactly 100% and ❌ for
+  exactly 0% instead of "100.0%"/"0.0%", across all pages.
+
 ## v0.7.2
 
 - New **Teams page** (replacing the "Team" nav entry): lists all teams

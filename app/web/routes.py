@@ -596,7 +596,6 @@ def results_manual():
 
 
 @web_bp.get("/draw")
-@login_required
 def draw():
     from app.simulation.draw import load_draw_pots
     engine = app_module.get_engine()

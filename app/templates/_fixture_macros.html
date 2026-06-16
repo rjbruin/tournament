@@ -14,12 +14,16 @@
 {# ---------- Compact: "Home - Away" with odds, for use in tables ---------- #}
 {% macro compact_fixture(match) %}
   {% if match.played %}
-  <div class="compact-fixture-row">
-    <span class="compact-flag">{{ match.home_team|flag }}</span>
-    <span class="compact-team">{{ match.home_team }}</span>{{ form_badge(match.home_team) }}
-    <span class="compact-score ms-auto">{{ match.home_goals }} – {{ match.away_goals }}</span>
-    <span class="compact-flag ms-1">{{ match.away_team|flag }}</span>
-    <span class="compact-team">{{ match.away_team }}</span>{{ form_badge(match.away_team) }}
+  <div class="compact-result-row">
+    <div class="compact-result-home">
+      <span class="compact-flag">{{ match.home_team|flag }}</span>
+      <span class="compact-team">{{ match.home_team }}</span>{{ form_badge(match.home_team) }}
+    </div>
+    <span class="compact-score">{{ match.home_goals }} – {{ match.away_goals }}</span>
+    <div class="compact-result-away">
+      {{ form_badge(match.away_team) }}<span class="compact-team">{{ match.away_team }}</span>
+      <span class="compact-flag">{{ match.away_team|flag }}</span>
+    </div>
   </div>
   {% else %}
   <div class="compact-fixture-row">

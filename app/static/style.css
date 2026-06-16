@@ -322,11 +322,35 @@ h1, h2 { color: var(--wc-green); }
   gap: .4rem;
   padding: .3rem 0;
 }
-.compact-flag { font-size: 1.1rem; line-height: 1; }
+.compact-result-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: .4rem;
+  padding: .25rem .25rem;
+}
+.compact-result-home {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  justify-content: flex-start;
+  min-width: 0;
+}
+.compact-result-away {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.compact-flag { font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
 .compact-team {
   font-weight: 600;
-  font-size: .9rem;
+  font-size: .85rem;
   color: var(--wc-green);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .compact-score {
   font-family: 'Bebas Neue', sans-serif;
@@ -334,8 +358,10 @@ h1, h2 { color: var(--wc-green); }
   background: var(--wc-green);
   color: #fff;
   border-radius: .25rem;
-  padding: .05rem .35rem;
+  padding: .05rem .45rem;
   letter-spacing: .06em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .compact-odds {
   font-size: .8rem;

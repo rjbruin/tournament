@@ -345,38 +345,57 @@ h1, h2 { color: var(--wc-green); }
 
 /* Bracket team rows */
 .knockout-card { min-width: 230px; }
+.bracket-slot { padding: .2rem 0; }
 .bracket-team-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: .35rem .5rem;
+  padding: .3rem .5rem;
   border-radius: .4rem;
   transition: background .12s;
+  gap: .35rem;
 }
-.bracket-team-row + .bracket-team-row { margin-top: .25rem; }
 .bracket-team-row:hover { background: rgba(10,59,42,.06); }
 .bracket-team-row.winner { background: rgba(0,132,61,.12); }
-.bracket-team-flag { font-size: 1.3rem; line-height: 1; margin-right: .35rem; }
+.bracket-team-flag { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
 .bracket-team-name {
   font-weight: 600;
-  font-size: .95rem;
+  font-size: .92rem;
   color: var(--wc-green);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bracket-team-name.is-winner { color: var(--wc-green-bright); }
 .bracket-team-odds {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1rem;
   color: var(--wc-green-bright);
-  margin-left: auto;
-  padding-left: .5rem;
+  flex-shrink: 0;
 }
 .bracket-cand-row {
-  font-size: .78rem;
-  color: #666;
-  padding: .1rem .5rem;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: .3rem;
+  font-size: .78rem;
+  color: #555;
+  padding: .1rem .5rem;
+  border-radius: .3rem;
+  transition: background .12s;
+}
+.bracket-cand-row:hover { background: rgba(10,59,42,.05); }
+.bracket-cand-name { display: flex; align-items: center; gap: .25rem; }
+.bracket-cand-odds {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .85rem;
+  color: var(--wc-green-bright);
+  flex-shrink: 0;
+}
+.bracket-slot-divider {
+  height: 1px;
+  background: rgba(10,59,42,.12);
+  margin: .3rem .5rem;
 }
 
 /* ---------- Bracket spatial layout ---------- */

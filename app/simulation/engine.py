@@ -353,8 +353,11 @@ class SimulationEngine:
 
     def _build_group_fixtures(self, group_results: dict, live_matches: list | None = None) -> dict:
         live_keys = set()
+        live_info = {}
         for entry in (live_matches or []):
-            live_keys.add(frozenset((entry.get("home"), entry.get("away"))))
+            key = frozenset((entry.get("home"), entry.get("away")))
+            live_keys.add(key)
+            live_info[key] = entry
         fixtures = {}
         for gi, g in enumerate(self.groups):
             gname = g["name"]
@@ -376,8 +379,18 @@ class SimulationEngine:
                         match["home_goals"] = int(entry["away_goals"])
                         match["away_goals"] = int(entry["home_goals"])
                     match["played"] = True
-                    if frozenset((home_name, away_name)) in live_keys:
+                    # Goal/card events (if captured) live on the result entry
+                    # and persist after the match finishes.
+                    if entry.get("events"):
+                        match["events"] = entry["events"]
+                    key = frozenset((home_name, away_name))
+                    if key in live_keys:
                         match["in_progress"] = True
+                        live = live_info.get(key, {})
+                        if live.get("minute") is not None:
+                            match["minute"] = live["minute"]
+                        if live.get("status"):
+                            match["status"] = live["status"]
                 else:
                     elo_h = float(self.team_elos[self.team_idx[home_name]])
                     elo_a = float(self.team_elos[self.team_idx[away_name]])

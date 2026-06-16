@@ -11,20 +11,80 @@
 {% endmacro %}
 
 
+{# ---------- Match events: goals + cards timeline ---------- #}
+{% macro _events_list(match) %}
+<ul class="match-events">
+  {% for ev in match.events %}
+  {% set side = 'home' if ev.team == match.home_team else 'away' %}
+  <li class="match-event match-event--{{ side }} match-event--{{ ev.type }}">
+    <span class="match-event-minute">{{ ev.minute if ev.minute is not none else '' }}{% if ev.injury_time %}+{{ ev.injury_time }}{% endif %}{% if ev.minute is not none %}'{% endif %}</span>
+    <span class="match-event-icon">{% if ev.type == 'goal' %}⚽{% elif ev.type == 'yellow' %}🟨{% else %}🟥{% endif %}</span>
+    <span class="match-event-player">{{ ev.player }}{% if ev.goal_type == 'OWN' %} (OG){% elif ev.goal_type == 'PENALTY' %} (P){% endif %}</span>
+    <span class="match-event-flag">{{ ev.team|flag }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+
+{# Render a match's goal/card events. ``collapsible`` hides them behind a
+   "Show" toggle (used in the dense fixtures list); otherwise they're shown
+   inline (used on the frontpage featured card). #}
+{% macro match_events(match, collapsible=False, target_id="") %}
+  {% set events = match.events or [] %}
+  {% if events %}
+  {% set goals = events | selectattr('type', 'equalto', 'goal') | list | length %}
+  {% set cards = events | rejectattr('type', 'equalto', 'goal') | list | length %}
+  {% if collapsible %}
+  <div class="match-events-toggle">
+    <span class="text-primary text-decoration-underline" style="cursor:pointer;"
+          data-bs-toggle="collapse" data-bs-target="#{{ target_id }}" role="button"
+          aria-expanded="false" aria-controls="{{ target_id }}" id="{{ target_id }}-toggle">
+      ⚽ {{ goals }}{% if cards %} &middot; 🟨🟥 {{ cards }}{% endif %} — Show
+    </span>
+  </div>
+  <div class="collapse" id="{{ target_id }}">
+    {{ _events_list(match) }}
+  </div>
+  <script>
+  (function () {
+    var el = document.getElementById('{{ target_id }}');
+    var t = document.getElementById('{{ target_id }}-toggle');
+    if (el && t) {
+      var base = t.innerHTML.replace(/—\s*Show\s*$/, '');
+      el.addEventListener('shown.bs.collapse', function () { t.innerHTML = base + '— Hide'; });
+      el.addEventListener('hidden.bs.collapse', function () { t.innerHTML = base + '— Show'; });
+    }
+  })();
+  </script>
+  {% else %}
+  {{ _events_list(match) }}
+  {% endif %}
+  {% endif %}
+{% endmacro %}
+
+
 {# ---------- Compact: "Home - Away" with odds, for use in tables ---------- #}
 {% macro compact_fixture(match) %}
-  {% if match.played and not match.in_progress %}
+  {% if match.played %}
   <div class="compact-result-row">
     <div class="compact-result-home">
       <span class="compact-flag">{{ match.home_team|flag }}</span>
       <span class="compact-team">{{ match.home_team }}</span>
     </div>
-    <span class="compact-score">{{ match.home_goals }} – {{ match.away_goals }}</span>
+    <span class="compact-score{% if match.in_progress %} compact-score--live{% endif %}">
+      {{ match.home_goals }} – {{ match.away_goals }}
+      {% if match.in_progress %}<span class="compact-live-min">🔴 {% if match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
+    </span>
     <div class="compact-result-away">
       <span class="compact-team">{{ match.away_team }}</span>
       <span class="compact-flag">{{ match.away_team|flag }}</span>
     </div>
   </div>
+  {% if match.events %}
+  <div class="compact-events">
+    {{ match_events(match, collapsible=True, target_id='ev-' ~ match.home_team|replace(' ', '') ~ '-' ~ match.away_team|replace(' ', '')) }}
+  </div>
+  {% endif %}
   {% else %}
   <div class="compact-fixture-row">
     <span class="compact-flag">{{ match.home_team|flag }}</span>
@@ -98,7 +158,7 @@
           <span class="fixture-score-sep">–</span>
           <span>{{ match.away_goals }}</span>
         </div>
-        {% if match.in_progress %}<span class="badge bg-danger" style="font-size:.7rem;">🔴 LIVE</span>{% endif %}
+        {% if match.in_progress %}<span class="badge bg-danger live-badge" style="font-size:.7rem;">🔴 {% if match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
         {% elif editable %}
         <div class="fixture-vs">-</div>
         {% elif match.draw_prob is defined %}
@@ -130,6 +190,12 @@
         {% endif %}
       </div>
     </div>
+
+    {% if not editable and match.events %}
+    <div class="fixture-events mt-3 pt-2 border-top" data-fixture-events>
+      {{ match_events(match) }}
+    </div>
+    {% endif %}
 
     {% if editable %}
     <div class="text-center mt-3">

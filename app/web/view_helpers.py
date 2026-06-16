@@ -72,6 +72,12 @@ def normalize_group_match(match: dict) -> dict:
         "place": match.get("place"),
         "in_progress": match.get("in_progress", False),
     }
+    if match.get("minute") is not None:
+        out["minute"] = match["minute"]
+    if match.get("status"):
+        out["status"] = match["status"]
+    if match.get("events"):
+        out["events"] = match["events"]
     if match.get("played"):
         out["home_goals"] = match["home_goals"]
         out["away_goals"] = match["away_goals"]

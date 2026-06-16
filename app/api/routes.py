@@ -18,7 +18,7 @@ def _authenticate():
         curl -H "Authorization: Bearer <api_slug>" .../api/stats
         curl ".../api/stats?api_key=<api_slug>"
     """
-    if request.endpoint in ("api.health", "api.actuals_timestamp"):
+    if request.endpoint in ("api.health", "api.actuals_timestamp", "api.live"):
         return
 
     if current_user.is_authenticated:
@@ -61,6 +61,47 @@ def actuals_timestamp():
     Used by unauthenticated frontpage polling to detect new results."""
     ts = data_store.actuals_last_updated()
     return jsonify({"last_updated": ts})
+
+
+@api_bp.get("/live")
+def live():
+    """Public endpoint: current in-play group matches with live score, minute,
+    status, and any goal/card events — read straight from data/actuals.json
+    (no football-data.org call; the background poller keeps actuals fresh).
+
+    Used by the frontpage live updater to refresh the scoreline/events in place
+    without a full reload. Returns ``{last_updated, live: [...]}``."""
+    actuals = data_store.load_actuals()
+    live_matches = actuals.get("live_matches", [])
+    group_results = actuals.get("group_results", {})
+
+    # Index results by unordered team pair for quick lookup of score + events.
+    by_pair = {}
+    for gname, entries in group_results.items():
+        for e in entries:
+            by_pair[frozenset((e.get("home"), e.get("away")))] = (gname, e)
+
+    out = []
+    for lm in live_matches:
+        home, away = lm.get("home"), lm.get("away")
+        pair = frozenset((home, away))
+        gname, entry = by_pair.get(pair, (None, {}))
+        hg = entry.get("home_goals", 0)
+        ag = entry.get("away_goals", 0)
+        out.append({
+            "group": gname,
+            "home": home,
+            "away": away,
+            "home_goals": hg,
+            "away_goals": ag,
+            # Robust against home/away orientation differences on the client.
+            "goals_by_team": {home: hg, away: ag},
+            "minute": lm.get("minute"),
+            "status": lm.get("status"),
+            "events": entry.get("events", []),
+        })
+
+    return jsonify({"last_updated": data_store.actuals_last_updated(), "live": out})
 
 
 @api_bp.post("/simulate")

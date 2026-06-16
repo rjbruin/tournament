@@ -31,6 +31,15 @@ def set_simulation_results(username: str, results, scenario_id: str = "current")
     _simulation_results[key] = results
 
 
+def invalidate_results(scenario_id: str = "current") -> None:
+    """Drop cached simulation results for `scenario_id` across all accounts, so
+    the next page load/API call re-runs against the freshly-updated actuals.
+    Used by the live poller when a live score changes the real results."""
+    for key in list(_simulation_results.keys()):
+        if key[1] == scenario_id:
+            _simulation_results.pop(key, None)
+
+
 # Number of independent draws to marginalize over for "pre-draw"/partial-draw
 # scenarios, and the number of tournament simulations run per draw.
 N_DRAWS = 12
@@ -232,6 +241,8 @@ def create_app():
             session["_csrf_token"] = token
         return {"csrf_token": token}
 
+    _maybe_start_live_poller(app)
+
     app.jinja_env.filters["flag"] = flag_emoji
 
     @app.template_filter("pct")
@@ -268,6 +279,10 @@ def create_app():
         tz_name = settings_tz
         if not tz_name and current_user.is_authenticated:
             tz_name = current_user.settings.get("display_timezone", "UTC")
+        # Unauthenticated visitors default to Amsterdam local time (most of the
+        # audience), rather than UTC.
+        if not tz_name and not current_user.is_authenticated:
+            tz_name = "Europe/Amsterdam"
         tz_name = tz_name or "UTC"
         try:
             dt = datetime.fromisoformat(f"{match['date']}T{match['local_time']}")
@@ -301,3 +316,61 @@ def create_app():
         return {"team_form": team_form, "active_scenario": scenario}
 
     return app
+
+
+# ----------------------------------------------------------------------
+# Background live-results poller.
+#
+# While a group-stage match is being played, a daemon thread polls
+# football-data.org (at least once a minute) and writes the live scoreline
+# (plus any goal/card events the API exposes) into data/actuals.json, then
+# invalidates the cached "current" simulation so projections refresh. It stops
+# polling frequently once no match is in play. See app/live_source.py.
+# ----------------------------------------------------------------------
+
+_live_poller_started = False
+
+
+def _live_poller_loop(app):
+    import time
+    from app import live_source
+
+    while True:
+        delay = live_source.IDLE_MAX
+        try:
+            summary = live_source.poll_live_matches(_engine)
+            if summary.get("changed"):
+                invalidate_results("current")
+            if summary.get("error"):
+                # API/network error — back off, but keep retrying.
+                delay = max(live_source.LIVE_INTERVAL, 120)
+            else:
+                delay = live_source.compute_poll_delay(_engine, summary.get("any_live", False))
+        except Exception:
+            app.logger.exception("live poller iteration failed")
+            delay = 120
+        time.sleep(delay)
+
+
+def _maybe_start_live_poller(app):
+    global _live_poller_started
+    if _live_poller_started:
+        return
+    if os.environ.get("DISABLE_LIVE_POLLER", "").lower() in ("1", "true", "yes"):
+        return
+    if app.config.get("TESTING"):
+        return
+    # ``create_app()`` runs (in run.py) before ``app.run(debug=...)`` sets
+    # ``app.debug``, so infer debug from FLASK_DEBUG exactly as run.py does.
+    # Under the Werkzeug reloader the watcher parent re-execs a child that has
+    # WERKZEUG_RUN_MAIN=="true"; only that child should own the poller, so we
+    # don't poll twice in debug mode. In production (FLASK_DEBUG=0, no
+    # reloader) the guard is inert and the poller starts normally.
+    debug = os.environ.get("FLASK_DEBUG", "1") not in ("0", "false", "False")
+    if debug and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        return
+
+    import threading
+    _live_poller_started = True
+    threading.Thread(target=_live_poller_loop, args=(app,), daemon=True,
+                     name="live-poller").start()

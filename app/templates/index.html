@@ -248,6 +248,38 @@
     {% endif %}
   </div>
 </div>
+
+{% if featured_is_live %}
+<script>
+(function () {
+  // Live updater: while the featured match is in play, tick the minute badge
+  // in place every 30s, and reload the page when the score or events change
+  // (so standings + championship projections refresh) or the match finishes.
+  const LIVE_POLL = 30 * 1000;
+  const home = {{ featured_fixture.home_team|tojson }};
+  const away = {{ featured_fixture.away_team|tojson }};
+  let lastKey = "{{ featured_fixture.home_goals if featured_fixture.played else 0 }}-{{ featured_fixture.away_goals if featured_fixture.played else 0 }}-{{ (featured_fixture.events or [])|length }}";
+  const badge = document.querySelector('#featured-fixture .live-badge');
+
+  async function tick() {
+    try {
+      const resp = await fetch(`${window.API_ROOT}/live`);
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const m = (data.live || []).find(x =>
+        (x.home === home && x.away === away) || (x.home === away && x.away === home));
+      if (!m) { window.location.reload(); return; }  // no longer live → finished
+      if (badge) badge.textContent = (m.minute != null ? "🔴 " + m.minute + "'" : "🔴 LIVE");
+      const gh = (m.goals_by_team && m.goals_by_team[home] != null) ? m.goals_by_team[home] : 0;
+      const ga = (m.goals_by_team && m.goals_by_team[away] != null) ? m.goals_by_team[away] : 0;
+      const key = gh + "-" + ga + "-" + (m.events ? m.events.length : 0);
+      if (key !== lastKey) window.location.reload();
+    } catch (e) { /* network blip — try again next tick */ }
+  }
+  setInterval(tick, LIVE_POLL);
+})();
+</script>
+{% endif %}
 {% endif %}
 
 {% if previous_fixture %}
@@ -496,8 +528,13 @@ document.getElementById('update-results-btn')?.addEventListener('click', async f
     } catch (e) { /* network error — silently skip */ }
   }
 
+  // While a match is live, the live updater (above) handles refreshes, so
+  // skip the slower "new results available" modal to avoid it firing on every
+  // live score tick.
+  {% if not featured_is_live %}
   intervalId = setInterval(checkForUpdates, POLL_INTERVAL);
   checkForUpdates();
+  {% endif %}
 })();
 </script>
 {% endif %}

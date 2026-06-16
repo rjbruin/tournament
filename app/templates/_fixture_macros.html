@@ -14,15 +14,23 @@
 {# ---------- Compact: "Home - Away" with odds, for use in tables ---------- #}
 {% macro compact_fixture(match) %}
   {% if match.played %}
-    <span class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }} - {{ match.away_team }} {{ form_badge(match.away_team) }}</span>
-    <span class="float-end fw-bold">{{ match.home_goals }} - {{ match.away_goals }}</span>
+  <div class="compact-fixture-row">
+    <span class="compact-flag">{{ match.home_team|flag }}</span>
+    <span class="compact-team">{{ match.home_team }}</span>{{ form_badge(match.home_team) }}
+    <span class="compact-score ms-auto">{{ match.home_goals }} – {{ match.away_goals }}</span>
+    <span class="compact-flag ms-1">{{ match.away_team|flag }}</span>
+    <span class="compact-team">{{ match.away_team }}</span>{{ form_badge(match.away_team) }}
+  </div>
   {% else %}
-    <span class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }} - {{ match.away_team }} {{ form_badge(match.away_team) }}</span>
-    <span class="float-end small text-muted">
-      {{ match.home_team|flag }} {{ match.home_prob|pct(0) }}
-      {% if match.draw_prob is defined %} / &#9898; {{ match.draw_prob|pct(0) }}{% endif %}
-      / {{ match.away_prob|pct(0) }} {{ match.away_team|flag }}
-    </span>
+  <div class="compact-fixture-row">
+    <span class="compact-flag">{{ match.home_team|flag }}</span>
+    <span class="compact-team">{{ match.home_team }}</span>{{ form_badge(match.home_team) }}
+    <span class="compact-odds ms-auto">{{ match.home_prob|pct(0) }}</span>
+    {% if match.draw_prob is defined %}<span class="compact-odds">&#9898;&nbsp;{{ match.draw_prob|pct(0) }}</span>{% endif %}
+    <span class="compact-odds">{{ match.away_prob|pct(0) }}</span>
+    <span class="compact-flag">{{ match.away_team|flag }}</span>
+    <span class="compact-team">{{ match.away_team }}</span>{{ form_badge(match.away_team) }}
+  </div>
   {% endif %}
 {% endmacro %}
 
@@ -50,48 +58,67 @@
 
 {# ---------- Large fixture card: header + odds row + meta line ---------- #}
 {% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, editable=False, explore=False, form_id=None, live=False, submit_label=None) %}
-<div class="card shadow-sm fixture-card mb-3">
+<div class="card fixture-card mb-3">
   {% if header %}
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-    {% if header_url %}<a href="{{ header_url }}" class="text-white text-decoration-none">{{ header }}</a>{% else %}{{ header }}{% endif %}
+    {% if header_url %}<a href="{{ header_url }}">{{ header }}</a>{% else %}{{ header }}{% endif %}
   </div>
   {% endif %}
-  <div class="card-body">
-    <div class="row align-items-center text-center">
+  <div class="card-body px-3 py-3">
+    <div class="row align-items-center text-center g-0">
       <div class="col-5">
         {% if match.home_team %}
-        <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
-        <div class="fw-semibold">{{ match.home_team }} {{ form_badge(match.home_team) }}</div>
-        {% if editable %}
-        <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
-        {% else %}
-        {% if match.home_prob is defined %}<div class="fixture-odds">{{ match.home_prob|pct(0) }}</div>{% endif %}
-        {% if show_advance and match.home_team and advance_prob is not none %}
-        <div class="small text-muted mt-1">Advance from group: {{ advance_prob.get(match.home_team, 0)|pct(0) }}</div>
-        {% endif %}
-        {% endif %}
+        <div class="fixture-team-side">
+          <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
+          <div class="fixture-team-name">{{ match.home_team }} {{ form_badge(match.home_team) }}</div>
+          {% if editable %}
+          <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
+          {% else %}
+          {% if match.home_prob is defined %}<div class="fixture-odds mt-1">{{ match.home_prob|pct(0) }}</div>{% endif %}
+          {% if show_advance and match.home_team and advance_prob is not none %}
+          <div class="small text-muted mt-1">Advance: {{ advance_prob.get(match.home_team, 0)|pct(0) }}</div>
+          {% endif %}
+          {% endif %}
+        </div>
         {% else %}
         {% for cand, p in (match.home_candidates or {}).items() %}
         <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
         {% endfor %}
         {% endif %}
       </div>
-      <div class="col-2">
-        {% if editable %}<div class="fw-bold">-</div>
-        {% elif match.draw_prob is defined %}<div class="fixture-odds">{{ match.draw_prob|pct(0) }}</div>{% else %}<div class="fw-bold">vs</div>{% endif %}
+
+      <div class="col-2 d-flex flex-column align-items-center justify-content-center" style="gap:.4rem;">
+        {% if match.played and not editable %}
+        <div class="fixture-score">
+          <span>{{ match.home_goals }}</span>
+          <span class="fixture-score-sep">–</span>
+          <span>{{ match.away_goals }}</span>
+        </div>
+        {% if match.in_progress %}<span class="badge bg-danger" style="font-size:.7rem;">🔴 LIVE</span>{% endif %}
+        {% elif editable %}
+        <div class="fixture-vs">-</div>
+        {% elif match.draw_prob is defined %}
+        <div class="fixture-vs">vs</div>
+        <div class="fixture-odds" style="font-size:1rem; color:#aaa;">{{ match.draw_prob|pct(0) }}</div>
+        {% else %}
+        <div class="fixture-vs">vs</div>
+        {% endif %}
       </div>
+
       <div class="col-5">
         {% if match.away_team %}
-        <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
-        <div class="fw-semibold">{{ match.away_team }} {{ form_badge(match.away_team) }}</div>
-        {% if editable %}
-        <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
-        {% else %}
-        {% if match.away_prob is defined %}<div class="fixture-odds">{{ match.away_prob|pct(0) }}</div>{% endif %}
-        {% if show_advance and match.away_team and advance_prob is not none %}
-        <div class="small text-muted mt-1">Advance from group: {{ advance_prob.get(match.away_team, 0)|pct(0) }}</div>
-        {% endif %}
-        {% endif %}
+        <div class="fixture-team-side">
+          <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
+          <div class="fixture-team-name">{{ match.away_team }} {{ form_badge(match.away_team) }}</div>
+          {% if editable %}
+          <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
+          {% else %}
+          {% if match.away_prob is defined %}<div class="fixture-odds mt-1">{{ match.away_prob|pct(0) }}</div>{% endif %}
+          {% if show_advance and match.away_team and advance_prob is not none %}
+          <div class="small text-muted mt-1">Advance: {{ advance_prob.get(match.away_team, 0)|pct(0) }}</div>
+          {% endif %}
+          {% endif %}
+        </div>
         {% else %}
         {% for cand, p in (match.away_candidates or {}).items() %}
         <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
@@ -99,18 +126,13 @@
         {% endif %}
       </div>
     </div>
-    {% if match.played and not editable %}
-    <div class="text-center fw-bold mt-1">
-      {{ match.home_goals }} - {{ match.away_goals }}
-      {% if match.in_progress %}<span class="badge bg-danger ms-1">🔴 LIVE</span>{% endif %}
-    </div>
-    {% endif %}
+
     {% if editable %}
-    <div class="text-center mt-2">
+    <div class="text-center mt-3">
       <button type="submit" {% if form_id %}form="{{ form_id }}"{% endif %} class="btn btn-primary btn-sm">{{ submit_label or "Show hypothetical scenario" }}</button>
     </div>
     {% elif match.date or explore or live %}
-    <div class="text-muted small text-center mt-2">
+    <div class="text-muted small text-center mt-2 border-top pt-2">
       {% if match.date %}
       {{ match|local_time }}
       {% if match.venue %} &middot; {{ match.venue }}{% if match.place %}, {{ match.place }}{% endif %}{% endif %}
@@ -200,36 +222,48 @@
 
 {# ---------- Knockout fixture: teams stacked vertically, no header ---------- #}
 {% macro knockout_fixture(match) %}
-<div class="card shadow-sm fixture-card knockout-card mb-3">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <div>
-        {% if match.home_team %}
-        <span class="fixture-flag-lg me-1">{{ match.home_team|flag }}</span>
-        <span class="fw-semibold {% if match.actual_winner == match.home_team %}text-success{% endif %}">{{ match.home_team }}</span>
-        {{ form_badge(match.home_team) }}
-        {% else %}
-        {% for cand, p in (match.home_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
-        {% endfor %}
+<div class="card fixture-card knockout-card mb-3">
+  <div class="card-body p-2">
+    <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
+      <span class="bracket-team-flag">
+        {% if match.home_team %}{{ match.home_team|flag }}{% endif %}
+      </span>
+      {% if match.home_team %}
+        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% endif %}">
+          {{ match.home_team }}{{ form_badge(match.home_team) }}
+        </span>
+        {% if match.home_prob is defined %}
+        <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>
         {% endif %}
-      </div>
-      {% if match.home_prob is defined %}<span class="fixture-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}
+      {% else %}
+        <span class="bracket-team-name" style="color:#aaa; font-weight:400; font-size:.82rem;">
+          {% for cand, p in (match.home_candidates or {}).items() %}
+          <span class="bracket-cand-row">{{ cand|flag }} {{ cand }} <span style="color:var(--wc-green-bright);">{{ p|pct(0) }}</span></span>
+          {% endfor %}
+        </span>
+      {% endif %}
     </div>
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        {% if match.away_team %}
-        <span class="fixture-flag-lg me-1">{{ match.away_team|flag }}</span>
-        <span class="fw-semibold {% if match.actual_winner == match.away_team %}text-success{% endif %}">{{ match.away_team }}</span>
-        {{ form_badge(match.away_team) }}
-        {% else %}
-        {% for cand, p in (match.away_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
-        {% endfor %}
+
+    <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
+      <span class="bracket-team-flag">
+        {% if match.away_team %}{{ match.away_team|flag }}{% endif %}
+      </span>
+      {% if match.away_team %}
+        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% endif %}">
+          {{ match.away_team }}{{ form_badge(match.away_team) }}
+        </span>
+        {% if match.away_prob is defined %}
+        <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>
         {% endif %}
-      </div>
-      {% if match.away_prob is defined %}<span class="fixture-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}
+      {% else %}
+        <span class="bracket-team-name" style="color:#aaa; font-weight:400;">
+          {% for cand, p in (match.away_candidates or {}).items() %}
+          <div class="bracket-cand-row">{{ cand|flag }} {{ cand }} <span style="color:var(--wc-green-bright);">{{ p|pct(0) }}</span></div>
+          {% endfor %}
+        </span>
+      {% endif %}
     </div>
+
     {% if match.match or match.date %}
     <div class="border-top pt-1 mt-2">
       {% if match.match %}

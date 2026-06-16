@@ -267,14 +267,117 @@ h1, h2 { color: var(--wc-green); }
 .badge.bg-warning { background-color: var(--wc-gold) !important; }
 
 /* ---------- Fixture display macros ---------- */
-.fixture-flag-lg { font-size: 1.6rem; line-height: 1; }
+.fixture-flag-lg { font-size: 2rem; line-height: 1; margin-bottom: .2rem; }
+.fixture-team-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: .04em;
+  color: var(--wc-green);
+  line-height: 1.1;
+}
 .fixture-odds {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   color: var(--wc-green-bright);
 }
-.fixture-card .card-header { font-size: 0.95rem; }
-.knockout-card { min-width: 220px; }
+.fixture-score {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--wc-green);
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: .06em;
+  padding: .15rem .8rem;
+  border-radius: .4rem;
+}
+.fixture-score-sep { color: rgba(255,255,255,.45); font-size: 1.2rem; }
+.fixture-vs {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  color: #aaa;
+  letter-spacing: .06em;
+}
+.fixture-card { border: none; box-shadow: 0 2px 12px rgba(10,59,42,.09) !important; }
+.fixture-card .card-header {
+  font-size: 0.85rem;
+  background: var(--wc-green);
+  color: rgba(255,255,255,.9);
+  border: none;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.fixture-card .card-header a { color: #fff; }
+.fixture-team-side {
+  background: rgba(10,59,42,.04);
+  border-radius: .5rem;
+  padding: .5rem .4rem;
+}
+
+/* Compact fixture rows */
+.compact-fixture-row {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem 0;
+}
+.compact-flag { font-size: 1.1rem; line-height: 1; }
+.compact-team {
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--wc-green);
+}
+.compact-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  background: var(--wc-green);
+  color: #fff;
+  border-radius: .25rem;
+  padding: .05rem .35rem;
+  letter-spacing: .06em;
+}
+.compact-odds {
+  font-size: .8rem;
+  color: var(--wc-green-bright);
+  font-weight: 600;
+}
+
+/* Bracket team rows */
+.knockout-card { min-width: 230px; }
+.bracket-team-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .35rem .5rem;
+  border-radius: .4rem;
+  transition: background .12s;
+}
+.bracket-team-row + .bracket-team-row { margin-top: .25rem; }
+.bracket-team-row:hover { background: rgba(10,59,42,.06); }
+.bracket-team-row.winner { background: rgba(0,132,61,.12); }
+.bracket-team-flag { font-size: 1.3rem; line-height: 1; margin-right: .35rem; }
+.bracket-team-name {
+  font-weight: 600;
+  font-size: .95rem;
+  color: var(--wc-green);
+}
+.bracket-team-name.is-winner { color: var(--wc-green-bright); }
+.bracket-team-odds {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.05rem;
+  color: var(--wc-green-bright);
+  margin-left: auto;
+  padding-left: .5rem;
+}
+.bracket-cand-row {
+  font-size: .78rem;
+  color: #666;
+  padding: .1rem .5rem;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
 
 /* ---------- Bracket spatial layout ---------- */
 .bracket-wrapper {

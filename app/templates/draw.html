@@ -48,9 +48,8 @@
   draws (following the same procedure as the real draw). Comparing it to the actual draw shows
   how much the real draw helped or hurt each team.
 </p>
-<div id="draw-comparison-wrap" class="mb-4">
-{% if comparison is not none %}
-  <div class="table-responsive">
+{% if comparison %}
+<div class="table-responsive mb-4">
   <table class="table table-sm table-hover align-middle">
     <thead>
       <tr>
@@ -73,38 +72,8 @@
       {% endfor %}
     </tbody>
   </table>
-  </div>
-{% else %}
-  <button id="compute-comparison-btn" type="button" class="btn btn-outline-primary">Compute actual-draw vs. pre-draw comparison</button>
-{% endif %}
 </div>
-<script>
-document.getElementById('compute-comparison-btn')?.addEventListener('click', async function () {
-  const btn = this;
-  btn.disabled = true;
-  btn.textContent = 'Computing… (this can take a moment)';
-  try {
-    const resp = await fetch("{{ url_for('api.draw_compare') }}", {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
-    const data = await resp.json();
-    let html = '<div class="table-responsive"><table class="table table-sm table-hover align-middle"><thead><tr>' +
-      '<th>Team</th><th class="text-end">Winner prob (actual draw)</th><th class="text-end">Winner prob (avg. draw)</th><th class="text-end">Difference</th>' +
-      '</tr></thead><tbody>';
-    const pct = (v) => v >= 1 ? '✅' : v <= 0 ? '❌' : (v * 100).toFixed(2) + '%';
-    (data.comparison || []).slice(0, 15).forEach(row => {
-      const diff = (row.current_winner_prob - row.pre_draw_winner_prob) * 100;
-      const cls = diff > 0 ? 'text-success' : (diff < 0 ? 'text-danger' : '');
-      html += `<tr><td>${row.team}</td><td class="text-end">${pct(row.current_winner_prob)}</td>` +
-        `<td class="text-end">${pct(row.pre_draw_winner_prob)}</td>` +
-        `<td class="text-end ${cls}">${diff >= 0 ? '+' : ''}${diff.toFixed(2)}%</td></tr>`;
-    });
-    html += '</tbody></table></div>';
-    document.getElementById('draw-comparison-wrap').innerHTML = html;
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'Error — try again';
-  }
-});
-</script>
+{% endif %}
 <p>
   <a href="{{ url_for('web.scenario_compare', a='current', b='pre-draw') }}" class="btn btn-sm btn-outline-primary">
     Full scenario comparison: current vs. pre-draw

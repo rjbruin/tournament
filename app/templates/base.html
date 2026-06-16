@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container">
       <a class="navbar-brand fw-bold" href="{{ url_for('web.index') }}"><span class="ball">⚽</span> WC <span class="accent">2026</span></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
@@ -100,6 +100,16 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function () {
+      function setNavbarHeight() {
+        const nav = document.querySelector('nav.navbar');
+        if (nav) document.documentElement.style.setProperty('--navbar-height', nav.offsetHeight + 'px');
+      }
+      setNavbarHeight();
+      window.addEventListener('resize', setNavbarHeight);
+    })();
+  </script>
   <script>
     // Show a one-shot notification stashed in sessionStorage by a previous
     // page (e.g. after a results sync or "show hypothetical scenario").

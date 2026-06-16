@@ -58,11 +58,23 @@ function getRoundsAndMatches() {
   );
 }
 
+function anchorLead() {
+  const scrollEl = document.querySelector('.bracket-scroll');
+  const rounds = document.querySelectorAll('.bracket-round');
+  if (!scrollEl || !rounds.length) return 8;
+  const colW = rounds[0].offsetWidth;
+  const fits = scrollEl.clientWidth / colW;
+  // Wide: collapse 160px before the column hits the edge.
+  // Narrow (< 1.8 cols visible): collapse when the next column is half on screen.
+  return fits >= 1.8 ? 160 : colW / 2;
+}
+
 function getAnchorIndex(scrollLeft) {
   const rounds = document.querySelectorAll('.bracket-round');
+  const lead = anchorLead();
   let anchor = 0;
   for (let i = 0; i < rounds.length; i++) {
-    if (rounds[i].offsetLeft <= scrollLeft + 1) {
+    if (rounds[i].offsetLeft <= scrollLeft + lead) {
       anchor = i;
     } else {
       break;

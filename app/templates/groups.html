@@ -3,8 +3,8 @@
 {% block title %}Groups — WC 2026{% endblock %}
 {% block content %}
 
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-  <h2 class="mb-0">Groups</h2>
+<h2 class="mb-3">Groups</h2>
+<div class="group-nav-sticky mb-4">
   <div class="group-nav" id="group-nav">
     {% for group in groups %}
     <a class="group-nav-btn" href="#group-{{ group.name }}">{{ group.name }}</a>
@@ -144,10 +144,30 @@
 (function () {
   const btns = document.querySelectorAll('.group-nav-btn');
   const sections = Array.from(btns).map(b => document.querySelector(b.getAttribute('href')));
+  const groupNavEl = document.querySelector('.group-nav-sticky');
+
+  function stickyOffset() {
+    const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--navbar-height') || '56', 10);
+    const pillH = groupNavEl ? groupNavEl.offsetHeight : 0;
+    return navH + pillH + 12; // 12px margin
+  }
+
+  btns.forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(btn.getAttribute('href'));
+      if (!target) return;
+      const offset = stickyOffset();
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    });
+  });
+
   function update() {
+    const threshold = stickyOffset() + 4;
     let active = 0;
     sections.forEach((sec, i) => {
-      if (sec && sec.getBoundingClientRect().top <= 120) active = i;
+      if (sec && sec.getBoundingClientRect().top <= threshold) active = i;
     });
     btns.forEach((b, i) => b.classList.toggle('active', i === active));
   }

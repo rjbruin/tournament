@@ -22,10 +22,15 @@ from app.web.view_helpers import normalize_group_match, normalize_bracket_match,
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
-def _get_config(user_settings: dict | None) -> tuple[str, str]:
+def _get_config(user_settings: dict | None, global_settings: dict | None = None) -> tuple[str, str]:
     settings = user_settings or {}
-    api_key = settings.get("openrouter_api_key") or os.environ.get("OPENROUTER_API_KEY", "")
+    global_settings = global_settings or {}
     model = settings.get("openrouter_model") or os.environ.get("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
+
+    if settings.get("openrouter_key_mode") == "shared":
+        api_key = global_settings.get("shared_openrouter_api_key") or os.environ.get("OPENROUTER_API_KEY", "")
+    else:
+        api_key = settings.get("openrouter_api_key") or os.environ.get("OPENROUTER_API_KEY", "")
     return api_key, model
 
 
@@ -270,12 +275,16 @@ def answer_question(
     results: dict | None,
     user_settings: dict | None = None,
     history: list[dict] | None = None,
+    global_settings: dict | None = None,
 ) -> str:
     if results is None:
         return "No simulation results are available yet. Please run a simulation first (see the Simulations page)."
 
-    api_key, model = _get_config(user_settings)
+    api_key, model = _get_config(user_settings, global_settings)
     if not api_key:
+        if (user_settings or {}).get("openrouter_key_mode") == "shared":
+            return ("The shared OpenRouter API key hasn't been configured by the admin yet. "
+                    "Add your own key on the Settings page instead, or try again later.")
         return ("No OpenRouter API key configured. Add one on the Settings page "
                 "(or set the OPENROUTER_API_KEY environment variable).")
 
@@ -312,6 +321,29 @@ def answer_question(
                 },
                 timeout=60,
             )
+        except requests.RequestException as e:
+            return f"OpenRouter request failed: {e}"
+
+        if resp.status_code in (402, 429):
+            try:
+                data = resp.json()
+                detail = data["error"].get("message", "")
+            except (ValueError, KeyError):
+                detail = ""
+            if resp.status_code == 402:
+                msg = "The OpenRouter account has run out of credits."
+            else:
+                msg = "OpenRouter is rate-limiting requests right now."
+            if (user_settings or {}).get("openrouter_key_mode") == "shared":
+                msg += (" The shared key is used by everyone, so this may resolve itself shortly. "
+                        "You can also add your own OpenRouter key on the Settings page.")
+            else:
+                msg += " Try again later, or check your plan/credits on openrouter.ai."
+            if detail:
+                msg += f" ({detail})"
+            return msg
+
+        try:
             resp.raise_for_status()
         except requests.RequestException as e:
             return f"OpenRouter request failed: {e}"

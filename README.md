@@ -39,6 +39,19 @@ App settings live in `data/settings.json` (gitignored — copy from
 - `openrouter_model` — model to use for the chat interface.
 - `display_timezone` — IANA timezone name used to display fixture times.
 
+### Admin account
+
+To designate one account as the admin (gives access to an "Admin settings"
+section on the Settings page — shared football-data.org and OpenRouter API
+keys, and a list of active users), set the `WC2026_ADMIN_USERNAME`
+environment variable to that account's username before starting the app, e.g.:
+
+```bash
+export WC2026_ADMIN_USERNAME=alice
+```
+
+Restart the app for the change to take effect.
+
 ### Running alongside another app
 
 To run on a different port and/or under a URL subpath (e.g. so it can sit

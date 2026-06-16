@@ -47,6 +47,7 @@ USERS_PATH = os.path.join(DATA_DIR, "users.json")
 
 DEFAULT_USER_SETTINGS = {
     "openrouter_api_key": "",
+    "openrouter_key_mode": "own",
     "openrouter_model": "anthropic/claude-sonnet-4.5",
     "display_timezone": "UTC",
     "n_simulations": 250_000,
@@ -56,6 +57,16 @@ DEFAULT_USER_SETTINGS = {
 }
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]{3,32}$")
+
+# Server-side secret naming the admin account, set via the environment (not
+# stored in data/users.json). To make a user an admin, set this on the
+# server before starting the app, e.g.:
+#
+#     export WC2026_ADMIN_USERNAME=alice
+#
+# and restart the app. Whichever account has that username (case-insensitive)
+# sees the "Admin settings" section on the Settings page.
+ADMIN_USERNAME_ENV = "WC2026_ADMIN_USERNAME"
 
 
 class User(UserMixin):
@@ -73,6 +84,11 @@ class User(UserMixin):
     @property
     def api_slug(self) -> str:
         return self._record["api_slug"]
+
+    @property
+    def is_admin(self) -> bool:
+        admin_username = os.environ.get(ADMIN_USERNAME_ENV, "")
+        return bool(admin_username) and self._record["username"].lower() == admin_username.lower()
 
     @property
     def settings(self) -> dict:
@@ -189,3 +205,13 @@ def set_password(username: str, password: str) -> bool:
 
 def user_count() -> int:
     return len(_load_all())
+
+
+def list_users() -> list[dict]:
+    """Return a list of {username, created_at} for all accounts, sorted by
+    username. Used by the admin settings panel."""
+    users = _load_all()
+    return sorted(
+        ({"username": r["username"], "created_at": r.get("created_at")} for r in users.values()),
+        key=lambda u: u["username"].lower(),
+    )

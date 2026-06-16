@@ -78,7 +78,7 @@ def get_or_run_results(username: str, scenario_id: str = "current", n: int = Non
     from app import data_store
     from app.simulation.draw import simulate_many_draws, is_draw_complete
 
-    scenario = data_store.load_scenario(scenario_id)
+    scenario = data_store.load_scenario(scenario_id, username)
     if scenario is None:
         return None
 
@@ -243,6 +243,13 @@ def create_app():
             return "❌"
         return f"{value * 100:.{decimals}f}%"
 
+    @app.template_filter("timestamp_to_date")
+    def timestamp_to_date(value, fmt="%Y-%m-%d"):
+        from datetime import datetime
+        if not value:
+            return "—"
+        return datetime.fromtimestamp(value).strftime(fmt)
+
     @app.template_filter("local_time")
     def local_time(match, settings_tz=None, fmt="%a %d %b, %H:%M"):
         """Convert a fixture's local kickoff (date + local_time +
@@ -281,7 +288,8 @@ def create_app():
         if request.blueprint == "api" or request.endpoint in (None, "static") or (request.endpoint or "").startswith("auth."):
             return {}
         scenario_id = request.args.get("s") or session.get("scenario_id") or "current"
-        scenario = data_store.load_scenario(scenario_id) or data_store.load_scenario("current")
+        username = current_user.username if current_user.is_authenticated else None
+        scenario = data_store.load_scenario(scenario_id, username) or data_store.load_scenario("current")
         try:
             team_form = compute_form(scenario["actuals"], _engine)
         except Exception:

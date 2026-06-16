@@ -13,8 +13,10 @@
 
 {% if in_modal %}
 <div class="d-flex flex-wrap gap-2 mb-3">
+  {% if current_user.is_authenticated and current_user.is_admin %}
   <button type="button" id="sync-results-btn" class="btn btn-outline-primary btn-sm">🔄 Update results &amp; re-simulate</button>
   <a href="{{ url_for('web.results_manual') }}" class="btn btn-outline-secondary btn-sm">✏️ Enter results manually</a>
+  {% endif %}
 </div>
 <div id="sync-results-status" class="small mb-3"></div>
 {% endif %}

@@ -93,7 +93,7 @@ def _scenario_id() -> str:
             # Only one hypothetical "what if" scenario exists at a time, and
             # it's discarded as soon as the user navigates away from it.
             if previous == data_store.HYPOTHETICAL_SCENARIO_ID and s != previous:
-                data_store.delete_hypothetical_scenario()
+                data_store.delete_hypothetical_scenario(_username())
                 old_key = ((_username() or "_anon").lower(), data_store.HYPOTHETICAL_SCENARIO_ID)
                 app_module._simulation_results.pop(old_key, None)
         session["scenario_id"] = s
@@ -157,7 +157,7 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
 
     # Reconstruct the state *before* this matchday: every match scheduled
     # earlier (in any group) is kept; this matchday's games are reopened.
-    scenario = data_store.load_scenario(scenario_id) or {}
+    scenario = data_store.load_scenario(scenario_id, _username()) or {}
     actuals = scenario.get("actuals") or data_store._empty_actuals()
     before = {"group_results": {}, "knockout_results": {}, "live_matches": []}
     before_pairs = {(m["_group"], frozenset((m["home_team"], m["away_team"])))
@@ -214,7 +214,7 @@ def index():
     # (rather than the next-upcoming match), so the Up Next card shows the
     # effects of the "what if" scoreline in the group table.
     if scenario_id == data_store.HYPOTHETICAL_SCENARIO_ID:
-        active_scenario_data = data_store.load_scenario(scenario_id)
+        active_scenario_data = data_store.load_scenario(scenario_id, _username())
         fm = (active_scenario_data or {}).get("featured_match")
         if fm:
             match = next((m for m in all_normalized
@@ -244,8 +244,8 @@ def index():
         except Exception:
             qualification_notes = []
 
-    scenario_list = data_store.list_scenarios()
-    active_scenario = data_store.load_scenario(scenario_id)
+    scenario_list = data_store.list_scenarios(_username())
+    active_scenario = data_store.load_scenario(scenario_id, _username())
     last_updated_ts = data_store.actuals_last_updated()
     last_updated = None
     if last_updated_ts:
@@ -325,7 +325,7 @@ def teams():
     engine = app_module.get_engine()
 
     scenario_id = request.args.get("s") or session.get("scenario_id") or "current"
-    scenario = data_store.load_scenario(scenario_id) or data_store.load_scenario("current")
+    scenario = data_store.load_scenario(scenario_id, _username()) or data_store.load_scenario("current")
     try:
         team_form = compute_form(scenario["actuals"], engine)
     except Exception:
@@ -582,7 +582,7 @@ def draw():
             })
         comparison.sort(key=lambda r: r["current_winner_prob"], reverse=True)
 
-    scenario_list = [s for s in data_store.list_scenarios() if s.get("draw") is not None or s["id"] == "current"]
+    scenario_list = [s for s in data_store.list_scenarios(_username()) if s.get("draw") is not None or s["id"] == "current"]
 
     return render_template(
         "draw.html",
@@ -601,10 +601,10 @@ def draw():
 def scenarios_new():
     label = request.form.get("label", "").strip() or "Untitled scenario"
     base_id = request.form.get("based_on") or "current"
-    base = data_store.load_scenario(base_id)
+    base = data_store.load_scenario(base_id, _username())
     actuals = (base or {}).get("actuals") or data_store._empty_actuals()
     import copy
-    scenario = data_store.fork_scenario(base_id, copy.deepcopy(actuals), label=label)
+    scenario = data_store.fork_scenario(base_id, copy.deepcopy(actuals), label=label, username=current_user.username)
     flash(f"Created scenario '{scenario['label']}'.", "success")
     return redirect(url_for("web.settings"))
 
@@ -612,7 +612,10 @@ def scenarios_new():
 @web_bp.post("/scenarios/<scenario_id>/delete")
 @login_required
 def scenarios_delete(scenario_id):
-    if data_store.delete_scenario(scenario_id):
+    if data_store._is_global_scenario_id(scenario_id) and not current_user.is_admin:
+        flash("Only the admin can delete this scenario.", "danger")
+        return redirect(url_for("web.settings"))
+    if data_store.delete_scenario(scenario_id, current_user.username):
         flash("Scenario deleted.", "success")
     else:
         flash("Could not delete that scenario.", "danger")
@@ -623,7 +626,7 @@ def scenarios_delete(scenario_id):
 @login_required
 def scenario_compare():
     engine = app_module.get_engine()
-    scenario_list = data_store.list_scenarios()
+    scenario_list = data_store.list_scenarios(_username())
     ids = [s["id"] for s in scenario_list]
     a_id = request.args.get("a") or (ids[0] if ids else "current")
     b_id = request.args.get("b") or (ids[1] if len(ids) > 1 else a_id)
@@ -637,7 +640,7 @@ def scenario_compare():
             return None
         top5 = sorted(results["winner_prob"].items(), key=lambda x: x[1], reverse=True)[:5]
         return {
-            "scenario": data_store.load_scenario(scenario_id),
+            "scenario": data_store.load_scenario(scenario_id, current_user.username),
             "top5": top5,
             "team_odds": {
                 "group_advance_prob": results["group_advance_prob"].get(team, 0),
@@ -708,7 +711,9 @@ def settings():
         settings=current_user.settings,
         global_settings=data_store.load_global_settings(),
         all_team_names=all_team_names,
-        scenario_list=data_store.list_scenarios(),
+        scenario_list=data_store.list_scenarios(_username()),
+        admin_users=auth.list_users() if current_user.is_admin else None,
+        admin_username_env=auth.ADMIN_USERNAME_ENV,
     )
 
 
@@ -720,9 +725,14 @@ def settings_save():
     except ValueError:
         n_simulations = auth.DEFAULT_USER_SETTINGS["n_simulations"]
 
+    openrouter_key_mode = request.form.get("openrouter_key_mode", "").strip()
+    if openrouter_key_mode not in ("own", "shared"):
+        openrouter_key_mode = auth.DEFAULT_USER_SETTINGS["openrouter_key_mode"]
+
     auth.update_settings(
         current_user.username,
         openrouter_api_key=request.form.get("openrouter_api_key", "").strip(),
+        openrouter_key_mode=openrouter_key_mode,
         openrouter_model=request.form.get("openrouter_model", "").strip() or auth.DEFAULT_USER_SETTINGS["openrouter_model"],
         display_timezone=request.form.get("display_timezone", "").strip() or auth.DEFAULT_USER_SETTINGS["display_timezone"],
         n_simulations=n_simulations,
@@ -731,13 +741,16 @@ def settings_save():
         onboarded=True,
     )
 
-    # The official-results API key is a shared/global setting (it's not tied
-    # to any one account), so only an authenticated user can change it but
-    # it applies to everyone.
-    if "football_data_api_key" in request.form:
-        data_store.save_global_settings({
-            "football_data_api_key": request.form.get("football_data_api_key", "").strip(),
-        })
+    # The official-results API key and shared OpenRouter key are global
+    # settings shared across all accounts, so only the admin may change them.
+    if current_user.is_admin:
+        global_updates = {}
+        if "football_data_api_key" in request.form:
+            global_updates["football_data_api_key"] = request.form.get("football_data_api_key", "").strip()
+        if "shared_openrouter_api_key" in request.form:
+            global_updates["shared_openrouter_api_key"] = request.form.get("shared_openrouter_api_key", "").strip()
+        if global_updates:
+            data_store.save_global_settings(global_updates)
 
     flash("Settings saved.", "success")
     return redirect(url_for("web.settings"))

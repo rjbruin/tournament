@@ -21,10 +21,12 @@
       {% if active_scenario and active_scenario.progress_label %} &middot; {{ active_scenario.progress_label }}{% endif %}
     </span>
     {% endif %}
+    {% if current_user.is_authenticated and current_user.is_admin %}
     {% if results_up_to_date %}
     <button type="button" class="btn btn-outline-light btn-sm flex-shrink-0" disabled>✅ Results up to date</button>
     {% else %}
     <button type="button" id="update-results-btn" class="btn btn-outline-light btn-sm flex-shrink-0">🔄 Update results</button>
+    {% endif %}
     {% endif %}
   </div>
 </div>

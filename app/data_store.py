@@ -141,6 +141,7 @@ def get_previous_snapshot(username: str) -> dict | None:
 
 DEFAULT_GLOBAL_SETTINGS = {
     "football_data_api_key": "",
+    "shared_openrouter_api_key": "",
 }
 
 
@@ -172,9 +173,28 @@ def save_global_settings(settings: dict) -> None:
 # ----------------------------------------------------------------------
 
 
-def _scenario_path(scenario_id: str) -> str:
+def _is_global_scenario_id(scenario_id: str) -> bool:
+    """True for scenario ids that are shared across all accounts: the
+    auto-generated "state of the tournament" snapshots, the "before the
+    first match" baseline, and the manually-entered-results baseline.
+    Everything else (uuid "what if" forks, the per-user "hypothetical"
+    slot) is private to the account that created it."""
+    return (scenario_id == BEFORE_FIRST_MATCH_SCENARIO_ID
+            or scenario_id == MANUAL_SCENARIO_ID
+            or _is_auto_match_id(scenario_id))
+
+
+def _user_scenarios_dir(username: str) -> str:
+    path = os.path.join(_user_dir(username), "scenarios")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _scenario_path(scenario_id: str, username: str | None = None) -> str:
     # Guard against path traversal via a crafted scenario id.
     safe_id = "".join(c for c in scenario_id if c.isalnum() or c in "-_")
+    if username and not _is_global_scenario_id(safe_id):
+        return os.path.join(_user_scenarios_dir(username), f"{safe_id}.json")
     return os.path.join(SCENARIOS_DIR, f"{safe_id}.json")
 
 
@@ -182,12 +202,17 @@ def _ensure_scenarios_dir() -> None:
     os.makedirs(SCENARIOS_DIR, exist_ok=True)
 
 
-def list_scenario_ids() -> list[str]:
+def list_scenario_ids(username: str | None = None) -> list[str]:
     _ensure_scenarios_dir()
     ids = []
     for fname in os.listdir(SCENARIOS_DIR):
         if fname.endswith(".json"):
             ids.append(fname[:-len(".json")])
+    if username:
+        d = _user_scenarios_dir(username)
+        for fname in os.listdir(d):
+            if fname.endswith(".json"):
+                ids.append(fname[:-len(".json")])
     return ids
 
 
@@ -433,8 +458,14 @@ def ensure_match_scenarios() -> list[str]:
     return update_scenarios()["created"]
 
 
-def load_scenario(scenario_id: str | None) -> dict | None:
-    """Load a scenario's metadata + actuals. Returns None if not found."""
+def load_scenario(scenario_id: str | None, username: str | None = None) -> dict | None:
+    """Load a scenario's metadata + actuals. Returns None if not found.
+
+    ``username`` is required to resolve "what if" scenarios (uuid-named
+    forks and the per-account "hypothetical" slot), which are private to
+    the account that created them. Global scenarios (current, pre-draw,
+    the auto-generated match-by-match snapshots, the manual baseline) are
+    resolved regardless of ``username``."""
     scenario_id = scenario_id or CURRENT_SCENARIO_ID
     if scenario_id == CURRENT_SCENARIO_ID:
         actuals = load_actuals()
@@ -469,7 +500,7 @@ def load_scenario(scenario_id: str | None) -> dict | None:
             "draw_complete": False,
             "progress_label": "Pre-draw",
         }
-    path = _scenario_path(scenario_id)
+    path = _scenario_path(scenario_id, username)
     if not os.path.exists(path):
         return None
     with open(path) as f:
@@ -497,13 +528,20 @@ def _matches_played(actuals: dict) -> int:
     return sum(len(v) for v in gr.values()) + len(kr)
 
 
-def list_scenarios() -> list[dict]:
-    """Return metadata (without the bulky ``actuals``) for every scenario,
-    ordered from most matches played to least. "Current" (the live real
-    results) is always pinned first; "pre-draw" sorts last."""
+def list_scenarios(username: str | None = None) -> list[dict]:
+    """Return metadata (without the bulky ``actuals``) for every scenario
+    visible to ``username``, ordered from most matches played to least.
+    "Current" (the live real results) is always pinned first; "pre-draw"
+    sorts last. Global scenarios are visible to everyone; "what if" forks
+    (uuid ids, the "hypothetical" slot) are only included for their owner."""
     scenarios = [load_scenario(CURRENT_SCENARIO_ID), load_scenario(PRE_DRAW_SCENARIO_ID)]
-    for sid in list_scenario_ids():
-        s = load_scenario(sid)
+    for sid in list_scenario_ids(username):
+        if _is_global_scenario_id(sid):
+            s = load_scenario(sid)
+        elif username:
+            s = load_scenario(sid, username)
+        else:
+            continue
         if s is not None:
             scenarios.append(s)
 
@@ -522,17 +560,21 @@ def save_scenario(label: str, actuals: dict, based_on: str | None = None,
                    scenario_id: str | None = None, draw: dict | None = None,
                    is_hypothetical: bool | None = None, is_manual: bool | None = None,
                    is_auto_match: bool | None = None,
-                   featured_match: dict | None = None) -> dict:
+                   featured_match: dict | None = None,
+                   username: str | None = None) -> dict:
     """Create or update a (non-"current") scenario and persist it.
 
     ``draw`` (optional): a ``{letter: [pot1..pot4 team names]}`` dict
     representing a (possibly partial) draw for this scenario. ``None``
-    means "no custom draw" (the scenario uses the real/actual groups)."""
+    means "no custom draw" (the scenario uses the real/actual groups).
+
+    ``username`` (optional): owner of a private "what if" scenario (uuid
+    id or the "hypothetical" slot). Ignored for global scenario ids."""
     _ensure_scenarios_dir()
     scenario_id = scenario_id or uuid.uuid4().hex[:12]
     if scenario_id in (CURRENT_SCENARIO_ID, PRE_DRAW_SCENARIO_ID):
         raise ValueError(f"Cannot save over the '{scenario_id}' scenario directly.")
-    existing = load_scenario(scenario_id)
+    existing = load_scenario(scenario_id, username)
     data = {
         "id": scenario_id,
         "label": label,
@@ -545,9 +587,9 @@ def save_scenario(label: str, actuals: dict, based_on: str | None = None,
         "is_auto_match": is_auto_match if is_auto_match is not None else (existing.get("is_auto_match", False) if existing else False),
         "featured_match": featured_match if featured_match is not None else (existing.get("featured_match") if existing else None),
     }
-    with open(_scenario_path(scenario_id), "w") as f:
+    with open(_scenario_path(scenario_id, username), "w") as f:
         json.dump(data, f, indent=2)
-    return load_scenario(scenario_id)
+    return load_scenario(scenario_id, username)
 
 
 # Fixed ids for the single-slot "what if" (hypothetical) and "manually
@@ -556,12 +598,12 @@ HYPOTHETICAL_SCENARIO_ID = "hypothetical"
 MANUAL_SCENARIO_ID = "manual"
 
 
-def find_hypothetical_scenario() -> dict | None:
-    return load_scenario(HYPOTHETICAL_SCENARIO_ID) if os.path.exists(_scenario_path(HYPOTHETICAL_SCENARIO_ID)) else None
+def find_hypothetical_scenario(username: str) -> dict | None:
+    return load_scenario(HYPOTHETICAL_SCENARIO_ID, username) if os.path.exists(_scenario_path(HYPOTHETICAL_SCENARIO_ID, username)) else None
 
 
-def delete_hypothetical_scenario() -> bool:
-    return delete_scenario(HYPOTHETICAL_SCENARIO_ID)
+def delete_hypothetical_scenario(username: str) -> bool:
+    return delete_scenario(HYPOTHETICAL_SCENARIO_ID, username)
 
 
 def save_manual_snapshot() -> dict:
@@ -574,10 +616,10 @@ def save_manual_snapshot() -> dict:
                           scenario_id=MANUAL_SCENARIO_ID, is_manual=True)
 
 
-def delete_scenario(scenario_id: str) -> bool:
+def delete_scenario(scenario_id: str, username: str | None = None) -> bool:
     if scenario_id == CURRENT_SCENARIO_ID:
         return False
-    path = _scenario_path(scenario_id)
+    path = _scenario_path(scenario_id, username)
     if not os.path.exists(path):
         return False
     os.remove(path)
@@ -593,11 +635,13 @@ def archive_current_scenario(label: str | None = None) -> dict:
     return save_scenario(label, actuals, based_on=CURRENT_SCENARIO_ID)
 
 
-def fork_scenario(scenario_id: str, actuals: dict, label: str | None = None) -> dict:
+def fork_scenario(scenario_id: str, actuals: dict, label: str | None = None,
+                   username: str | None = None) -> dict:
     """Create a new scenario seeded from `actuals`, derived from
     `scenario_id` (used when a user edits results on a scenario they
-    shouldn't mutate directly, i.e. "current")."""
-    base = load_scenario(scenario_id)
+    shouldn't mutate directly, i.e. "current"). The fork is private to
+    `username` (a "what if" scenario)."""
+    base = load_scenario(scenario_id, username)
     base_label = (base or {}).get("label", scenario_id)
     label = label or f"What if (based on {base_label})"
-    return save_scenario(label, actuals, based_on=scenario_id)
+    return save_scenario(label, actuals, based_on=scenario_id, username=username)

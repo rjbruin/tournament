@@ -18,7 +18,25 @@
             Your API key is stored with your account and never sent anywhere except to OpenRouter.
           </p>
           <div class="mb-3">
-            <label for="openrouter_api_key" class="form-label">OpenRouter API key</label>
+            <label class="form-label">API key source</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="openrouter_key_mode" id="key_mode_own" value="own"
+                     {% if settings.openrouter_key_mode != 'shared' %}checked{% endif %}>
+              <label class="form-check-label" for="key_mode_own">Use my own OpenRouter API key</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="openrouter_key_mode" id="key_mode_shared" value="shared"
+                     {% if settings.openrouter_key_mode == 'shared' %}checked{% endif %}>
+              <label class="form-check-label" for="key_mode_shared">Use the shared key configured by the admin</label>
+            </div>
+            <div class="form-text">
+              The shared key is paid for and rate-limited by the admin and is used by everyone who selects it —
+              expect occasional "out of credits" or rate-limit messages during busy periods.
+              If you have your own OpenRouter account, using your own key is more reliable.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="openrouter_api_key" class="form-label">Your OpenRouter API key</label>
             <input type="password" class="form-control" id="openrouter_api_key" name="openrouter_api_key"
                    placeholder="sk-or-..." value="{{ settings.openrouter_api_key }}" autocomplete="off">
           </div>
@@ -76,21 +94,51 @@
         </div>
       </div>
 
-      <div class="card shadow-sm mt-4">
-        <div class="card-header fw-bold">Official results API</div>
+      {% if admin_users is not none %}
+      <div class="card shadow-sm mt-4 border-warning">
+        <div class="card-header fw-bold">Admin settings</div>
         <div class="card-body">
+          <p class="text-muted small">
+            These settings are shared across all accounts and only visible to the admin account
+            (configured via the <code>{{ admin_username_env }}</code> environment variable on the server).
+          </p>
+
+          <h6 class="mb-2">Official results API</h6>
           <p class="text-muted small">
             Used by the "Update Results &amp; Re-simulate" button to fetch official World Cup results from
             <a href="https://www.football-data.org" target="_blank" rel="noopener">football-data.org</a>.
-            This setting is shared across all accounts.
           </p>
           <div class="mb-3">
             <label for="football_data_api_key" class="form-label">football-data.org API key</label>
             <input type="password" class="form-control" id="football_data_api_key" name="football_data_api_key"
                    placeholder="API key" value="{{ global_settings.football_data_api_key }}" autocomplete="off">
           </div>
+
+          <h6 class="mb-2 mt-4">Shared OpenRouter key</h6>
+          <p class="text-muted small">
+            Used by accounts that select "Use the shared key configured by the admin" above. All such accounts
+            share this key's usage and rate limits.
+          </p>
+          <div class="mb-3">
+            <label for="shared_openrouter_api_key" class="form-label">Shared OpenRouter API key</label>
+            <input type="password" class="form-control" id="shared_openrouter_api_key" name="shared_openrouter_api_key"
+                   placeholder="sk-or-..." value="{{ global_settings.shared_openrouter_api_key }}" autocomplete="off">
+          </div>
+
+          <h6 class="mb-2 mt-4">Active users</h6>
+          <ul class="list-group list-group-flush">
+            {% for u in admin_users %}
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+              <span>{{ u.username }}</span>
+              {% if u.created_at %}
+              <span class="text-muted small">joined {{ u.created_at | int | timestamp_to_date }}</span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
         </div>
       </div>
+      {% endif %}
 
       <button type="submit" class="btn btn-success mt-4">Save Settings</button>
     </form>

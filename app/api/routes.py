@@ -71,7 +71,7 @@ def simulate():
     if previous is not None:
         data_store.save_snapshot(g.user.username, previous, label=save_label)
 
-    scenario = data_store.load_scenario(scenario_id)
+    scenario = data_store.load_scenario(scenario_id, g.user.username)
     if scenario is None:
         return jsonify({"error": "Unknown scenario"}), 404
     results = engine.run(n, actuals=scenario["actuals"])
@@ -88,6 +88,8 @@ def sync_results():
     """Fetch official World Cup results from football-data.org, merge any
     newly-completed group-stage matches into data/actuals.json, and re-run
     the simulation for the current account using those updated actuals."""
+    if not g.user.is_admin:
+        return jsonify({"error": "Only the admin account can update results."}), 403
     engine = app_module.get_engine()
 
     # Per the scenarios feature: snapshot the real-world results as a frozen
@@ -139,6 +141,8 @@ def update_scenarios():
     """Rebuild the canonical set of auto-generated scenarios — one per unique
     state of the tournament (before the first match, then after each played
     match) — pruning any that no longer match the real results."""
+    if not g.user.is_admin:
+        return jsonify({"error": "Only the admin account can update scenarios."}), 403
     result = data_store.update_scenarios()
     return jsonify({"ok": True, **result})
 
@@ -272,7 +276,9 @@ def query():
                                               n=g.user.settings.get("n_simulations"))
     engine = app_module.get_engine()
     history = data.get("history") if isinstance(data.get("history"), list) else None
-    answer = answer_question(data["question"], engine, results, user_settings=g.user.settings, history=history)
+    from app import data_store
+    answer = answer_question(data["question"], engine, results, user_settings=g.user.settings, history=history,
+                              global_settings=data_store.load_global_settings())
     return jsonify({"question": data["question"], "answer": answer})
 
 
@@ -284,7 +290,7 @@ def query():
 def get_scenarios():
     """List scenarios, optionally filtered by quality flags, e.g.
     ?group_stage_complete=true&has_knockout_results=false"""
-    scenarios = data_store.list_scenarios()
+    scenarios = data_store.list_scenarios(g.user.username)
     quality_keys = ("group_stage_complete", "has_group_results",
                     "has_knockout_results", "knockout_complete")
     for key in quality_keys:
@@ -300,7 +306,7 @@ def get_scenarios():
 
 @api_bp.get("/actuals")
 def get_actuals():
-    scenario = data_store.load_scenario(_scenario_id())
+    scenario = data_store.load_scenario(_scenario_id(), g.user.username)
     if scenario is None:
         return jsonify({"error": "Unknown scenario"}), 404
     return jsonify(scenario["actuals"])
@@ -329,7 +335,7 @@ def _load_actuals_for_edit():
     fork = (request.args.get("fork") or (request.json or {}).get("fork") if request.is_json else request.args.get("fork"))
     fork = str(fork).lower() in ("1", "true", "yes") if fork else False
 
-    scenario = data_store.load_scenario(scenario_id)
+    scenario = data_store.load_scenario(scenario_id, g.user.username)
     if scenario is None:
         return None, None, False
     import copy
@@ -406,15 +412,17 @@ def post_knockout_result():
 
 def _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork):
     if do_fork:
-        scenario = data_store.fork_scenario(base_scenario_id, actuals)
+        scenario = data_store.fork_scenario(base_scenario_id, actuals, username=g.user.username)
         return jsonify({"ok": True, "scenario": {k: v for k, v in scenario.items() if k != "actuals"},
                          "actuals": actuals})
+    if data_store._is_global_scenario_id(target_id) and not g.user.is_admin:
+        return jsonify({"error": "Only the admin account can edit this scenario. Use fork=true to create your own copy."}), 403
     if target_id == "current":
         data_store.save_actuals(actuals)
         data_store.ensure_match_scenarios()
     else:
-        existing = data_store.load_scenario(target_id)
-        data_store.save_scenario(existing["label"], actuals, scenario_id=target_id)
+        existing = data_store.load_scenario(target_id, g.user.username)
+        data_store.save_scenario(existing["label"], actuals, scenario_id=target_id, username=g.user.username)
     _invalidate_results(target_id)
     return jsonify({"ok": True, "scenario_id": target_id, "actuals": actuals})
 
@@ -440,7 +448,7 @@ def create_hypothetical_scenario():
         return jsonify({"error": "Unknown group"}), 404
 
     base_id = body.get("base") or _scenario_id()
-    base = data_store.load_scenario(base_id)
+    base = data_store.load_scenario(base_id, g.user.username)
     if base is None:
         return jsonify({"error": "Unknown scenario"}), 404
 
@@ -460,7 +468,7 @@ def create_hypothetical_scenario():
     actuals["group_results"][gname] = matches
 
     # Only one "what if" scenario at a time.
-    data_store.delete_hypothetical_scenario()
+    data_store.delete_hypothetical_scenario(g.user.username)
     scenario_id = data_store.HYPOTHETICAL_SCENARIO_ID
     key = ((g.user.username or "_anon").lower(), scenario_id)
     app_module._simulation_results.pop(key, None)
@@ -469,7 +477,8 @@ def create_hypothetical_scenario():
     featured_match = {"group": gname, "home": body["home"], "away": body["away"]}
     scenario = data_store.save_scenario(label, actuals, based_on=base_id,
                                          scenario_id=scenario_id, draw=base.get("draw"),
-                                         is_hypothetical=True, featured_match=featured_match)
+                                         is_hypothetical=True, featured_match=featured_match,
+                                         username=g.user.username)
 
     n = g.user.settings.get("n_simulations", auth.DEFAULT_USER_SETTINGS["n_simulations"])
     results = app_module.get_or_run_results(g.user.username, scenario_id, n=n)
@@ -543,6 +552,8 @@ def save_manual_snapshot():
     """Remember the current real-world actuals as the "manually entered"
     baseline, used later by /results/sync to detect whether official results
     match what was entered by hand."""
+    if not g.user.is_admin:
+        return jsonify({"error": "Only the admin account can edit official results."}), 403
     scenario = data_store.save_manual_snapshot()
     return jsonify({"ok": True, "scenario": {k: v for k, v in scenario.items() if k != "actuals"}})
 
@@ -550,13 +561,15 @@ def save_manual_snapshot():
 @api_bp.post("/actuals/reset")
 def reset_actuals():
     scenario_id = _scenario_id()
+    if data_store._is_global_scenario_id(scenario_id) and not g.user.is_admin:
+        return jsonify({"error": "Only the admin account can edit this scenario."}), 403
     if scenario_id == "current":
         data_store.save_actuals(data_store._empty_actuals())
     else:
-        existing = data_store.load_scenario(scenario_id)
+        existing = data_store.load_scenario(scenario_id, g.user.username)
         if existing is None:
             return jsonify({"error": "Unknown scenario"}), 404
-        data_store.save_scenario(existing["label"], data_store._empty_actuals(), scenario_id=scenario_id)
+        data_store.save_scenario(existing["label"], data_store._empty_actuals(), scenario_id=scenario_id, username=g.user.username)
     _invalidate_results(scenario_id)
     return jsonify({"ok": True})
 
@@ -613,18 +626,18 @@ def draw_save():
         return jsonify({"error": "Missing 'draw'"}), 400
     label = body.get("label") or ("Custom draw" if is_draw_complete(draw) else "Partial draw")
     based_on = body.get("based_on") or "current"
-    base = data_store.load_scenario(based_on)
+    base = data_store.load_scenario(based_on, g.user.username)
     actuals = (base or {}).get("actuals") or data_store._empty_actuals()
     scenario_id = body.get("scenario")
     if scenario_id:
-        existing = data_store.load_scenario(scenario_id)
+        existing = data_store.load_scenario(scenario_id, g.user.username)
         if existing is None:
             return jsonify({"error": "Unknown scenario"}), 404
-        scenario = data_store.save_scenario(existing["label"], existing["actuals"], scenario_id=scenario_id, draw=draw)
+        scenario = data_store.save_scenario(existing["label"], existing["actuals"], scenario_id=scenario_id, draw=draw, username=g.user.username)
         _invalidate_results(scenario_id)
     else:
         import copy
-        scenario = data_store.save_scenario(label, copy.deepcopy(actuals), based_on=based_on, draw=draw)
+        scenario = data_store.save_scenario(label, copy.deepcopy(actuals), based_on=based_on, draw=draw, username=g.user.username)
     return jsonify({"ok": True, "scenario": {k: v for k, v in scenario.items() if k != "actuals"}})
 
 

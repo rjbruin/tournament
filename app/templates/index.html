@@ -10,6 +10,47 @@
 </div>
 {% endif %}
 
+{% if not current_user.is_authenticated %}
+<div class="hero-banner hero-banner--splash mb-4">
+  <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4">
+    <div>
+      <h1 class="mb-0">{{ tournament.name }}</h1>
+      <div class="hero-subtitle">{{ tournament.host_countries | join(" · ") }} — {{ tournament.year }}</div>
+    </div>
+  </div>
+  <p class="hero-splash-lead">Live results. Real-time odds. Monte Carlo simulations across <strong>millions of possible futures</strong> — updated after every match.</p>
+  <div class="row g-3 hero-features">
+    <div class="col-6 col-md-3">
+      <div class="hero-feature">
+        <div class="hero-feature-icon">📊</div>
+        <div class="hero-feature-label">Live standings</div>
+        <div class="hero-feature-desc">Groups and knockout bracket updated as results come in</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="hero-feature">
+        <div class="hero-feature-icon">🏆</div>
+        <div class="hero-feature-label">Championship odds</div>
+        <div class="hero-feature-desc">Who is most likely to lift the trophy, right now</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="hero-feature">
+        <div class="hero-feature-icon">🔮</div>
+        <div class="hero-feature-label">What-if scenarios</div>
+        <div class="hero-feature-desc">Change any scoreline and see how the bracket shifts</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="hero-feature">
+        <div class="hero-feature-icon">🤖</div>
+        <div class="hero-feature-label">Ask AI</div>
+        <div class="hero-feature-desc">Ask any question, get answers grounded in the simulations</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
 <div class="hero-banner mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
   <div>
     <h1 class="mb-0">{{ tournament.name }}</h1>
@@ -37,6 +78,7 @@
     {% endif %}
   </div>
 </div>
+{% endif %}
 <div id="update-results-status" class="small text-end mb-3"></div>
 
 {% if featured_fixture %}
@@ -257,10 +299,10 @@
 {% endif %}
 {% endif %}
 
-{% if not current_user.is_authenticated and not invite_only %}
+{% if not current_user.is_authenticated %}
 <div class="card shadow-sm mb-5 border-0" style="background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 100%); color: white;">
   <div class="card-body py-4 px-4">
-    <h4 class="fw-bold mb-3">More with a free account</h4>
+    <h4 class="fw-bold mb-3">More with an account</h4>
     <div class="row g-3">
       <div class="col-12 col-md-6">
         <div class="d-flex gap-3 align-items-start">
@@ -282,7 +324,12 @@
       </div>
     </div>
     <div class="mt-4 d-flex gap-2 flex-wrap">
+      {% if invite_only %}
+      <span class="btn btn-light fw-bold disabled" style="opacity:.7;">Invite only</span>
+      <span class="small align-self-center ms-1" style="opacity:.8;">Ask the admin for an invite link to sign up.</span>
+      {% else %}
       <a href="{{ url_for('auth.register') }}" class="btn btn-light fw-bold">Create a free account</a>
+      {% endif %}
       <a href="{{ url_for('auth.login_get') }}" class="btn btn-outline-light">Log in</a>
     </div>
   </div>

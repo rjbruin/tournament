@@ -263,6 +263,18 @@ def index():
             if featured_is_live:
                 featured_group_table_before = _group_table_before(g, raw_fixtures, featured_fixture, teams_by_name, results)
 
+    # Previous match: the most recently played non-live match, shown only when
+    # the featured fixture is upcoming (not itself a played result).
+    previous_fixture = None
+    previous_group_table = None
+    played = [m for m in all_normalized if m.get("played") and not m.get("in_progress")]
+    if played and featured_fixture and not featured_fixture.get("played"):
+        previous_fixture = played[-1]
+        g = next((g for g in groups if g["name"] == previous_fixture.get("_group")), None)
+        if g:
+            raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
+            previous_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
+
     qualification_notes = []
     if featured_fixture and not _is_pre_draw(scenario_id):
         try:
@@ -304,6 +316,8 @@ def index():
         featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
         qualification_notes=qualification_notes,
+        previous_fixture=previous_fixture,
+        previous_group_table=previous_group_table,
     )
 
 

@@ -250,6 +250,22 @@
 </div>
 {% endif %}
 
+{% if previous_fixture %}
+<div class="card shadow-sm mb-4" id="previous-fixture">
+  <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+    <span class="fw-bold">Latest result — Group {{ previous_fixture._group }}</span>
+  </div>
+  <div class="card-body">
+    {{ fx.large_fixture(previous_fixture) }}
+    {% if previous_group_table %}
+    <hr class="mt-2">
+    <div class="small text-muted fw-bold mb-2">Group {{ previous_fixture._group }} standings</div>
+    {{ fx.group_table(previous_group_table, results) }}
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 {% if results %}
 {% set top10 = results.winner_prob.items() | sort(attribute=1, reverse=True) | list %}
 <h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 Champion Projection 🏆</h2>

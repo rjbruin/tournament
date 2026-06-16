@@ -603,9 +603,9 @@ def draw():
 
     actual_groups = {g["name"]: g["teams"] for g in engine.groups}
 
-    n = current_user.settings.get("n_simulations")
-    current_results = app_module.get_simulation_results(current_user.username, "current")
-    pre_draw_results = app_module.get_simulation_results(current_user.username, "pre-draw")
+    username = _username()
+    current_results = app_module.get_simulation_results(username, "current")
+    pre_draw_results = app_module.get_simulation_results(username, "pre-draw")
 
     comparison = None
     if current_results and pre_draw_results:

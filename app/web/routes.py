@@ -657,16 +657,20 @@ def draw():
     actual_groups = {g["name"]: g["teams"] for g in engine.groups}
 
     username = _username()
-    current_results = app_module.get_or_run_results(username, "current")
+    # Compare the real draw *before any matches are played* (the
+    # "before the first match" baseline) against the pre-draw average, so the
+    # difference reflects the draw itself rather than results played so far.
+    post_draw_id = data_store.BEFORE_FIRST_MATCH_SCENARIO_ID
+    post_draw_results = app_module.get_or_run_results(username, post_draw_id)
     pre_draw_results = app_module.get_or_run_results(username, "pre-draw")
 
     comparison = None
-    if current_results and pre_draw_results:
+    if post_draw_results and pre_draw_results:
         comparison = []
         for t in engine.team_names:
             comparison.append({
                 "team": t,
-                "current_winner_prob": current_results["winner_prob"].get(t, 0),
+                "current_winner_prob": post_draw_results["winner_prob"].get(t, 0),
                 "pre_draw_winner_prob": pre_draw_results["winner_prob"].get(t, 0),
             })
         comparison.sort(key=lambda r: r["current_winner_prob"], reverse=True)

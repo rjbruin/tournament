@@ -73,7 +73,7 @@
     </div>
     <span class="compact-score{% if match.in_progress %} compact-score--live{% endif %}">
       {{ match.home_goals }} – {{ match.away_goals }}
-      {% if match.in_progress %}<span class="compact-live-min">🔴 {% if match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
+      {% if match.in_progress %}<span class="compact-live-min">🔴 {% if match.minute is defined and match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
     </span>
     <div class="compact-result-away">
       <span class="compact-team">{{ match.away_team }}</span>
@@ -158,7 +158,7 @@
           <span class="fixture-score-sep">–</span>
           <span>{{ match.away_goals }}</span>
         </div>
-        {% if match.in_progress %}<span class="badge bg-danger live-badge" style="font-size:.7rem;">🔴 {% if match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
+        {% if match.in_progress %}<span class="badge bg-danger live-badge" style="font-size:.7rem;">🔴 {% if match.minute is defined and match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
         {% elif editable %}
         <div class="fixture-vs">-</div>
         {% elif match.draw_prob is defined %}

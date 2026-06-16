@@ -206,7 +206,7 @@ def create_app():
         # so the app is useful while watching a game without an account.
         public_endpoints = {
             "web.index", "web.groups", "web.group", "web.team", "web.team_default",
-            "web.bracket", "web.fixtures",
+            "web.bracket", "web.fixtures", "web.manifest",
         }
         if request.endpoint in public_endpoints:
             return

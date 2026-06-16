@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash, session, Response
 from flask_login import current_user, login_required
 
 import app as app_module
@@ -6,6 +6,25 @@ from app import auth, data_store
 from app.web.view_helpers import normalize_group_match, normalize_bracket_match, compute_group_table, utc_sort_key as _utc_sort_key
 
 web_bp = Blueprint("web", __name__)
+
+
+@web_bp.get("/manifest.json")
+def manifest():
+    import json
+    data = {
+        "name": "WC 2026 Simulator",
+        "short_name": "WC 2026",
+        "description": "Monte Carlo simulation of the 2026 FIFA World Cup",
+        "start_url": url_for("web.index"),
+        "display": "standalone",
+        "background_color": "#1a1a2e",
+        "theme_color": "#2e7d32",
+        "icons": [
+            {"src": url_for("static", filename="icon-192.png"), "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+            {"src": url_for("static", filename="icon-512.png"), "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+        ],
+    }
+    return Response(json.dumps(data), mimetype="application/manifest+json")
 
 
 def _admin_users_with_usage() -> list[dict]:

@@ -7,15 +7,14 @@ username:
     {
       "alice": {
         "username": "alice",
+        "email": "alice@example.com",
+        "email_verified": true,
         "password_hash": "...",
         "api_slug": "a1b2c3...",
-        "settings": {
-          "openrouter_api_key": "",
-          "openrouter_model": "anthropic/claude-sonnet-4.5",
-          "display_timezone": "UTC",
-          "n_simulations": 250000
-        },
-        "created_at": 1234567890.0
+        "settings": { ... },
+        "created_at": 1234567890.0,
+        "approved": true,
+        "invite_token": "abc..."   # token used to register, if any
       },
       ...
     }
@@ -23,14 +22,9 @@ username:
 Passwords are hashed with werkzeug's ``generate_password_hash`` (PBKDF2,
 salted) — never stored in plaintext.
 
-Each account also gets a unique ``api_slug``: a long random token that can be
-used to authenticate API requests without a session cookie (e.g.
-``Authorization: Bearer <api_slug>`` or ``?api_key=<api_slug>``). It can be
-regenerated from the Account settings page if it leaks.
-
-Each account has its own simulation results, snapshot history, and settings
-(OpenRouter key/model, display timezone, default number of simulations) —
-see ``app/data_store.py`` for the per-user data files.
+Admin account: set ``WC2026_ADMIN_EMAIL`` on the server to the email address
+of the account that should be the admin. Falls back to ``WC2026_ADMIN_USERNAME``
+for backward compatibility (if the account has no email set yet).
 """
 
 import json
@@ -57,16 +51,17 @@ DEFAULT_USER_SETTINGS = {
 }
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]{3,32}$")
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-# Server-side secret naming the admin account, set via the environment (not
-# stored in data/users.json). To make a user an admin, set this on the
-# server before starting the app, e.g.:
+# Admin is identified by email address (recommended) or by username (legacy).
+# Set WC2026_ADMIN_EMAIL (or WC2026_ADMIN_USERNAME) on the server before
+# starting the app, e.g.:
 #
-#     export WC2026_ADMIN_USERNAME=alice
+#     export WC2026_ADMIN_EMAIL=admin@example.com
 #
-# and restart the app. Whichever account has that username (case-insensitive)
-# sees the "Admin settings" section on the Settings page.
-ADMIN_USERNAME_ENV = "WC2026_ADMIN_USERNAME"
+# Restart the app for the change to take effect.
+ADMIN_EMAIL_ENV = "WC2026_ADMIN_EMAIL"
+ADMIN_USERNAME_ENV = "WC2026_ADMIN_USERNAME"  # legacy fallback
 
 
 class User(UserMixin):
@@ -82,19 +77,31 @@ class User(UserMixin):
         return self._record["username"]
 
     @property
+    def email(self) -> str:
+        return self._record.get("email", "")
+
+    @property
+    def email_verified(self) -> bool:
+        return bool(self._record.get("email_verified", False))
+
+    @property
     def api_slug(self) -> str:
         return self._record["api_slug"]
 
     @property
     def is_approved(self) -> bool:
-        # The admin account is always considered approved.
         if self.is_admin:
             return True
         return bool(self._record.get("approved", False))
 
     @property
     def is_admin(self) -> bool:
-        admin_username = os.environ.get(ADMIN_USERNAME_ENV, "")
+        admin_email = os.environ.get(ADMIN_EMAIL_ENV, "").strip()
+        if admin_email:
+            user_email = self._record.get("email", "")
+            return bool(user_email) and user_email.lower() == admin_email.lower()
+        # Legacy fallback: match by username if ADMIN_EMAIL not set
+        admin_username = os.environ.get(ADMIN_USERNAME_ENV, "").strip()
         return bool(admin_username) and self._record["username"].lower() == admin_username.lower()
 
     @property
@@ -115,11 +122,6 @@ def _load_all() -> dict:
 
 
 def _save_all(users: dict) -> None:
-    # Resolve symlinks first: USERS_PATH may be a symlink into a directory
-    # that's persisted across deploys (see scripts/deploy.sh). os.replace()
-    # does NOT follow a symlink for its destination — it would delete the
-    # symlink and write the new file in its place inside the (ephemeral)
-    # release directory, silently breaking persistence across updates.
     target_path = os.path.realpath(USERS_PATH)
     tmp_path = target_path + ".tmp"
     with open(tmp_path, "w") as f:
@@ -127,7 +129,7 @@ def _save_all(users: dict) -> None:
     os.replace(tmp_path, target_path)
 
 
-def get_user(username: str) -> User | None:
+def get_user(username: str) -> "User | None":
     if not username:
         return None
     users = _load_all()
@@ -135,7 +137,18 @@ def get_user(username: str) -> User | None:
     return User(record) if record else None
 
 
-def get_user_by_api_slug(slug: str) -> User | None:
+def get_user_by_email(email: str) -> "User | None":
+    if not email:
+        return None
+    email_lower = email.lower().strip()
+    users = _load_all()
+    for record in users.values():
+        if record.get("email", "").lower() == email_lower:
+            return User(record)
+    return None
+
+
+def get_user_by_api_slug(slug: str) -> "User | None":
     if not slug:
         return None
     users = _load_all()
@@ -145,44 +158,62 @@ def get_user_by_api_slug(slug: str) -> User | None:
     return None
 
 
-def validate_username(username: str) -> str | None:
-    """Returns an error message, or None if the username is valid."""
+def validate_username(username: str) -> "str | None":
     if not username or not USERNAME_RE.match(username):
         return "Username must be 3-32 characters: letters, numbers, underscore, or hyphen."
     return None
 
 
-def validate_password(password: str) -> str | None:
-    """Returns an error message, or None if the password is acceptable."""
+def validate_email(email: str) -> "str | None":
+    if not email or not EMAIL_RE.match(email.strip()):
+        return "Please enter a valid email address."
+    return None
+
+
+def validate_password(password: str) -> "str | None":
     if not password or len(password) < 8:
         return "Password must be at least 8 characters."
     return None
 
 
-def create_user(username: str, password: str, approved: bool = False) -> User | None:
-    """Create a new account. Returns the User, or None if the username is
-    already taken. New accounts are unapproved by default until the admin
-    approves them (unless `approved=True` is passed, e.g. for the first user)."""
+def create_user(username: str, password: str, email: str = "",
+                approved: bool = False, invite_token: str | None = None) -> "User | None":
+    """Create a new account. Returns the User, or None if the username or
+    email is already taken."""
     users = _load_all()
     key = username.lower()
     if key in users:
         return None
+    if email:
+        email = email.strip().lower()
+        for r in users.values():
+            if r.get("email", "").lower() == email:
+                return None  # email already registered
     record = {
         "username": username,
+        "email": email,
+        "email_verified": False,
         "password_hash": generate_password_hash(password),
         "api_slug": secrets.token_hex(20),
         "settings": dict(DEFAULT_USER_SETTINGS),
         "created_at": time.time(),
         "approved": approved,
+        "invite_token": invite_token,
     }
     users[key] = record
     _save_all(users)
     return User(record)
 
 
+def set_email_verified(username: str) -> None:
+    users = _load_all()
+    record = users.get(username.lower())
+    if record:
+        record["email_verified"] = True
+        _save_all(users)
+
+
 def approve_user(username: str) -> bool:
-    """Approve a pending account so it can log in. Returns True if the account
-    existed and was updated, False if the account was not found."""
     users = _load_all()
     record = users.get(username.lower())
     if not record:
@@ -204,7 +235,7 @@ def update_settings(username: str, **kwargs) -> None:
     _save_all(users)
 
 
-def regenerate_api_slug(username: str) -> str | None:
+def regenerate_api_slug(username: str) -> "str | None":
     users = _load_all()
     record = users.get(username.lower())
     if not record:
@@ -229,11 +260,16 @@ def user_count() -> int:
 
 
 def list_users() -> list[dict]:
-    """Return a list of {username, created_at, approved} for all accounts,
-    sorted by username. Used by the admin settings panel."""
+    """Return a list of user summaries for the admin panel."""
     users = _load_all()
     return sorted(
-        ({"username": r["username"], "created_at": r.get("created_at"), "approved": r.get("approved", False)}
-         for r in users.values()),
+        ({
+            "username": r["username"],
+            "email": r.get("email", ""),
+            "email_verified": r.get("email_verified", False),
+            "created_at": r.get("created_at"),
+            "approved": r.get("approved", False),
+            "invite_token": r.get("invite_token"),
+        } for r in users.values()),
         key=lambda u: u["username"].lower(),
     )

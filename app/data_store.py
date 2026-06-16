@@ -19,6 +19,8 @@ import uuid
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 ACTUALS_PATH = os.path.join(DATA_DIR, "actuals.json")
 SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
+INVITES_PATH = os.path.join(DATA_DIR, "invites.json")
+EMAIL_TOKENS_PATH = os.path.join(DATA_DIR, "email_tokens.json")
 USERS_DATA_DIR = os.path.join(DATA_DIR, "users")
 SCENARIOS_DIR = os.path.join(DATA_DIR, "scenarios")
 
@@ -143,6 +145,9 @@ DEFAULT_GLOBAL_SETTINGS = {
     "football_data_api_key": "",
     "shared_openrouter_api_key": "",
     "admin_email": "",
+    "invite_only": True,
+    "shared_llm_daily_limit": 100_000,
+    "shared_llm_weekly_limit": 1_000_000,
 }
 
 
@@ -167,6 +172,7 @@ def save_global_settings(settings: dict) -> None:
 # JSON object per line: {"ts": <unix_timestamp>, "tokens": <int>}
 # ----------------------------------------------------------------------
 
+# Default LLM limits (used when global settings don't override them).
 LLM_DAILY_LIMIT = 100_000
 LLM_WEEKLY_LIMIT = 1_000_000
 
@@ -210,16 +216,159 @@ def get_llm_usage(username: str) -> dict:
     return {"daily_tokens": daily, "weekly_tokens": weekly}
 
 
-def check_llm_quota(username: str) -> str | None:
-    """Return an error message if the user has hit their quota, else None."""
+def check_llm_quota(username: str, global_settings: dict | None = None) -> str | None:
+    """Return an error message if the user has hit their shared-key quota, else None.
+    Limits are taken from global_settings if provided, otherwise use defaults."""
+    gs = global_settings or {}
+    daily_limit = int(gs.get("shared_llm_daily_limit") or LLM_DAILY_LIMIT)
+    weekly_limit = int(gs.get("shared_llm_weekly_limit") or LLM_WEEKLY_LIMIT)
     usage = get_llm_usage(username)
-    if usage["daily_tokens"] >= LLM_DAILY_LIMIT:
-        return (f"Daily Ask AI limit reached ({LLM_DAILY_LIMIT:,} tokens). "
+    if usage["daily_tokens"] >= daily_limit:
+        return (f"Daily Ask AI limit reached ({daily_limit:,} tokens). "
                 "Your quota resets every 24 hours.")
-    if usage["weekly_tokens"] >= LLM_WEEKLY_LIMIT:
-        return (f"Weekly Ask AI limit reached ({LLM_WEEKLY_LIMIT:,} tokens). "
+    if usage["weekly_tokens"] >= weekly_limit:
+        return (f"Weekly Ask AI limit reached ({weekly_limit:,} tokens). "
                 "Your quota resets every 7 days.")
     return None
+
+
+# ----------------------------------------------------------------------
+# Invite links.
+# Stored in data/invites.json: {token: {label, max_uses, accounts, created_at}}
+# ----------------------------------------------------------------------
+
+def _load_invites() -> dict:
+    if not os.path.exists(INVITES_PATH):
+        return {}
+    with open(INVITES_PATH) as f:
+        return json.load(f)
+
+
+def _save_invites(invites: dict) -> None:
+    target = os.path.realpath(INVITES_PATH)
+    tmp = target + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(invites, f, indent=2)
+    os.replace(tmp, target)
+
+
+def create_invite(label: str, max_uses: int) -> dict:
+    """Create and persist a new invite link. Returns the invite dict."""
+    import secrets as _secrets
+    invites = _load_invites()
+    token = _secrets.token_urlsafe(24)
+    invite = {"label": label, "max_uses": max_uses, "accounts": [], "created_at": time.time()}
+    invites[token] = invite
+    _save_invites(invites)
+    return {"token": token, **invite}
+
+
+def get_invite(token: str) -> dict | None:
+    """Return the invite dict for this token, or None if invalid/exhausted."""
+    if not token:
+        return None
+    invites = _load_invites()
+    invite = invites.get(token)
+    if not invite:
+        return None
+    if len(invite["accounts"]) >= invite["max_uses"]:
+        return None  # exhausted
+    return {"token": token, **invite}
+
+
+def use_invite(token: str, username: str) -> bool:
+    """Record a registration use of this invite. Returns True on success."""
+    invites = _load_invites()
+    invite = invites.get(token)
+    if not invite:
+        return False
+    invite["accounts"].append(username)
+    _save_invites(invites)
+    return True
+
+
+def list_invites() -> list[dict]:
+    """Return all invites sorted by creation time (newest first)."""
+    invites = _load_invites()
+    result = []
+    for token, inv in invites.items():
+        result.append({
+            "token": token,
+            "label": inv["label"],
+            "max_uses": inv["max_uses"],
+            "accounts": inv["accounts"],
+            "uses_remaining": inv["max_uses"] - len(inv["accounts"]),
+            "created_at": inv["created_at"],
+        })
+    return sorted(result, key=lambda i: i["created_at"], reverse=True)
+
+
+def delete_invite(token: str) -> bool:
+    invites = _load_invites()
+    if token not in invites:
+        return False
+    del invites[token]
+    _save_invites(invites)
+    return True
+
+
+# ----------------------------------------------------------------------
+# One-time email tokens for verification and magic-link sign-in.
+# Stored in data/email_tokens.json:
+#   {token: {type: "verify"|"magic", username, expires_at}}
+# ----------------------------------------------------------------------
+
+_TOKEN_TTL = {"verify": 86400, "magic": 3600}  # seconds
+
+
+def _load_email_tokens() -> dict:
+    if not os.path.exists(EMAIL_TOKENS_PATH):
+        return {}
+    with open(EMAIL_TOKENS_PATH) as f:
+        return json.load(f)
+
+
+def _save_email_tokens(tokens: dict) -> None:
+    target = os.path.realpath(EMAIL_TOKENS_PATH)
+    tmp = target + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(tokens, f, indent=2)
+    os.replace(tmp, target)
+
+
+def create_email_token(token_type: str, username: str) -> str:
+    """Create a one-time token of type 'verify' or 'magic'. Returns the token."""
+    import secrets as _secrets
+    tokens = _load_email_tokens()
+    # Prune expired tokens
+    now = time.time()
+    tokens = {k: v for k, v in tokens.items() if v.get("expires_at", 0) > now}
+    token = _secrets.token_urlsafe(32)
+    tokens[token] = {
+        "type": token_type,
+        "username": username,
+        "expires_at": now + _TOKEN_TTL.get(token_type, 3600),
+    }
+    _save_email_tokens(tokens)
+    return token
+
+
+def consume_email_token(token: str, expected_type: str) -> str | None:
+    """Validate and consume a one-time token. Returns username on success, None otherwise."""
+    if not token:
+        return None
+    tokens = _load_email_tokens()
+    entry = tokens.get(token)
+    if not entry:
+        return None
+    if entry.get("type") != expected_type:
+        return None
+    if entry.get("expires_at", 0) < time.time():
+        return None
+    username = entry["username"]
+    del tokens[token]
+    _save_email_tokens(tokens)
+    return username
 
 
 # ----------------------------------------------------------------------

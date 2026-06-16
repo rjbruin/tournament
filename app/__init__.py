@@ -178,7 +178,7 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix="/api")
 
     login_manager = LoginManager()
-    login_manager.login_view = "auth.login"
+    login_manager.login_view = "auth.login_get"
     login_manager.login_message_category = "info"
     # Harden the "remember me" cookie to match the session cookie settings.
     login_manager.remember_cookie_httponly = True

@@ -99,11 +99,33 @@
         <div class="card-header fw-bold">Admin settings</div>
         <div class="card-body">
           <p class="text-muted small">
-            These settings are shared across all accounts and only visible to the admin account
-            (configured via the <code>{{ admin_username_env }}</code> environment variable on the server).
+            These settings are shared across all accounts and only visible to the admin
+            (identified by the <code>{{ admin_email_env }}</code> environment variable on the server).
           </p>
 
-          <h6 class="mb-2">Official results API</h6>
+          <h6 class="mb-2">Registration</h6>
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="invite_only"
+                   name="invite_only" value="1" {% if global_settings.invite_only %}checked{% endif %}>
+            <label class="form-check-label" for="invite_only">Invite-only registration</label>
+          </div>
+          <p class="text-muted small">
+            When enabled, new accounts require a valid invite link.
+            When disabled, anyone can register.
+          </p>
+
+          <h6 class="mb-2">Notification email</h6>
+          <p class="text-muted small">
+            Receive an email when a new user registers.
+            Requires a local SMTP server (e.g. Postfix/sendmail) on the server.
+          </p>
+          <div class="mb-3">
+            <label for="admin_email" class="form-label">Admin email address</label>
+            <input type="email" class="form-control" id="admin_email" name="admin_email"
+                   placeholder="admin@example.com" value="{{ global_settings.admin_email }}">
+          </div>
+
+          <h6 class="mb-2 mt-4">Official results API</h6>
           <p class="text-muted small">
             Used by the "Update Results &amp; Re-simulate" button to fetch official World Cup results from
             <a href="https://www.football-data.org" target="_blank" rel="noopener">football-data.org</a>.
@@ -116,50 +138,54 @@
 
           <h6 class="mb-2 mt-4">Shared OpenRouter key</h6>
           <p class="text-muted small">
-            Used by accounts that select "Use the shared key configured by the admin" above. All such accounts
-            share this key's usage and rate limits.
+            Used by accounts that select "Use the shared key configured by the admin" above.
           </p>
           <div class="mb-3">
             <label for="shared_openrouter_api_key" class="form-label">Shared OpenRouter API key</label>
             <input type="password" class="form-control" id="shared_openrouter_api_key" name="shared_openrouter_api_key"
                    placeholder="sk-or-..." value="{{ global_settings.shared_openrouter_api_key }}" autocomplete="off">
           </div>
-
-          <h6 class="mb-2 mt-4">Notification email</h6>
-          <p class="text-muted small">
-            When a new user registers, an email is sent here so you can approve or reject them.
-            Requires a local SMTP server (e.g. Postfix/sendmail) on the server.
-          </p>
-          <div class="mb-3">
-            <label for="admin_email" class="form-label">Admin email address</label>
-            <input type="email" class="form-control" id="admin_email" name="admin_email"
-                   placeholder="admin@example.com" value="{{ global_settings.admin_email }}">
+          <div class="row g-3 mb-3">
+            <div class="col">
+              <label for="shared_llm_daily_limit" class="form-label">Shared key — daily token limit per user</label>
+              <input type="number" class="form-control" id="shared_llm_daily_limit" name="shared_llm_daily_limit"
+                     min="1000" step="1000" value="{{ global_settings.shared_llm_daily_limit }}">
+            </div>
+            <div class="col">
+              <label for="shared_llm_weekly_limit" class="form-label">Shared key — weekly token limit per user</label>
+              <input type="number" class="form-control" id="shared_llm_weekly_limit" name="shared_llm_weekly_limit"
+                     min="1000" step="10000" value="{{ global_settings.shared_llm_weekly_limit }}">
+            </div>
           </div>
 
           <h6 class="mb-2 mt-4">Active users</h6>
           <ul class="list-group list-group-flush">
             {% for u in admin_users %}
-            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-              <div>
-                <span>{{ u.username }}</span>
-                {% if not u.approved %}
-                <span class="badge bg-warning text-dark ms-1">pending approval</span>
-                {% endif %}
-                {% if u.created_at %}
-                <span class="text-muted small ms-2">joined {{ u.created_at | int | timestamp_to_date }}</span>
-                {% endif %}
-              </div>
-              <div class="d-flex align-items-center gap-2">
-                {% if u.llm_usage %}
-                <span class="text-muted small">
-                  Ask AI: {{ "{:,}".format(u.llm_usage.daily_tokens) }} today /
-                  {{ "{:,}".format(u.llm_usage.weekly_tokens) }} this week
-                </span>
-                {% endif %}
+            <li class="list-group-item px-0 py-2">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <span class="fw-semibold">{{ u.username }}</span>
+                  {% if u.email %}<span class="text-muted small ms-2">{{ u.email }}</span>{% endif %}
+                  {% if not u.email_verified and u.email %}
+                  <span class="badge bg-secondary ms-1">email unverified</span>
+                  {% endif %}
+                  {% if u.created_at %}
+                  <span class="text-muted small ms-2">joined {{ u.created_at | int | timestamp_to_date }}</span>
+                  {% endif %}
+                  {% if u.invite_token %}
+                  <span class="text-muted small ms-2">via invite</span>
+                  {% endif %}
+                </div>
                 {% if not u.approved %}
                 <a href="{{ url_for('web.admin_approve_user', username=u.username) }}" class="btn btn-success btn-sm">Approve</a>
                 {% endif %}
               </div>
+              {% if u.llm_usage %}
+              <div class="text-muted small mt-1">
+                Ask AI (shared key): {{ "{:,}".format(u.llm_usage.daily_tokens) }} tokens today /
+                {{ "{:,}".format(u.llm_usage.weekly_tokens) }} this week
+              </div>
+              {% endif %}
             </li>
             {% endfor %}
           </ul>
@@ -184,10 +210,76 @@
       </div>
     </div>
 
+    {% if invite_list is not none %}
+    <div class="card shadow-sm mt-4 border-warning" id="admin-invites">
+      <div class="card-header fw-bold">Invite links</div>
+      <div class="card-body">
+        <p class="text-muted small">Generate invite links to share with people you want to give access.</p>
+        <form method="post" action="{{ url_for('web.admin_invite_create') }}" class="row g-2 mb-4">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <div class="col">
+            <input type="text" class="form-control form-control-sm" name="label" placeholder="Label (e.g. 'Friends')" required>
+          </div>
+          <div class="col-auto">
+            <input type="number" class="form-control form-control-sm" name="max_uses" value="1" min="1" max="100" style="width:5rem" title="Max uses">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-success btn-sm">Create link</button>
+          </div>
+        </form>
+        {% if invite_list %}
+        <ul class="list-group list-group-flush">
+          {% for inv in invite_list %}
+          <li class="list-group-item px-0 py-2">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div class="flex-grow-1">
+                <div class="fw-semibold">{{ inv.label }}</div>
+                <div class="text-muted small">
+                  {{ inv.uses_remaining }} / {{ inv.max_uses }} use{{ 's' if inv.max_uses != 1 else '' }} remaining
+                  {% if inv.accounts %}&middot; {{ inv.accounts | join(', ') }}{% endif %}
+                </div>
+                <div class="input-group input-group-sm mt-1" style="max-width:500px">
+                  <input type="text" class="form-control form-control-sm font-monospace"
+                         value="{{ request.host_url.rstrip('/') }}{{ url_for('auth.register') }}?invite={{ inv.token }}" readonly
+                         id="invite-{{ inv.token }}">
+                  <button class="btn btn-outline-secondary btn-sm" type="button"
+                          onclick="navigator.clipboard.writeText(document.getElementById('invite-{{ inv.token }}').value)">Copy</button>
+                </div>
+              </div>
+              <form method="post" action="{{ url_for('web.admin_invite_delete', token=inv.token) }}"
+                    onsubmit="return confirm('Delete this invite link?')">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+              </form>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small mb-0">No invite links yet.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
     <div class="card shadow-sm mt-4">
       <div class="card-header fw-bold">Account</div>
       <div class="card-body">
         <p class="mb-2"><strong>Username:</strong> {{ current_user.username }}</p>
+        {% if current_user.email %}
+        <p class="mb-2">
+          <strong>Email:</strong> {{ current_user.email }}
+          {% if current_user.email_verified %}
+          <span class="badge bg-success ms-1">verified</span>
+          {% else %}
+          <span class="badge bg-secondary ms-1">unverified</span>
+          <form method="post" action="{{ url_for('auth.resend_verification') }}" class="d-inline ms-2">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-link btn-sm p-0">Resend verification email</button>
+          </form>
+          {% endif %}
+        </p>
+        {% endif %}
 
         <div class="mb-3">
           <label class="form-label">API key (for headless API access)</label>

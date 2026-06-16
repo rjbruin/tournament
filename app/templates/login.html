@@ -7,13 +7,13 @@
     <h2 class="mb-4 text-center">Log in</h2>
     <div class="card shadow-sm">
       <div class="card-body">
-        <form method="post" action="{{ url_for('auth.login') }}">
+        <form method="post" action="{{ url_for('auth.login_post') }}">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="next" value="{{ next }}">
           <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" value="{{ username or '' }}"
-                   autocomplete="username" required autofocus>
+            <label for="identifier" class="form-label">Username or email</label>
+            <input type="text" class="form-control" id="identifier" name="identifier"
+                   value="{{ identifier or '' }}" autocomplete="username email" required autofocus>
           </div>
           <div class="mb-3">
             <label for="password" class="form-label">Password</label>
@@ -22,6 +22,10 @@
           </div>
           <button type="submit" class="btn btn-success w-100">Log in</button>
         </form>
+        <hr class="my-3">
+        <a href="{{ url_for('auth.magic_link_get') }}" class="btn btn-outline-secondary w-100">
+          Sign in with email link (or reset password)
+        </a>
       </div>
     </div>
     <p class="text-center text-muted small mt-3">

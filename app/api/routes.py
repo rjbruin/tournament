@@ -273,9 +273,12 @@ def query():
         return jsonify({"error": "Missing 'question' field"}), 400
 
     from app import data_store
-    quota_error = data_store.check_llm_quota(g.user.username)
-    if quota_error:
-        return jsonify({"error": quota_error}), 429
+    gs = data_store.load_global_settings()
+    # Only enforce quota for shared-key users (own-key users pay their own bill).
+    if g.user.settings.get("openrouter_key_mode") == "shared":
+        quota_error = data_store.check_llm_quota(g.user.username, gs)
+        if quota_error:
+            return jsonify({"error": quota_error}), 429
 
     scenario_id = data.get("scenario") or _scenario_id()
     results = app_module.get_or_run_results(g.user.username, scenario_id,
@@ -283,7 +286,7 @@ def query():
     engine = app_module.get_engine()
     history = data.get("history") if isinstance(data.get("history"), list) else None
     answer, tokens_used = answer_question(data["question"], engine, results, user_settings=g.user.settings,
-                                           history=history, global_settings=data_store.load_global_settings())
+                                           history=history, global_settings=gs)
     if tokens_used > 0:
         data_store.record_llm_usage(g.user.username, tokens_used)
 
@@ -294,8 +297,8 @@ def query():
         "usage": {
             "daily_tokens": usage["daily_tokens"],
             "weekly_tokens": usage["weekly_tokens"],
-            "daily_limit": data_store.LLM_DAILY_LIMIT,
-            "weekly_limit": data_store.LLM_WEEKLY_LIMIT,
+            "daily_limit": int(gs.get("shared_llm_daily_limit") or data_store.LLM_DAILY_LIMIT),
+            "weekly_limit": int(gs.get("shared_llm_weekly_limit") or data_store.LLM_WEEKLY_LIMIT),
         },
     })
 

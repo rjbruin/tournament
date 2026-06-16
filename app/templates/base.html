@@ -70,6 +70,15 @@
       <a class="btn btn-sm btn-outline-dark" href="{{ request.path }}?s=current">Switch to current results</a>
     </div>
     {% endif %}
+    {% if current_user.is_authenticated and current_user.email and not current_user.email_verified %}
+    <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span>Please verify your email address (<strong>{{ current_user.email }}</strong>) to unlock all features.</span>
+      <form method="post" action="{{ url_for('auth.resend_verification') }}" class="mb-0">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-sm btn-outline-dark">Resend verification email</button>
+      </form>
+    </div>
+    {% endif %}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}

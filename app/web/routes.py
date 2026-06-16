@@ -739,7 +739,9 @@ def settings():
         all_team_names=all_team_names,
         scenario_list=data_store.list_scenarios(_username()),
         admin_users=_admin_users_with_usage() if current_user.is_admin else None,
+        admin_email_env=auth.ADMIN_EMAIL_ENV,
         admin_username_env=auth.ADMIN_USERNAME_ENV,
+        invite_list=data_store.list_invites() if current_user.is_admin else None,
     )
 
 
@@ -777,6 +779,15 @@ def settings_save():
             global_updates["shared_openrouter_api_key"] = request.form.get("shared_openrouter_api_key", "").strip()
         if "admin_email" in request.form:
             global_updates["admin_email"] = request.form.get("admin_email", "").strip()
+        if "invite_only" in request.form:
+            global_updates["invite_only"] = request.form.get("invite_only") == "1"
+        try:
+            if "shared_llm_daily_limit" in request.form:
+                global_updates["shared_llm_daily_limit"] = max(1000, int(request.form["shared_llm_daily_limit"]))
+            if "shared_llm_weekly_limit" in request.form:
+                global_updates["shared_llm_weekly_limit"] = max(1000, int(request.form["shared_llm_weekly_limit"]))
+        except (ValueError, TypeError):
+            pass
         if global_updates:
             data_store.save_global_settings(global_updates)
 
@@ -830,3 +841,30 @@ def admin_approve_user(username):
 @login_required
 def admin_approve_user_post(username):
     return admin_approve_user(username)
+
+
+@web_bp.post("/admin/invites/new")
+@login_required
+def admin_invite_create():
+    if not current_user.is_admin:
+        flash("Only the admin can create invite links.", "danger")
+        return redirect(url_for("web.settings"))
+    label = request.form.get("label", "").strip() or "Invite"
+    try:
+        max_uses = max(1, int(request.form.get("max_uses", 1)))
+    except (ValueError, TypeError):
+        max_uses = 1
+    data_store.create_invite(label, max_uses)
+    flash(f"Invite link '{label}' created.", "success")
+    return redirect(url_for("web.settings") + "#admin-invites")
+
+
+@web_bp.post("/admin/invites/<token>/delete")
+@login_required
+def admin_invite_delete(token):
+    if not current_user.is_admin:
+        flash("Only the admin can delete invite links.", "danger")
+        return redirect(url_for("web.settings"))
+    data_store.delete_invite(token)
+    flash("Invite link deleted.", "success")
+    return redirect(url_for("web.settings") + "#admin-invites")

@@ -3,17 +3,43 @@
 {% block content %}
 
 <div class="row justify-content-center">
-  <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+  <div class="col-12 col-sm-8 col-md-6 col-lg-5">
     <h2 class="mb-4 text-center">Create an account</h2>
+
+    {% if invite_only and not invite %}
+    <div class="card shadow-sm text-center p-4">
+      <p class="mb-3">Registration is by invite only.</p>
+      <p class="text-muted small mb-0">Ask the admin for an invite link to get started.</p>
+    </div>
+    <p class="text-center text-muted small mt-3">
+      Already have an account? <a href="{{ url_for('auth.login_get') }}">Log in</a>
+    </p>
+    {% else %}
+
+    {% if invite %}
+    <div class="alert alert-success py-2">
+      <strong>Invite:</strong> {{ invite.label }}
+      ({{ invite.uses_remaining }} use{{ 's' if invite.uses_remaining != 1 else '' }} remaining)
+    </div>
+    {% endif %}
+
     <div class="card shadow-sm">
       <div class="card-body">
-        <form method="post" action="{{ url_for('auth.register') }}">
+        <form method="post" action="{{ url_for('auth.register_post') }}">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="invite_token" value="{{ invite.token if invite else '' }}">
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" value="{{ username or '' }}"
-                   autocomplete="username" pattern="[a-zA-Z0-9_-]{3,32}" required autofocus>
-            <div class="form-text">3-32 characters: letters, numbers, underscore, or hyphen.</div>
+            <input type="text" class="form-control" id="username" name="username"
+                   value="{{ username or '' }}" autocomplete="username"
+                   pattern="[a-zA-Z0-9_-]{3,32}" required autofocus>
+            <div class="form-text">3–32 characters: letters, numbers, underscore, or hyphen.</div>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="email" name="email"
+                   value="{{ email or '' }}" autocomplete="email" required>
+            <div class="form-text">Used for sign-in links and account recovery. Not shown to other users.</div>
           </div>
           <div class="mb-3">
             <label for="password" class="form-label">Password</label>
@@ -31,8 +57,9 @@
       </div>
     </div>
     <p class="text-center text-muted small mt-3">
-      Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
+      Already have an account? <a href="{{ url_for('auth.login_get') }}">Log in</a>
     </p>
+    {% endif %}
   </div>
 </div>
 

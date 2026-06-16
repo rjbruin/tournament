@@ -3,6 +3,13 @@
 {% block title %}Home — WC 2026{% endblock %}
 {% block content %}
 
+{% if pending_approvals %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center">
+  <span><strong>{{ pending_approvals }} account{{ 's' if pending_approvals != 1 else '' }}</strong> waiting for approval.</span>
+  <a href="{{ url_for('web.settings') }}#admin-users" class="btn btn-sm btn-warning">Review</a>
+</div>
+{% endif %}
+
 <div class="hero-banner mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
   <div>
     <h1 class="mb-0">{{ tournament.name }}</h1>
@@ -250,13 +257,35 @@
 {% endif %}
 {% endif %}
 
-{% if not current_user.is_authenticated %}
-<div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-  <span>
-    👋 You're viewing the current real-world scenario.
-    <a href="{{ url_for('auth.register') }}">Sign in or create an account</a> to explore "what if" scenarios
-    and ask the AI questions about the results.
-  </span>
+{% if not current_user.is_authenticated and not invite_only %}
+<div class="card shadow-sm mb-5 border-0" style="background: linear-gradient(135deg, #1a472a 0%, #2d6a4f 100%); color: white;">
+  <div class="card-body py-4 px-4">
+    <h4 class="fw-bold mb-3">More with a free account</h4>
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <div class="d-flex gap-3 align-items-start">
+          <div style="font-size:2rem; line-height:1;">🤖</div>
+          <div>
+            <div class="fw-bold mb-1">Ask AI</div>
+            <div class="small" style="opacity:.85;">Ask any question about tournament probabilities. Get instant answers powered by Claude, with a generous free usage quota included.</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="d-flex gap-3 align-items-start">
+          <div style="font-size:2rem; line-height:1;">🔮</div>
+          <div>
+            <div class="fw-bold mb-1">What-if scenarios</div>
+            <div class="small" style="opacity:.85;">Edit any match scoreline and instantly see how the groups, bracket, and championship odds would change. Save and compare multiple scenarios.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4 d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('auth.register') }}" class="btn btn-light fw-bold">Create a free account</a>
+      <a href="{{ url_for('auth.login_get') }}" class="btn btn-outline-light">Log in</a>
+    </div>
+  </div>
 </div>
 {% endif %}
 
@@ -353,6 +382,63 @@ document.getElementById('update-results-btn')?.addEventListener('click', async f
   }
 });
 </script>
+{% if not current_user.is_authenticated %}
+<!-- Modal: new results available -->
+<div class="modal fade" id="resultsUpdatedModal" tabindex="-1" aria-labelledby="resultsUpdatedModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resultsUpdatedModalLabel">New results available</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        The tournament results and simulations have been updated. Refresh the page to see the latest standings and championship odds.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Dismiss</button>
+        <button type="button" class="btn btn-success" onclick="window.location.reload()">Refresh now</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const POLL_INTERVAL = 5 * 60 * 1000;
+  const TS_KEY = 'wc2026-last-ts';
+  let intervalId = null;
+
+  async function checkForUpdates() {
+    try {
+      const resp = await fetch('{{ url_for("api.actuals_timestamp") }}');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const serverTs = data.last_updated;
+      if (!serverTs) return;
+
+      const knownTs = parseFloat(localStorage.getItem(TS_KEY) || '0');
+      if (knownTs === 0) {
+        // First poll — record current timestamp, don't alert
+        localStorage.setItem(TS_KEY, String(serverTs));
+        return;
+      }
+      if (serverTs > knownTs) {
+        localStorage.setItem(TS_KEY, String(serverTs));
+        clearInterval(intervalId);
+        const modal = new bootstrap.Modal(document.getElementById('resultsUpdatedModal'));
+        document.getElementById('resultsUpdatedModal').addEventListener('hidden.bs.modal', function () {
+          // User dismissed — stop polling for this page load
+        }, { once: true });
+        modal.show();
+      }
+    } catch (e) { /* network error — silently skip */ }
+  }
+
+  intervalId = setInterval(checkForUpdates, POLL_INTERVAL);
+  checkForUpdates();
+})();
+</script>
+{% endif %}
+
 {% if current_user.is_authenticated and current_user.settings.get('openrouter_api_key') %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>

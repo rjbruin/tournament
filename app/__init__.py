@@ -211,7 +211,7 @@ def create_app():
         if request.endpoint in public_endpoints:
             return
         if not current_user.is_authenticated:
-            return redirect(url_for("auth.login", next=request.full_path))
+            return redirect(url_for("auth.login_get", next=request.full_path))
 
     @app.before_request
     def csrf_protect():

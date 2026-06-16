@@ -18,7 +18,7 @@ def _authenticate():
         curl -H "Authorization: Bearer <api_slug>" .../api/stats
         curl ".../api/stats?api_key=<api_slug>"
     """
-    if request.endpoint == "api.health":
+    if request.endpoint in ("api.health", "api.actuals_timestamp"):
         return
 
     if current_user.is_authenticated:
@@ -53,6 +53,14 @@ def _require_results():
 @api_bp.get("/health")
 def health():
     return jsonify({"status": "ok"})
+
+
+@api_bp.get("/actuals/timestamp")
+def actuals_timestamp():
+    """Public endpoint: returns the last time the current scenario was updated.
+    Used by unauthenticated frontpage polling to detect new results."""
+    ts = data_store.actuals_last_updated()
+    return jsonify({"last_updated": ts})
 
 
 @api_bp.post("/simulate")

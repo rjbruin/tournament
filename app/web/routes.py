@@ -278,6 +278,15 @@ def index():
         import time as _time
         last_updated = _time.strftime("%d-%m %H:%M", _time.gmtime(last_updated_ts))
 
+    pending_approvals = 0
+    if current_user.is_authenticated and current_user.is_admin:
+        pending_approvals = sum(
+            1 for u in auth.list_users()
+            if not u["approved"] and not u.get("is_admin")
+        )
+
+    gs = data_store.load_global_settings()
+
     return render_template(
         "index.html",
         tournament=engine.data["tournament"],
@@ -290,6 +299,8 @@ def index():
         results_up_to_date=_results_up_to_date(engine),
         featured_fixture=featured_fixture,
         featured_is_live=featured_is_live,
+        pending_approvals=pending_approvals,
+        invite_only=gs.get("invite_only", True),
         featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
         qualification_notes=qualification_notes,

@@ -3,7 +3,14 @@
 {% block title %}Groups — WC 2026{% endblock %}
 {% block content %}
 
-<h2 class="mb-4">Groups</h2>
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <h2 class="mb-0">Groups</h2>
+  <div class="group-nav" id="group-nav">
+    {% for group in groups %}
+    <a class="group-nav-btn" href="#group-{{ group.name }}">{{ group.name }}</a>
+    {% endfor %}
+  </div>
+</div>
 
 {% for group in groups %}
 <div class="row mb-4" id="group-{{ group.name }}">
@@ -132,4 +139,20 @@
   </div>
 </div>
 {% endif %}
+
+<script>
+(function () {
+  const btns = document.querySelectorAll('.group-nav-btn');
+  const sections = Array.from(btns).map(b => document.querySelector(b.getAttribute('href')));
+  function update() {
+    let active = 0;
+    sections.forEach((sec, i) => {
+      if (sec && sec.getBoundingClientRect().top <= 120) active = i;
+    });
+    btns.forEach((b, i) => b.classList.toggle('active', i === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
 {% endblock %}

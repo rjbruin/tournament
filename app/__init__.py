@@ -180,6 +180,10 @@ def create_app():
     login_manager = LoginManager()
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "info"
+    # Harden the "remember me" cookie to match the session cookie settings.
+    login_manager.remember_cookie_httponly = True
+    login_manager.remember_cookie_samesite = "Lax"
+    login_manager.remember_cookie_secure = app.config["SESSION_COOKIE_SECURE"]
 
     @login_manager.user_loader
     def load_user(user_id):

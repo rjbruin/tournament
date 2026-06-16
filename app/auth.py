@@ -86,6 +86,13 @@ class User(UserMixin):
         return self._record["api_slug"]
 
     @property
+    def is_approved(self) -> bool:
+        # The admin account is always considered approved.
+        if self.is_admin:
+            return True
+        return bool(self._record.get("approved", False))
+
+    @property
     def is_admin(self) -> bool:
         admin_username = os.environ.get(ADMIN_USERNAME_ENV, "")
         return bool(admin_username) and self._record["username"].lower() == admin_username.lower()
@@ -152,9 +159,10 @@ def validate_password(password: str) -> str | None:
     return None
 
 
-def create_user(username: str, password: str) -> User | None:
+def create_user(username: str, password: str, approved: bool = False) -> User | None:
     """Create a new account. Returns the User, or None if the username is
-    already taken."""
+    already taken. New accounts are unapproved by default until the admin
+    approves them (unless `approved=True` is passed, e.g. for the first user)."""
     users = _load_all()
     key = username.lower()
     if key in users:
@@ -165,10 +173,23 @@ def create_user(username: str, password: str) -> User | None:
         "api_slug": secrets.token_hex(20),
         "settings": dict(DEFAULT_USER_SETTINGS),
         "created_at": time.time(),
+        "approved": approved,
     }
     users[key] = record
     _save_all(users)
     return User(record)
+
+
+def approve_user(username: str) -> bool:
+    """Approve a pending account so it can log in. Returns True if the account
+    existed and was updated, False if the account was not found."""
+    users = _load_all()
+    record = users.get(username.lower())
+    if not record:
+        return False
+    record["approved"] = True
+    _save_all(users)
+    return True
 
 
 def update_settings(username: str, **kwargs) -> None:
@@ -208,10 +229,11 @@ def user_count() -> int:
 
 
 def list_users() -> list[dict]:
-    """Return a list of {username, created_at} for all accounts, sorted by
-    username. Used by the admin settings panel."""
+    """Return a list of {username, created_at, approved} for all accounts,
+    sorted by username. Used by the admin settings panel."""
     users = _load_all()
     return sorted(
-        ({"username": r["username"], "created_at": r.get("created_at")} for r in users.values()),
+        ({"username": r["username"], "created_at": r.get("created_at"), "approved": r.get("approved", False)}
+         for r in users.values()),
         key=lambda u: u["username"].lower(),
     )

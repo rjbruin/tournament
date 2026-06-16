@@ -276,17 +276,19 @@ def answer_question(
     user_settings: dict | None = None,
     history: list[dict] | None = None,
     global_settings: dict | None = None,
-) -> str:
+) -> tuple[str, int]:
+    """Return (answer_text, total_tokens_used). total_tokens_used is 0 on
+    early-exit (no API call made) or when the API doesn't report usage."""
     if results is None:
-        return "No simulation results are available yet. Please run a simulation first (see the Simulations page)."
+        return ("No simulation results are available yet. Please run a simulation first (see the Simulations page).", 0)
 
     api_key, model = _get_config(user_settings, global_settings)
     if not api_key:
         if (user_settings or {}).get("openrouter_key_mode") == "shared":
             return ("The shared OpenRouter API key hasn't been configured by the admin yet. "
-                    "Add your own key on the Settings page instead, or try again later.")
+                    "Add your own key on the Settings page instead, or try again later.", 0)
         return ("No OpenRouter API key configured. Add one on the Settings page "
-                "(or set the OPENROUTER_API_KEY environment variable).")
+                "(or set the OPENROUTER_API_KEY environment variable).", 0)
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -307,6 +309,8 @@ def answer_question(
 
     messages.append({"role": "user", "content": question})
 
+    total_tokens = 0
+
     # Agentic loop: let the model call tools until it produces a final answer
     for _ in range(5):
         try:
@@ -322,7 +326,7 @@ def answer_question(
                 timeout=60,
             )
         except requests.RequestException as e:
-            return f"OpenRouter request failed: {e}"
+            return (f"OpenRouter request failed: {e}", total_tokens)
 
         if resp.status_code in (402, 429):
             try:
@@ -341,23 +345,26 @@ def answer_question(
                 msg += " Try again later, or check your plan/credits on openrouter.ai."
             if detail:
                 msg += f" ({detail})"
-            return msg
+            return (msg, total_tokens)
 
         try:
             resp.raise_for_status()
         except requests.RequestException as e:
-            return f"OpenRouter request failed: {e}"
+            return (f"OpenRouter request failed: {e}", total_tokens)
 
         data = resp.json()
         if "error" in data:
-            return f"OpenRouter error: {data['error'].get('message', data['error'])}"
+            return (f"OpenRouter error: {data['error'].get('message', data['error'])}", total_tokens)
+
+        usage = data.get("usage") or {}
+        total_tokens += (usage.get("prompt_tokens") or 0) + (usage.get("completion_tokens") or 0)
 
         choice = data["choices"][0]
         message = choice["message"]
         tool_calls = message.get("tool_calls")
 
         if not tool_calls:
-            return message.get("content") or "Unable to generate an answer."
+            return (message.get("content") or "Unable to generate an answer.", total_tokens)
 
         messages.append(message)
         for call in tool_calls:
@@ -373,4 +380,4 @@ def answer_question(
                 "content": result,
             })
 
-    return "Unable to generate an answer."
+    return ("Unable to generate an answer.", total_tokens)

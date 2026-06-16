@@ -125,14 +125,41 @@
                    placeholder="sk-or-..." value="{{ global_settings.shared_openrouter_api_key }}" autocomplete="off">
           </div>
 
+          <h6 class="mb-2 mt-4">Notification email</h6>
+          <p class="text-muted small">
+            When a new user registers, an email is sent here so you can approve or reject them.
+            Requires a local SMTP server (e.g. Postfix/sendmail) on the server.
+          </p>
+          <div class="mb-3">
+            <label for="admin_email" class="form-label">Admin email address</label>
+            <input type="email" class="form-control" id="admin_email" name="admin_email"
+                   placeholder="admin@example.com" value="{{ global_settings.admin_email }}">
+          </div>
+
           <h6 class="mb-2 mt-4">Active users</h6>
           <ul class="list-group list-group-flush">
             {% for u in admin_users %}
             <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-              <span>{{ u.username }}</span>
-              {% if u.created_at %}
-              <span class="text-muted small">joined {{ u.created_at | int | timestamp_to_date }}</span>
-              {% endif %}
+              <div>
+                <span>{{ u.username }}</span>
+                {% if not u.approved %}
+                <span class="badge bg-warning text-dark ms-1">pending approval</span>
+                {% endif %}
+                {% if u.created_at %}
+                <span class="text-muted small ms-2">joined {{ u.created_at | int | timestamp_to_date }}</span>
+                {% endif %}
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                {% if u.llm_usage %}
+                <span class="text-muted small">
+                  Ask AI: {{ "{:,}".format(u.llm_usage.daily_tokens) }} today /
+                  {{ "{:,}".format(u.llm_usage.weekly_tokens) }} this week
+                </span>
+                {% endif %}
+                {% if not u.approved %}
+                <a href="{{ url_for('web.admin_approve_user', username=u.username) }}" class="btn btn-success btn-sm">Approve</a>
+                {% endif %}
+              </div>
             </li>
             {% endfor %}
           </ul>

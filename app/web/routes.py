@@ -8,6 +8,13 @@ from app.web.view_helpers import normalize_group_match, normalize_bracket_match,
 web_bp = Blueprint("web", __name__)
 
 
+def _admin_users_with_usage() -> list[dict]:
+    users = auth.list_users()
+    for u in users:
+        u["llm_usage"] = data_store.get_llm_usage(u["username"])
+    return users
+
+
 def _is_live(match: dict) -> bool:
     """A match is "live" if it's flagged in_progress, or if the current
     time is within 2 hours of its scheduled kickoff."""
@@ -712,7 +719,7 @@ def settings():
         global_settings=data_store.load_global_settings(),
         all_team_names=all_team_names,
         scenario_list=data_store.list_scenarios(_username()),
-        admin_users=auth.list_users() if current_user.is_admin else None,
+        admin_users=_admin_users_with_usage() if current_user.is_admin else None,
         admin_username_env=auth.ADMIN_USERNAME_ENV,
     )
 
@@ -749,6 +756,8 @@ def settings_save():
             global_updates["football_data_api_key"] = request.form.get("football_data_api_key", "").strip()
         if "shared_openrouter_api_key" in request.form:
             global_updates["shared_openrouter_api_key"] = request.form.get("shared_openrouter_api_key", "").strip()
+        if "admin_email" in request.form:
+            global_updates["admin_email"] = request.form.get("admin_email", "").strip()
         if global_updates:
             data_store.save_global_settings(global_updates)
 
@@ -785,3 +794,20 @@ def change_password():
     return redirect(url_for("web.settings"))
 
 
+@web_bp.get("/admin/approve/<username>")
+@login_required
+def admin_approve_user(username):
+    if not current_user.is_admin:
+        flash("Only the admin can approve accounts.", "danger")
+        return redirect(url_for("web.settings"))
+    if auth.approve_user(username):
+        flash(f"Account '{username}' approved — they can now log in.", "success")
+    else:
+        flash(f"Account '{username}' not found.", "danger")
+    return redirect(url_for("web.settings"))
+
+
+@web_bp.post("/admin/approve/<username>")
+@login_required
+def admin_approve_user_post(username):
+    return admin_approve_user(username)

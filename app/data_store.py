@@ -142,6 +142,7 @@ def get_previous_snapshot(username: str) -> dict | None:
 DEFAULT_GLOBAL_SETTINGS = {
     "football_data_api_key": "",
     "shared_openrouter_api_key": "",
+    "admin_email": "",
 }
 
 
@@ -158,6 +159,67 @@ def save_global_settings(settings: dict) -> None:
     current.update(settings)
     with open(SETTINGS_PATH, "w") as f:
         json.dump(current, f, indent=2)
+
+
+# ----------------------------------------------------------------------
+# Per-user LLM token usage tracking.
+# Entries are appended to data/users/<username>/llm_usage.jsonl, one
+# JSON object per line: {"ts": <unix_timestamp>, "tokens": <int>}
+# ----------------------------------------------------------------------
+
+LLM_DAILY_LIMIT = 100_000
+LLM_WEEKLY_LIMIT = 1_000_000
+
+
+def _llm_usage_path(username: str) -> str:
+    return os.path.join(_user_dir(username), "llm_usage.jsonl")
+
+
+def record_llm_usage(username: str, tokens: int) -> None:
+    """Append a token-usage entry for this user."""
+    path = _llm_usage_path(username)
+    with open(path, "a") as f:
+        f.write(json.dumps({"ts": time.time(), "tokens": tokens}) + "\n")
+
+
+def get_llm_usage(username: str) -> dict:
+    """Return {daily_tokens, weekly_tokens} consumed so far by this user."""
+    path = _llm_usage_path(username)
+    if not os.path.exists(path):
+        return {"daily_tokens": 0, "weekly_tokens": 0}
+    now = time.time()
+    day_ago = now - 86400
+    week_ago = now - 604800
+    daily = 0
+    weekly = 0
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            ts = entry.get("ts", 0)
+            t = entry.get("tokens", 0)
+            if ts >= week_ago:
+                weekly += t
+            if ts >= day_ago:
+                daily += t
+    return {"daily_tokens": daily, "weekly_tokens": weekly}
+
+
+def check_llm_quota(username: str) -> str | None:
+    """Return an error message if the user has hit their quota, else None."""
+    usage = get_llm_usage(username)
+    if usage["daily_tokens"] >= LLM_DAILY_LIMIT:
+        return (f"Daily Ask AI limit reached ({LLM_DAILY_LIMIT:,} tokens). "
+                "Your quota resets every 24 hours.")
+    if usage["weekly_tokens"] >= LLM_WEEKLY_LIMIT:
+        return (f"Weekly Ask AI limit reached ({LLM_WEEKLY_LIMIT:,} tokens). "
+                "Your quota resets every 7 days.")
+    return None
 
 
 # ----------------------------------------------------------------------

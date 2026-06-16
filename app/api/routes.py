@@ -271,15 +271,33 @@ def query():
     data = request.get_json()
     if not data or "question" not in data:
         return jsonify({"error": "Missing 'question' field"}), 400
+
+    from app import data_store
+    quota_error = data_store.check_llm_quota(g.user.username)
+    if quota_error:
+        return jsonify({"error": quota_error}), 429
+
     scenario_id = data.get("scenario") or _scenario_id()
     results = app_module.get_or_run_results(g.user.username, scenario_id,
                                               n=g.user.settings.get("n_simulations"))
     engine = app_module.get_engine()
     history = data.get("history") if isinstance(data.get("history"), list) else None
-    from app import data_store
-    answer = answer_question(data["question"], engine, results, user_settings=g.user.settings, history=history,
-                              global_settings=data_store.load_global_settings())
-    return jsonify({"question": data["question"], "answer": answer})
+    answer, tokens_used = answer_question(data["question"], engine, results, user_settings=g.user.settings,
+                                           history=history, global_settings=data_store.load_global_settings())
+    if tokens_used > 0:
+        data_store.record_llm_usage(g.user.username, tokens_used)
+
+    usage = data_store.get_llm_usage(g.user.username)
+    return jsonify({
+        "question": data["question"],
+        "answer": answer,
+        "usage": {
+            "daily_tokens": usage["daily_tokens"],
+            "weekly_tokens": usage["weekly_tokens"],
+            "daily_limit": data_store.LLM_DAILY_LIMIT,
+            "weekly_limit": data_store.LLM_WEEKLY_LIMIT,
+        },
+    })
 
 
 # ----------------------------------------------------------------------

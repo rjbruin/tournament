@@ -553,30 +553,69 @@ def fixtures():
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
     groups = engine.groups
-    all_fixtures = []
+
+    # Fixtures are grouped into navigable sections: the three group-stage
+    # matchdays, then each knockout round. ``sections`` preserves this
+    # canonical order and only includes sections that have fixtures.
+    section_defs = [
+        ("md1", "Matchday 1", "MD1"),
+        ("md2", "Matchday 2", "MD2"),
+        ("md3", "Matchday 3", "MD3"),
+        ("Round-of-32", "Round of 32", "R32"),
+        ("Round-of-16", "Round of 16", "R16"),
+        ("Quarterfinal", "Quarterfinals", "QF"),
+        ("Semifinal", "Semifinals", "SF"),
+        ("Final", "Final", "Final"),
+    ]
+    buckets = {sid: [] for sid, _, _ in section_defs}
+
     if results is not None and not _is_pre_draw(scenario_id):
         fixtures_by_group = results.get("fixtures", {})
         for g in groups:
             raw_fixtures = fixtures_by_group.get(g["name"], [])
-            for m in raw_fixtures:
+            # Each group plays 6 matches across 3 matchdays (2 per matchday);
+            # assign matchdays by chronological order within the group.
+            ordered = sorted(raw_fixtures, key=_utc_sort_key)
+            for idx, m in enumerate(ordered):
+                matchday = idx // 2 + 1
                 nm = normalize_group_match(m)
                 nm["header"] = f"Group {g['name']}"
                 nm["header_url"] = url_for("web.groups") + f"#group-{g['name']}"
                 nm["sort_key"] = _utc_sort_key(m)
-                all_fixtures.append(nm)
+                buckets[f"md{matchday}"].append(nm)
+
         bm = results.get("bracket_matches", {})
+        # Map the singular round name (from ROUND_NAMES) to its section id.
+        round_to_section = {
+            "Round of 32": "Round-of-32",
+            "Round of 16": "Round-of-16",
+            "Quarterfinal": "Quarterfinal",
+            "Semifinal": "Semifinal",
+            "Final": "Final",
+        }
         for m in engine.all_knockout_defs:
             match = bm[m["match"]]
             nm = normalize_bracket_match(match)
             nm["header"] = nm["round"]
             nm["header_url"] = url_for("web.bracket") + f"#round-{nm['round'].replace(' ', '-')}"
             nm["sort_key"] = _utc_sort_key(match)
-            all_fixtures.append(nm)
-        all_fixtures.sort(key=lambda f: f["sort_key"])
+            sid = round_to_section.get(nm["round"])
+            if sid:
+                buckets[sid].append(nm)
+
+        for sid in buckets:
+            buckets[sid].sort(key=lambda f: f["sort_key"])
+
+    sections = [
+        {"id": sid, "label": label, "short": short, "fixtures": buckets[sid]}
+        for sid, label, short in section_defs
+        if buckets[sid]
+    ]
+
     return render_template(
         "fixtures.html",
         groups=groups,
-        all_fixtures=all_fixtures,
+        sections=sections,
         results=results,
         scenario_id=scenario_id,
     )

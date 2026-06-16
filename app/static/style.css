@@ -302,6 +302,19 @@ h1, h2 { color: var(--wc-green); }
   background: var(--wc-green);
   color: #fff;
 }
+/* Wider pill for labelled sections (MD1, R32, QF, Final, …) */
+.group-nav-btn--wide {
+  width: auto;
+  padding: 0 .7rem;
+}
+
+.fixtures-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: .05em;
+  color: var(--wc-green);
+  border-bottom: 2px solid rgba(10,59,42,.12);
+  padding-bottom: .3rem;
+}
 
 /* ---------- Fixture display macros ---------- */
 .fixture-flag-lg { font-size: 2rem; line-height: 1; margin-bottom: .2rem; }

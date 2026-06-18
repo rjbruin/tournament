@@ -41,11 +41,11 @@
           </thead>
           <tbody>
             {% for row in group_tables[group.name] %}
-            <tr>
+            <tr class="{{ fx.qual_row_class(row) }}">
               <td>
                 <a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">
                   {{ row.name|flag }} {{ row.name }}
-                </a> {{ fx.form_badge(row.name) }}
+                </a> {{ fx.form_badge(row.name) }}{{ fx.qual_marker(row) }}
               </td>
               <td class="text-end">{{ row.gp }}</td>
               <td class="text-end">{{ row.gf }}</td>
@@ -54,12 +54,7 @@
               <td class="text-end fw-bold">{{ row.pts }}</td>
               <td class="text-end text-muted">{{ row.elo }}</td>
               {% if results %}
-              <td class="text-end">
-                {% set adv = row.advance_prob %}
-                <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                  {{ adv|pct(0) }}
-                </span>
-              </td>
+              <td class="text-end">{{ fx.advance_badge(row.advance_prob) }}</td>
               {% endif %}
             </tr>
             {% endfor %}

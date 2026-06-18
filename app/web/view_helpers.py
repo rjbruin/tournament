@@ -155,6 +155,7 @@ def compute_group_table(group: dict, fixtures: list, teams_by_name: dict, result
             stats[a]["pts"] += 1
 
     advance = (results or {}).get("group_advance_prob", {})
+    finish = (results or {}).get("group_finish", {}).get(group["name"], {})
     rows = []
     for tname in group["teams"]:
         s = stats[tname]
@@ -164,4 +165,29 @@ def compute_group_table(group: dict, fixtures: list, teams_by_name: dict, result
         rows.append(s)
 
     rows.sort(key=lambda r: (r["pts"], r["gd"], r["gf"], r["advance_prob"]), reverse=True)
+
+    # Annotate each row with its current standings rank and a qualification
+    # state, used to colour the table. A probability at/above SECURED is treated
+    # as mathematically clinched.
+    SECURED = 0.9995
+    for i, r in enumerate(rows):
+        r["rank"] = i + 1
+        f = finish.get(r["name"], {})
+        first_p = f.get("first_prob", 0)
+        top2_p = first_p + f.get("second_prob", 0)
+        adv_p = r["advance_prob"]
+        if first_p >= SECURED:
+            r["qual"] = "secured_first"
+        elif top2_p >= SECURED:
+            r["qual"] = "secured_second"
+        elif adv_p >= SECURED:
+            r["qual"] = "secured_qualified"
+        elif r["rank"] == 1:
+            r["qual"] = "place_first"
+        elif r["rank"] == 2:
+            r["qual"] = "place_second"
+        elif r["rank"] == 3:
+            r["qual"] = "place_third"
+        else:
+            r["qual"] = None
     return rows

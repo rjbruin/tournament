@@ -18,7 +18,8 @@ def _authenticate():
         curl -H "Authorization: Bearer <api_slug>" .../api/stats
         curl ".../api/stats?api_key=<api_slug>"
     """
-    if request.endpoint in ("api.health", "api.actuals_timestamp", "api.live"):
+    if request.endpoint in ("api.health", "api.actuals_timestamp", "api.live",
+                            "api.changelog"):
         return
 
     if current_user.is_authenticated:
@@ -102,6 +103,27 @@ def live():
         })
 
     return jsonify({"last_updated": data_store.actuals_last_updated(), "live": out})
+
+
+@api_bp.get("/changelog")
+def changelog():
+    """Public: changelog entries newer than ``?since=<version>`` (newest first),
+    plus the current app version. Used by the "What's New" popup."""
+    from app import changelog as changelog_mod
+    since = request.args.get("since", "")
+    return jsonify({
+        "current": changelog_mod.APP_VERSION,
+        "entries": changelog_mod.entries_since(since or None),
+    })
+
+
+@api_bp.post("/account/seen_version")
+def mark_seen_version():
+    """Record that the current account has seen the "What's New" popup for the
+    running app version, so it isn't shown again until the next release."""
+    from app import changelog as changelog_mod
+    auth.update_settings(g.user.username, last_seen_version=changelog_mod.APP_VERSION)
+    return jsonify({"ok": True, "version": changelog_mod.APP_VERSION})
 
 
 @api_bp.post("/simulate")

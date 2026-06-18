@@ -48,6 +48,8 @@ DEFAULT_USER_SETTINGS = {
     "default_team": "Netherlands",
     "favorite_team": "",
     "onboarded": False,
+    # Last app version for which this account was shown the "What's New" popup.
+    "last_seen_version": "",
 }
 
 USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]{3,32}$")

@@ -308,6 +308,43 @@ h1, h2 { color: var(--wc-green); }
   padding: 0 .7rem;
 }
 
+/* ---------- Qualification styling for standings ---------- */
+/* Subtle tint while a team merely occupies a qualifying place (Bootstrap reads
+   the row background from --bs-table-bg, so hover striping still works). */
+.qual-place-first, .qual-place-second { --bs-table-bg: rgba(0,132,61,.05); }
+.qual-place-third  { --bs-table-bg: rgba(255,193,7,.08); }
+/* Stronger tint once a place is mathematically secured. */
+.qual-secured-first     { --bs-table-bg: rgba(0,132,61,.17); }
+.qual-secured-second    { --bs-table-bg: rgba(0,132,61,.12); }
+.qual-secured-qualified { --bs-table-bg: rgba(0,132,61,.09); }
+
+/* Coloured accent bar on the team cell. */
+.qual-row td:first-child { border-left: 3px solid transparent; }
+.qual-place-first td:first-child,
+.qual-place-second td:first-child { border-left-color: rgba(0,132,61,.45); }
+.qual-place-third td:first-child  { border-left-color: rgba(255,193,7,.8); }
+.qual-secured-first td:first-child,
+.qual-secured-second td:first-child { border-left-color: var(--wc-green); }
+.qual-secured-qualified td:first-child { border-left-color: #1b9e77; }
+
+.qual-marker {
+  display: inline-block;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  padding: .05rem .32rem;
+  border-radius: .4rem;
+  vertical-align: middle;
+  margin-left: .25rem;
+  white-space: nowrap;
+}
+.qual-marker-secured { background: var(--wc-green); color: #fff; }
+
+/* Odds-type icons (cup for the title, advancement marker for the knockouts) */
+.odds-icon { font-weight: 700; font-style: normal; }
+.advance-badge .odds-icon { margin-right: .1rem; }
+.winner-odds .odds-icon { margin-right: .15rem; }
+
 .fixtures-section-title {
   font-family: 'Bebas Neue', sans-serif;
   letter-spacing: .05em;

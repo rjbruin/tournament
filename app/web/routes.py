@@ -160,29 +160,47 @@ def _groups_for_results(engine, results):
 
 
 def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
-    """Build natural-language "what's at stake" notes for the two teams in the
-    featured group fixture, explaining what each needs to reach the knockouts.
+    """Build "what's at stake" info for the two teams in the featured group
+    fixture, from the second group matchday onwards.
 
-    Only produced on the final group matchday (a team's last group game), when
-    the question "what do they need?" is crisp. Returns a list of explanation
-    dicts (see app/qualification.py), possibly empty."""
+    Returns ``(notes, message)``:
+      - ``notes``: per-team qualification explanation dicts (see
+        app/qualification.py) when some result of this match can clinch
+        advancement or confirm elimination for either team;
+      - ``message``: a fixed string when no result of this match settles either
+        team's fate, else ``None``.
+
+    Both are empty/None on the first matchday or for non-group fixtures."""
     from app import qualification
 
     if not featured_fixture or not featured_fixture.get("_group"):
-        return []
+        return [], None
     if featured_fixture.get("played") and not featured_fixture.get("in_progress"):
-        return []
+        return [], None
 
     gname = featured_fixture["_group"]
     cutoff = featured_fixture["_sort_key"]
-    group_matches = [m for m in all_normalized if m.get("_group") == gname]
-    unplayed = [m for m in group_matches if m["_sort_key"] >= cutoff]
-    # Final matchday only: the two last group games (disjoint pairs).
-    if not (1 <= len(unplayed) <= 2):
-        return []
+    home = featured_fixture.get("home_team")
+    away = featured_fixture.get("away_team")
+    if not home or not away:
+        return [], None
 
-    # Reconstruct the state *before* this matchday: every match scheduled
-    # earlier (in any group) is kept; this matchday's games are reopened.
+    # Which matchday is this fixture? Each group plays 6 matches across 3
+    # matchdays (2 per matchday), in chronological order. Only show
+    # qualification scenarios from matchday 2 onwards.
+    group_matches = sorted((m for m in all_normalized if m.get("_group") == gname),
+                           key=lambda m: m["_sort_key"])
+    fidx = next((i for i, m in enumerate(group_matches)
+                 if {m.get("home_team"), m.get("away_team")} == {home, away}), None)
+    if fidx is None:
+        return [], None
+    matchday = fidx // 2 + 1
+    if matchday < 2:
+        return [], None
+
+    # Reconstruct the state *before* this match: every group match that kicked
+    # off earlier is kept (using its real result); this match and all later
+    # ones are reopened for the reasoning.
     scenario = data_store.load_scenario(scenario_id, _username()) or {}
     actuals = scenario.get("actuals") or data_store._empty_actuals()
     before = {"group_results": {}, "knockout_results": {}, "live_matches": []}
@@ -194,14 +212,18 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
         if kept:
             before["group_results"][g] = kept
 
+    # Can a result of this match settle either team's fate? If not, say so
+    # plainly rather than spelling out a multi-match decision tree.
+    clinch = qualification.match_clinch_status(engine, before, gname, home, away)
+    if clinch is not None and not clinch["any_decisive"]:
+        return [], "Neither team can clinch advancement to the knockout round in this match."
+
     notes = []
-    for team in (featured_fixture.get("home_team"), featured_fixture.get("away_team")):
-        if not team:
-            continue
+    for team in (home, away):
         expl = qualification.explain_qualification_cached(engine, before, gname, team, "advances")
         if expl:
             notes.append(expl)
-    return notes
+    return notes, None
 
 
 @web_bp.get("/")
@@ -276,11 +298,13 @@ def index():
             previous_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
 
     qualification_notes = []
+    qualification_message = None
     if featured_fixture and not _is_pre_draw(scenario_id):
         try:
-            qualification_notes = _qualification_notes(engine, scenario_id, featured_fixture, all_normalized)
+            qualification_notes, qualification_message = _qualification_notes(
+                engine, scenario_id, featured_fixture, all_normalized)
         except Exception:
-            qualification_notes = []
+            qualification_notes, qualification_message = [], None
 
     scenario_list = data_store.list_scenarios(_username())
     active_scenario = data_store.load_scenario(scenario_id, _username())
@@ -316,6 +340,7 @@ def index():
         featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
         qualification_notes=qualification_notes,
+        qualification_message=qualification_message,
         previous_fixture=previous_fixture,
         previous_group_table=previous_group_table,
     )
@@ -762,6 +787,14 @@ def scenario_compare():
 @web_bp.get("/simulation-logic")
 def simulation_logic():
     return render_template("simulation_logic.html")
+
+
+@web_bp.get("/changelog")
+def changelog():
+    from app import changelog as changelog_mod
+    return render_template("changelog.html",
+                           changelog=changelog_mod.CHANGELOG,
+                           app_version=changelog_mod.APP_VERSION)
 
 
 @web_bp.get("/onboarding")

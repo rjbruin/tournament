@@ -387,6 +387,54 @@ def explain_qualification(engine, actuals: dict, group_name: str, team_name: str
             "status": "conditional", "summary": summary, "lines": lines}
 
 
+def match_clinch_status(engine, actuals: dict, group_name: str, home: str, away: str,
+                        n: int = DEFAULT_N) -> dict | None:
+    """Determine whether a single result of the group match ``home`` vs ``away``
+    can *settle* either team's fate, marginalizing over all other remaining
+    group matches.
+
+    A result "clinches" advancement for a team if, across every simulation with
+    that result, the team reaches the knockouts; it "eliminates" the team if it
+    never does. Returns::
+
+        {"any_decisive": bool,
+         "teams": {team: {"clinch": [results], "eliminate": [results]}}}
+
+    where each ``results`` is a subset of {1: home win, 0: draw, -1: away win}.
+    Returns ``None`` if the match isn't a remaining match of the group (e.g.
+    already played) or the group is unknown.
+    """
+    if group_name not in engine.group_pos:
+        return None
+    sim = engine.simulate_group_outcomes(n, actuals, group_name)
+    matches = sim["matches"]
+    f = next((k for k, m in enumerate(matches)
+              if {m["home"], m["away"]} == {home, away}), None)
+    if f is None:
+        return None
+    res = matches[f]["result"]
+
+    out = {"any_decisive": False, "teams": {}}
+    for team in (home, away):
+        if team not in sim["outcomes"]:
+            continue
+        achieved = sim["outcomes"][team]["advanced"]
+        info = {"clinch": [], "eliminate": []}
+        for v in (1, 0, -1):
+            mask = res == v
+            if not mask.any():
+                continue
+            rate = float(achieved[mask].mean())
+            if rate >= 1 - TOL:
+                info["clinch"].append(v)
+            elif rate <= TOL:
+                info["eliminate"].append(v)
+        if info["clinch"] or info["eliminate"]:
+            out["any_decisive"] = True
+        out["teams"][team] = info
+    return out
+
+
 _CACHE: dict = {}
 _CACHE_MAX = 256
 

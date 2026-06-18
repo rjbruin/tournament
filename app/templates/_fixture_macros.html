@@ -11,6 +11,35 @@
 {% endmacro %}
 
 
+{# ---------- Qualification styling for standings rows ---------- #}
+{# Icon used on advancement odds. Set to '→' (arrow) or 'Q'. #}
+{% set ADVANCE_ICON = 'Q' %}
+
+{% macro qual_row_class(row) -%}
+qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
+{%- endmacro %}
+
+{# A small "secured" marker shown next to a team that has clinched a place. #}
+{% macro qual_marker(row) -%}
+  {%- if row.qual == 'secured_first' %}<span class="qual-marker qual-marker-secured" title="Secured top of the group">1st&nbsp;✓</span>
+  {%- elif row.qual == 'secured_second' %}<span class="qual-marker qual-marker-secured" title="Secured a top-two finish">Top&nbsp;2&nbsp;✓</span>
+  {%- elif row.qual == 'secured_qualified' %}<span class="qual-marker qual-marker-secured" title="Secured a place in the knockout round">Q&nbsp;✓</span>
+  {%- endif %}
+{%- endmacro %}
+
+{# Advancement odds badge, prefixed with the advancement icon. #}
+{% macro advance_badge(adv) -%}
+<span class="badge advance-badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+  <span class="odds-icon" title="Chance to advance from the group">{{ ADVANCE_ICON }}</span> {{ adv|pct(0) }}
+</span>
+{%- endmacro %}
+
+{# Tournament-winner odds, prefixed with a cup icon. #}
+{% macro winner_odds(prob) -%}
+<span class="winner-odds"><span class="odds-icon" title="Chance to win the tournament">🏆</span> {{ prob|pct }}</span>
+{%- endmacro %}
+
+
 {# ---------- Match events: goals + cards timeline ---------- #}
 {% macro _events_list(match) %}
 <ul class="match-events">
@@ -239,20 +268,15 @@
     </thead>
     <tbody>
       {% for row in rows %}
-      <tr>
-        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {% if show_form %}{{ form_badge(row.name) }}{% endif %}</td>
+      <tr class="{{ qual_row_class(row) }}">
+        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {% if show_form %}{{ form_badge(row.name) }}{% endif %}{{ qual_marker(row) }}</td>
         <td class="text-end">{{ row.gp }}</td>
         <td class="text-end">{{ row.gf }}</td>
         <td class="text-end">{{ row.ga }}</td>
         <td class="text-end">{{ row.gd }}</td>
         <td class="text-end fw-bold">{{ row.pts }}</td>
         {% if results %}
-        <td class="text-end">
-          {% set adv = row.advance_prob %}
-          <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-            {{ adv|pct(0) }}
-          </span>
-        </td>
+        <td class="text-end">{{ advance_badge(row.advance_prob) }}</td>
         {% endif %}
       </tr>
       {% endfor %}

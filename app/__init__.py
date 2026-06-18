@@ -216,6 +216,7 @@ def create_app():
         public_endpoints = {
             "web.index", "web.groups", "web.group", "web.team", "web.team_default",
             "web.bracket", "web.fixtures", "web.teams", "web.draw", "web.manifest",
+            "web.changelog", "web.simulation_logic",
         }
         if request.endpoint in public_endpoints:
             return

@@ -95,6 +95,8 @@
       <hr class="mb-3">
       <a href="{{ url_for('web.simulation_logic') }}" class="text-muted">How it Works</a>
       &middot;
+      <a href="{{ url_for('web.changelog') }}" class="text-muted">Changelog</a>
+      &middot;
       &copy; {{ tournament.year if tournament is defined else 2026 }} WC Simulator &mdash; Monte Carlo projections for entertainment purposes only.
     </div>
   </footer>
@@ -136,6 +138,77 @@
     // may be mounted under (e.g. when reverse-proxied at /tournament).
     window.API_ROOT = '{{ url_for("api.health") }}'.replace(/\/health$/, '');
     window.HOME_URL = '{{ url_for("web.index") }}';
+    window.IS_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};
+    window.LAST_SEEN_VERSION = {{ (current_user.settings.get('last_seen_version', '') if current_user.is_authenticated else '')|tojson }};
+  </script>
+
+  <!-- "What's New" popup: shown once after a new version is deployed -->
+  <div class="modal fade" id="whatsNewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">✨ What's New</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="whatsNewBody"></div>
+        <div class="modal-footer">
+          <a href="{{ url_for('web.changelog') }}" class="me-auto small text-muted">Full changelog</a>
+          <button type="button" class="btn btn-success" data-bs-dismiss="modal">Got it</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    function esc(s) {
+      const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+    }
+    function render(entries) {
+      return entries.map(function (e) {
+        let html = '<div class="mb-3"><div class="d-flex align-items-baseline gap-2 mb-1">'
+          + '<strong>v' + esc(e.version) + '</strong>'
+          + (e.date ? '<span class="text-muted small">' + esc(e.date) + '</span>' : '')
+          + '</div>';
+        if (e.features && e.features.length) {
+          html += '<div class="small fw-bold text-uppercase text-muted">✨ New</div><ul class="mb-1">'
+            + e.features.map(f => '<li>' + esc(f) + '</li>').join('') + '</ul>';
+        }
+        if (e.fixes && e.fixes.length) {
+          html += '<div class="small fw-bold text-uppercase text-muted">🛠️ Fixed</div><ul class="mb-1">'
+            + e.fixes.map(f => '<li>' + esc(f) + '</li>').join('') + '</ul>';
+        }
+        return html + '</div>';
+      }).join('');
+    }
+    const LS_KEY = 'wc2026-seen-version';
+    // For signed-in accounts the server tracks the last-seen version; for
+    // anonymous visitors we fall back to this browser's localStorage.
+    const since = window.IS_AUTHENTICATED
+      ? (window.LAST_SEEN_VERSION || '')
+      : (localStorage.getItem(LS_KEY) || '');
+
+    fetch(`${window.API_ROOT}/changelog?since=${encodeURIComponent(since)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data || !data.entries || !data.entries.length) return;
+        const body = document.getElementById('whatsNewBody');
+        if (!body) return;
+        body.innerHTML = render(data.entries);
+        const modalEl = document.getElementById('whatsNewModal');
+        const modal = new bootstrap.Modal(modalEl);
+        function markSeen() {
+          localStorage.setItem(LS_KEY, data.current);
+          if (window.IS_AUTHENTICATED) {
+            fetch(`${window.API_ROOT}/account/seen_version`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }
+            }).catch(() => {});
+          }
+        }
+        modalEl.addEventListener('hidden.bs.modal', markSeen, { once: true });
+        modal.show();
+      })
+      .catch(() => {});
+  })();
   </script>
   {% block scripts %}{% endblock %}
 </body>

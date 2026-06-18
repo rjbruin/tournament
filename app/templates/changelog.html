@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Changelog — WC 2026{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mb-4">
+      <h2 class="mb-0">Changelog</h2>
+      <span class="text-muted">Currently running v{{ app_version }}</span>
+    </div>
+
+    {% for entry in changelog %}
+    <div class="changelog-entry mb-4">
+      <div class="d-flex align-items-baseline gap-2 mb-2">
+        <h4 class="mb-0">v{{ entry.version }}</h4>
+        {% if entry.date %}<span class="text-muted small">{{ entry.date }}</span>{% endif %}
+        {% if loop.first %}<span class="badge bg-success">Latest</span>{% endif %}
+      </div>
+      {% if entry.features %}
+      <div class="small fw-bold text-uppercase text-muted mt-2 mb-1">✨ New</div>
+      <ul class="mb-2">
+        {% for f in entry.features %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if entry.fixes %}
+      <div class="small fw-bold text-uppercase text-muted mt-2 mb-1">🛠️ Fixed</div>
+      <ul class="mb-2">
+        {% for f in entry.fixes %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% if not loop.last %}<hr>{% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

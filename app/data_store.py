@@ -856,3 +856,17 @@ def fork_scenario(scenario_id: str, actuals: dict, label: str | None = None,
     base_label = (base or {}).get("label", scenario_id)
     label = label or f"What if (based on {base_label})"
     return save_scenario(label, actuals, based_on=scenario_id, username=username)
+
+
+# ---------------------------------------------------------------------------
+# Page-view usage tracking.
+# Entries appended to data/pageviews.jsonl, one JSON object per line:
+#   {"ts": <unix>, "ip": "<ip>", "page": "<path>", "user": "<username|null>"}
+# ---------------------------------------------------------------------------
+
+_PAGEVIEWS_PATH = os.path.join(DATA_DIR, "pageviews.jsonl")
+
+
+def record_pageview(ip: str, page: str, username: str | None) -> None:
+    with open(_PAGEVIEWS_PATH, "a") as f:
+        f.write(json.dumps({"ts": time.time(), "ip": ip, "page": page, "user": username}) + "\n")

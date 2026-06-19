@@ -105,6 +105,22 @@ def live():
     return jsonify({"last_updated": data_store.actuals_last_updated(), "live": out})
 
 
+@api_bp.post("/live/fetch")
+def live_fetch():
+    """Admin-only: immediately trigger a live-results fetch from the API,
+    bypassing the background poller's schedule."""
+    if not g.user.is_admin:
+        return jsonify({"error": "Admin only"}), 403
+    from app import live_source
+    try:
+        summary = live_source.poll_live_matches(app_module._engine)
+        if summary.get("changed"):
+            app_module.invalidate_results("current")
+        return jsonify({"ok": True, "summary": {k: v for k, v in summary.items() if isinstance(v, (bool, int, str, type(None)))}})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
 @api_bp.get("/changelog")
 def changelog():
     """Public: changelog entries newer than ``?since=<version>`` (newest first),

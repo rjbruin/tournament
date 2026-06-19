@@ -85,7 +85,12 @@
 <div class="card shadow-sm mb-4" id="featured-fixture">
   <div class="card-header d-flex justify-content-between align-items-center">
     <span class="fw-bold">{{ "Live match" if featured_is_live else ("Latest result" if featured_fixture.played else "Up next") }} — Group {{ featured_fixture._group }}</span>
-    {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
+    <div class="d-flex gap-2 align-items-center">
+      {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
+      {% if featured_is_live and current_user.is_authenticated and current_user.is_admin %}
+      <button type="button" id="fetch-live-btn" class="btn btn-outline-light btn-sm">⬇ Fetch live</button>
+      {% endif %}
+    </div>
   </div>
   <div class="card-body">
     {% set can_explore = current_user.is_authenticated and (not featured_fixture.played or featured_fixture.in_progress) %}
@@ -496,6 +501,27 @@ document.getElementById('update-results-btn')?.addEventListener('click', async f
     document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
     btn.disabled = false;
     btn.textContent = original;
+  }
+});
+document.getElementById('fetch-live-btn')?.addEventListener('click', async function () {
+  const btn = this;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Fetching…';
+  try {
+    const resp = await fetch(`${window.API_ROOT}/live/fetch`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+    const data = await resp.json();
+    if (data.ok) {
+      btn.textContent = '✅ Done';
+      setTimeout(() => { btn.disabled = false; btn.textContent = original; }, 2000);
+      if (data.summary && data.summary.changed) window.location.reload();
+    } else {
+      btn.textContent = `❌ ${data.error || 'Failed'}`;
+      setTimeout(() => { btn.disabled = false; btn.textContent = original; }, 3000);
+    }
+  } catch (e) {
+    btn.textContent = '❌ Error';
+    setTimeout(() => { btn.disabled = false; btn.textContent = original; }, 3000);
   }
 });
 </script>

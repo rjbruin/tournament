@@ -8,6 +8,17 @@ from app.web.view_helpers import normalize_group_match, normalize_bracket_match,
 web_bp = Blueprint("web", __name__)
 
 
+@web_bp.before_request
+def _track_pageview():
+    from flask_login import current_user as _cu
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+    username = _cu.username if getattr(_cu, "is_authenticated", False) else None
+    try:
+        data_store.record_pageview(ip, request.path, username)
+    except Exception:
+        pass
+
+
 @web_bp.get("/manifest.json")
 def manifest():
     import json

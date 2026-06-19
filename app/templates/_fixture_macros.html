@@ -19,19 +19,25 @@
 qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 {%- endmacro %}
 
-{# A small "secured" marker shown next to a team that has clinched a place. #}
+{# A small "secured" marker shown next to a team that has clinched a specific place. #}
+{# The Q ✓ marker is intentionally omitted — the advance badge covers that case. #}
 {% macro qual_marker(row) -%}
   {%- if row.qual == 'secured_first' %}<span class="qual-marker qual-marker-secured" title="Secured top of the group">1st&nbsp;✓</span>
   {%- elif row.qual == 'secured_second' %}<span class="qual-marker qual-marker-secured" title="Secured a top-two finish">Top&nbsp;2&nbsp;✓</span>
-  {%- elif row.qual == 'secured_qualified' %}<span class="qual-marker qual-marker-secured" title="Secured a place in the knockout round">Q&nbsp;✓</span>
   {%- endif %}
 {%- endmacro %}
 
-{# Advancement odds badge, prefixed with the advancement icon. #}
+{# Advancement odds badge. Shows Q ✓ when guaranteed, >99.9% when near-certain but not exact. #}
 {% macro advance_badge(adv) -%}
+{%- if adv is not none and adv >= 1.0 -%}
+<span class="badge advance-badge advance-badge--certain bg-success" title="Qualification secured">{{ ADVANCE_ICON }}&nbsp;✓</span>
+{%- elif adv is not none and adv >= 0.9995 -%}
+<span class="badge advance-badge bg-success">&gt;99.9%</span>
+{%- elif adv is not none -%}
 <span class="badge advance-badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
   <span class="odds-icon" title="Chance to advance from the group">{{ ADVANCE_ICON }}</span> {{ adv|pct(0) }}
 </span>
+{%- endif %}
 {%- endmacro %}
 
 {# Tournament-winner odds, prefixed with a cup icon. #}

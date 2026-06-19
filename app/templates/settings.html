@@ -96,7 +96,10 @@
 
       {% if admin_users is not none %}
       <div class="card shadow-sm mt-4 border-warning">
-        <div class="card-header fw-bold">Admin settings</div>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-bold">Admin settings</span>
+          <a href="{{ url_for('web.admin_usage') }}" class="btn btn-outline-secondary btn-sm">📊 Usage statistics</a>
+        </div>
         <div class="card-body">
           <p class="text-muted small">
             These settings are shared across all accounts and only visible to the admin

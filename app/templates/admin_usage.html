@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Usage Statistics — Admin{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0">Usage Statistics</h2>
+  <a href="{{ url_for('web.settings') }}#admin-users" class="btn btn-outline-secondary btn-sm">← Back to settings</a>
+</div>
+
+{# Summary cards #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold">{{ hits_24h }}</div>
+        <div class="small text-muted">Page views (24 h)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold">{{ uniq_24h }}</div>
+        <div class="small text-muted">Unique IPs (24 h)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold">{{ hits_7d }}</div>
+        <div class="small text-muted">Page views (7 d)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold">{{ uniq_7d }}</div>
+        <div class="small text-muted">Unique IPs (7 d)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Daily breakdown table #}
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold">Daily breakdown (last 7 days)</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr><th>Day</th><th class="text-end">Page views</th><th class="text-end">Unique IPs</th></tr>
+      </thead>
+      <tbody>
+        {% for day in daily_uniq %}
+        <tr>
+          <td>{{ day.label }}</td>
+          <td class="text-end">{{ day.hits }}</td>
+          <td class="text-end">{{ day.uniq }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# Hourly sparkline (last 7 days, one bar per hour) #}
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold">Hourly traffic — last 7 days</div>
+  <div class="card-body">
+    <canvas id="hourly-chart" height="80"></canvas>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  {# Top pages #}
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">Top pages (7 d)</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Path</th><th class="text-end">Hits</th></tr></thead>
+          <tbody>
+            {% for page, count in top_pages %}
+            <tr><td class="text-truncate" style="max-width:180px" title="{{ page }}">{{ page }}</td><td class="text-end">{{ count }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Top users #}
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">Top users (7 d)</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>User</th><th class="text-end">Hits</th></tr></thead>
+          <tbody>
+            {% for user, count in top_users %}
+            <tr><td>{{ user }}</td><td class="text-end">{{ count }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Top IPs #}
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">Top IPs (24 h)</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>IP</th><th class="text-end">Hits</th></tr></thead>
+          <tbody>
+            {% for ip, count in top_ips %}
+            <tr><td class="font-monospace small">{{ ip }}</td><td class="text-end">{{ count }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="text-muted small text-end">All times UTC. Total recorded page views: {{ total }}.</p>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const buckets = {{ hourly_buckets | tojson }};
+  const labels = buckets.map((_, i) => {
+    const hoursAgo = buckets.length - 1 - i;
+    if (hoursAgo % 24 === 0) {
+      const d = new Date(Date.now() - hoursAgo * 3600000);
+      return d.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric'});
+    }
+    return '';
+  });
+  new Chart(document.getElementById('hourly-chart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: buckets,
+        backgroundColor: 'rgba(46,125,50,0.6)',
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      plugins: {legend: {display: false}, tooltip: {callbacks: {title: (items) => `Hour ${items[0].dataIndex}`}}},
+      scales: {x: {grid: {display: false}}, y: {beginAtZero: true, ticks: {stepSize: 1}}},
+      animation: false,
+    }
+  });
+})();
+</script>
+{% endblock %}

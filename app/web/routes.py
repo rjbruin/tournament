@@ -1,3 +1,5 @@
+import os
+
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash, session, Response
 from flask_login import current_user, login_required
 
@@ -842,6 +844,87 @@ def onboarding_save():
     )
     flash("Welcome! Your settings have been saved — you can change these any time on the Settings page.", "success")
     return redirect(url_for("web.index"))
+
+
+@web_bp.get("/admin/usage")
+@login_required
+def admin_usage():
+    if not current_user.is_admin:
+        return redirect(url_for("web.index"))
+    import json, time as _time
+    from collections import defaultdict, Counter
+
+    path = data_store._PAGEVIEWS_PATH
+    rows = []
+    if os.path.exists(path):
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        rows.append(json.loads(line))
+                    except Exception:
+                        pass
+
+    now = _time.time()
+    day = 86400
+
+    def window(rows, seconds):
+        cutoff = now - seconds
+        return [r for r in rows if r.get("ts", 0) >= cutoff]
+
+    def unique_ips(rows):
+        return len({r["ip"] for r in rows if r.get("ip")})
+
+    rows_24h = window(rows, day)
+    rows_7d  = window(rows, 7 * day)
+
+    # Page hit counts (last 7 days)
+    page_counts = Counter(r.get("page", "?") for r in rows_7d)
+    top_pages = page_counts.most_common(20)
+
+    # Per-IP hit count (last 24h)
+    ip_counts_24h = Counter(r.get("ip", "?") for r in rows_24h)
+    top_ips = ip_counts_24h.most_common(20)
+
+    # Hourly buckets for the last 7 days (for a simple chart)
+    hours = 7 * 24
+    buckets = [0] * hours
+    cutoff_7d = now - 7 * day
+    for r in rows:
+        ts = r.get("ts", 0)
+        if ts >= cutoff_7d:
+            idx = int((ts - cutoff_7d) / 3600)
+            if 0 <= idx < hours:
+                buckets[idx] += 1
+
+    # Unique IP counts per day for last 7 days
+    daily_uniq = []
+    for d in range(6, -1, -1):
+        start = now - (d + 1) * day
+        end   = now - d * day
+        day_rows = [r for r in rows if start <= r.get("ts", 0) < end]
+        import datetime
+        label = datetime.datetime.utcfromtimestamp(end).strftime("%a %d %b")
+        daily_uniq.append({"label": label, "hits": len(day_rows), "uniq": unique_ips(day_rows)})
+
+    # Per-user hit count total
+    user_counts = Counter(r.get("user") or "(anonymous)" for r in rows_7d)
+    top_users = user_counts.most_common(20)
+
+    return render_template(
+        "admin_usage.html",
+        total=len(rows),
+        hits_24h=len(rows_24h),
+        hits_7d=len(rows_7d),
+        uniq_24h=unique_ips(rows_24h),
+        uniq_7d=unique_ips(rows_7d),
+        top_pages=top_pages,
+        top_ips=top_ips,
+        top_users=top_users,
+        daily_uniq=daily_uniq,
+        hourly_buckets=buckets,
+    )
 
 
 @web_bp.get("/settings")

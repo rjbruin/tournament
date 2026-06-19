@@ -10,9 +10,18 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.4.4"
+APP_VERSION = "1.4.5"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.4.5",
+        "date": "2026-06-20",
+        "fixes": [
+            "Fixed TemplateRuntimeError on the home page: replaced Ansible-only "
+            "'combine' filter with standard Jinja2 namespace logic for the live "
+            "outcome highlight introduced in v1.4.4.",
+        ],
+    },
     {
         "version": "1.4.4",
         "date": "2026-06-20",

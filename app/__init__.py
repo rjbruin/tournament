@@ -7,7 +7,7 @@ from flask_login import LoginManager, current_user
 
 from app import auth
 from app.simulation.engine import SimulationEngine
-from app.flags import flag_emoji
+from app.flags import flag_emoji, flag_url
 
 # Per-account in-memory simulation results: {username: results_dict}.
 # Snapshots are persisted to disk (see data_store), but the "current" results
@@ -274,6 +274,7 @@ def create_app():
     _maybe_start_live_poller(app)
 
     app.jinja_env.filters["flag"] = flag_emoji
+    app.jinja_env.filters["flag_url"] = flag_url
 
     @app.template_filter("pct")
     def pct_filter(value, decimals=1):

@@ -62,6 +62,13 @@ SPECIAL = {
 }
 
 
+FLAG_CDN = "https://flagcdn.com/w640/{code}.png"
+SPECIAL_CODES = {
+    "England": "gb-eng",
+    "Scotland": "gb-sct",
+}
+
+
 def flag_emoji(team_name: str) -> str:
     if team_name in SPECIAL:
         return SPECIAL[team_name]
@@ -69,3 +76,11 @@ def flag_emoji(team_name: str) -> str:
     if not code:
         return "\U0001F3F3"  # white flag fallback
     return "".join(chr(0x1F1E6 + ord(c) - ord("A")) for c in code)
+
+
+def flag_url(team_name: str) -> str:
+    """Return a flagcdn.com PNG URL for the given team name, or empty string."""
+    code = SPECIAL_CODES.get(team_name) or ISO2.get(team_name, "").lower()
+    if not code:
+        return ""
+    return FLAG_CDN.format(code=code)

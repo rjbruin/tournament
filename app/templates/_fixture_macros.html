@@ -269,9 +269,8 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
     <div class="fixture-hero">
 
       {# Home team panel #}
-      <div class="fixture-team-panel home">
+      <div class="fixture-team-panel home"{% if match.home_team %} style="--flag-img: url('{{ match.home_team|flag_url }}')"{% endif %}>
         {% if match.home_team %}
-        <div class="fixture-flag-watermark">{{ match.home_team|flag }}</div>
         <div class="fixture-team-name{% if _home_ko %} knocked-out{% endif %}">{{ match.home_team }}</div>
         <div class="fixture-badge-row">
           {{ star_badge(team=match.home_team) }}
@@ -317,9 +316,8 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       </div>
 
       {# Away team panel #}
-      <div class="fixture-team-panel away">
+      <div class="fixture-team-panel away"{% if match.away_team %} style="--flag-img: url('{{ match.away_team|flag_url }}')"{% endif %}>
         {% if match.away_team %}
-        <div class="fixture-flag-watermark">{{ match.away_team|flag }}</div>
         <div class="fixture-team-name{% if _away_ko %} knocked-out{% endif %}">{{ match.away_team }}</div>
         <div class="fixture-badge-row away">
           {% if _away_adv is not none %}{{ advance_badge(_away_adv, delta=_away_delta) }}{% endif %}

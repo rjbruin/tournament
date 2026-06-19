@@ -96,19 +96,20 @@ def _results_up_to_date(engine) -> bool:
     return True
 
 
-def _advance_prob_before(engine, actuals, group_name, home_team, away_team, n=30_000):
-    """Run a mini simulation with the home vs away match removed from actuals
-    and return group_advance_prob for all teams (used to show odds deltas)."""
+def _advance_prob_before(engine, actuals, group_name, pairs, n=30_000):
+    """Run a mini simulation with the given match pairs removed from actuals
+    and return group_advance_prob for all teams (used to show odds deltas).
+    ``pairs`` is a list of (home, away) tuples to exclude."""
     import copy
     before = copy.deepcopy(actuals)
-    pair = frozenset([home_team, away_team])
+    excluded = {frozenset(p) for p in pairs}
     before.setdefault("group_results", {})[group_name] = [
         r for r in before["group_results"].get(group_name, [])
-        if frozenset([r.get("home"), r.get("away")]) != pair
+        if frozenset([r.get("home"), r.get("away")]) not in excluded
     ]
     before["live_matches"] = [
         lm for lm in before.get("live_matches", [])
-        if frozenset([lm.get("home"), lm.get("away")]) != pair
+        if frozenset([lm.get("home"), lm.get("away")]) not in excluded
     ]
     try:
         return engine.run(n, actuals=before).get("group_advance_prob", {})
@@ -116,13 +117,16 @@ def _advance_prob_before(engine, actuals, group_name, home_team, away_team, n=30
         return {}
 
 
-def _group_table_before(g, raw_fixtures, live_match, teams_by_name, results):
-    """Standings for group `g` as they were before `live_match` (a
-    normalized match dict) was played."""
+def _group_table_before(g, raw_fixtures, live_matches, teams_by_name, results):
+    """Standings for group `g` as they were before `live_matches` (a list of
+    normalized match dicts) were played. Pass a single-element list for the
+    original single-match behaviour."""
     import copy
+    excluded = [{lm.get("home_team"), lm.get("away_team")} for lm in live_matches]
     before_fixtures = []
     for m in raw_fixtures:
-        if {m.get("home"), m.get("away")} == {live_match.get("home_team"), live_match.get("away_team")}:
+        pair = {m.get("home"), m.get("away")}
+        if pair in excluded:
             m = copy.deepcopy(m)
             m["played"] = False
             m.pop("home_goals", None)
@@ -310,54 +314,86 @@ def index():
             if match:
                 featured_fixture = match
 
-    featured_is_live = bool(featured_fixture) and _is_live(featured_fixture)
+    # Find the concurrent sibling: matchday 3 has two simultaneous matches per
+    # group. If featured_fixture has a same-group match starting within 5 min,
+    # include it so both are shown together.
+    from datetime import timedelta, datetime as _dt
+    def _are_concurrent(m1, m2):
+        if m1.get("_group") != m2.get("_group"):
+            return False
+        k1, k2 = m1["_sort_key"], m2["_sort_key"]
+        if k1 == _dt.min or k2 == _dt.min:
+            return False
+        return abs((k1 - k2).total_seconds()) < 300
+
+    featured_fixtures = []
+    if featured_fixture:
+        featured_fixtures = [featured_fixture]
+        sibling = next(
+            (m for m in all_normalized
+             if m is not featured_fixture and _are_concurrent(featured_fixture, m)),
+            None,
+        )
+        if sibling:
+            featured_fixtures.append(sibling)
+
+    featured_is_live = any(_is_live(m) for m in featured_fixtures)
 
     featured_group_table = None
     featured_group_table_before = None
     featured_before_adv = None
-    if featured_fixture and featured_fixture.get("_group"):
-        g = next((g for g in groups if g["name"] == featured_fixture["_group"]), None)
+    if featured_fixtures:
+        gname = featured_fixtures[0].get("_group")
+        g = next((grp for grp in groups if grp["name"] == gname), None) if gname else None
         if g:
             raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
             featured_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
-
-            if featured_is_live:
-                featured_group_table_before = _group_table_before(g, raw_fixtures, featured_fixture, teams_by_name, results)
+            pairs = [(m.get("home_team"), m.get("away_team")) for m in featured_fixtures]
+            any_live_fx = any(m.get("in_progress") for m in featured_fixtures)
+            any_played_fx = any(m.get("played") for m in featured_fixtures)
+            if any_live_fx or any_played_fx:
                 actuals = data_store.load_actuals()
-                featured_before_adv = _advance_prob_before(
-                    engine, actuals, g["name"],
-                    featured_fixture.get("home_team"), featured_fixture.get("away_team"))
-            elif featured_fixture.get("played"):
-                actuals = data_store.load_actuals()
-                featured_before_adv = _advance_prob_before(
-                    engine, actuals, g["name"],
-                    featured_fixture.get("home_team"), featured_fixture.get("away_team"))
+                featured_before_adv = _advance_prob_before(engine, actuals, g["name"], pairs)
+                if any_live_fx:
+                    live_featured = [m for m in featured_fixtures if m.get("in_progress")]
+                    featured_group_table_before = _group_table_before(
+                        g, raw_fixtures, live_featured, teams_by_name, results)
 
-    # Previous match: the most recently played non-live match, shown only when
-    # the featured fixture is upcoming (not itself a played result).
-    previous_fixture = None
+    # Previous matches: the most recently played non-live match(es), shown only
+    # when the featured fixture is upcoming (not itself a played result).
+    previous_fixtures = []
     previous_group_table = None
     previous_before_adv = None
-    played = [m for m in all_normalized if m.get("played") and not m.get("in_progress")]
-    if played and featured_fixture and not featured_fixture.get("played"):
-        previous_fixture = played[-1]
-        g = next((g for g in groups if g["name"] == previous_fixture.get("_group")), None)
-        if g:
-            raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
-            previous_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
+    played_done = [m for m in all_normalized if m.get("played") and not m.get("in_progress")]
+    if played_done and featured_fixtures and not featured_fixtures[0].get("played"):
+        last_played = played_done[-1]
+        previous_fixtures = [last_played]
+        prev_sibling = next(
+            (m for m in played_done if m is not last_played and _are_concurrent(last_played, m)),
+            None,
+        )
+        if prev_sibling:
+            previous_fixtures.append(prev_sibling)
+        pg = next((grp for grp in groups if grp["name"] == previous_fixtures[0].get("_group")), None)
+        if pg:
+            raw_fixtures = (results or {}).get("fixtures", {}).get(pg["name"], [])
+            previous_group_table = compute_group_table(pg, raw_fixtures, teams_by_name, results)
             actuals = data_store.load_actuals()
-            previous_before_adv = _advance_prob_before(
-                engine, actuals, g["name"],
-                previous_fixture.get("home_team"), previous_fixture.get("away_team"))
+            prev_pairs = [(m.get("home_team"), m.get("away_team")) for m in previous_fixtures]
+            previous_before_adv = _advance_prob_before(engine, actuals, pg["name"], prev_pairs)
 
     qualification_stakes = []
     qualification_full = []
-    if featured_fixture and not _is_pre_draw(scenario_id):
-        try:
-            qualification_stakes, qualification_full = _qualification_notes(
-                engine, scenario_id, featured_fixture, all_normalized)
-        except Exception:
-            qualification_stakes, qualification_full = [], []
+    if not _is_pre_draw(scenario_id):
+        for fx_match in featured_fixtures:
+            if fx_match.get("played") and not fx_match.get("in_progress"):
+                continue
+            try:
+                s, f = _qualification_notes(engine, scenario_id, fx_match, all_normalized)
+                qualification_stakes.extend(s)
+                qualification_full.extend(f)
+            except Exception:
+                pass
 
     scenario_list = data_store.list_scenarios(_username())
     active_scenario = data_store.load_scenario(scenario_id, _username())
@@ -392,7 +428,8 @@ def index():
         scenario_list=scenario_list,
         last_updated=last_updated,
         results_up_to_date=_results_up_to_date(engine),
-        featured_fixture=featured_fixture,
+        featured_fixture=featured_fixtures[0] if featured_fixtures else None,
+        featured_fixtures=featured_fixtures,
         featured_is_live=featured_is_live,
         pending_approvals=pending_approvals,
         invite_only=gs.get("invite_only", True),
@@ -401,7 +438,8 @@ def index():
         featured_before_adv=featured_before_adv,
         qualification_stakes=qualification_stakes,
         qualification_full=qualification_full,
-        previous_fixture=previous_fixture,
+        previous_fixtures=previous_fixtures,
+        previous_fixture=previous_fixtures[0] if previous_fixtures else None,
         previous_group_table=previous_group_table,
         previous_before_adv=previous_before_adv,
         groups=groups,

@@ -240,7 +240,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 
 
 {# ---------- Large fixture card: header + odds row + meta line ---------- #}
-{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, before_adv=None, editable=False, explore=False, form_id=None, live=False, submit_label=None) %}
+{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, before_adv=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='') %}
 <div class="card fixture-card mb-3">
   {% if header %}
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
@@ -334,11 +334,11 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       {% endif %}
       {% if explore %}
       {% if match.date %} &middot; {% endif %}
-      <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="explore-toggle-btn">🔍 Explore</span>
+      <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="explore-toggle-btn{{ idx }}">🔍 Explore</span>
       {% endif %}
       {% if live %}
       {% if match.date or explore %} &middot; {% endif %}
-      <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="live-score-toggle-btn">📡 Edit live score</span>
+      <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="live-score-toggle-btn{{ idx }}">📡 Edit live score</span>
       {% endif %}
     </div>
     {% endif %}

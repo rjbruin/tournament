@@ -10,9 +10,21 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.2.5"
+APP_VERSION = "1.3.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.3.0",
+        "date": "2026-06-19",
+        "features": [
+            "Matchday 3 ready: when two matches in the same group kick off "
+            "simultaneously, both fixtures are shown stacked in one card with "
+            "a shared group standings table and combined What's at Stake "
+            "section. The Fetch Live button refreshes both at once. "
+            "Up Next similarly shows both upcoming matches when they're "
+            "scheduled at the same time.",
+        ],
+    },
     {
         "version": "1.2.5",
         "date": "2026-06-19",

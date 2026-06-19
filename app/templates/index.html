@@ -81,10 +81,21 @@
 {% endif %}
 <div id="update-results-status" class="small text-end mb-3"></div>
 
-{% if featured_fixture %}
+{% if featured_fixtures %}
+{%- set _featured_group = featured_fixtures[0]._group %}
+{%- set _featured_concurrent = featured_fixtures|length > 1 %}
 <div class="card shadow-sm mb-4" id="featured-fixture">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <span class="fw-bold">{{ "Live match" if featured_is_live else ("Latest result" if featured_fixture.played else "Up next") }} — Group {{ featured_fixture._group }}</span>
+    <span class="fw-bold">
+      {%- if featured_is_live -%}
+        {{ "Live matches" if _featured_concurrent else "Live match" }}
+      {%- elif featured_fixtures[0].played -%}
+        Latest result{{ "s" if _featured_concurrent else "" }}
+      {%- else -%}
+        Up next
+      {%- endif %}
+      {%- if _featured_group %} — Group {{ _featured_group }}{% endif %}
+    </span>
     <div class="d-flex gap-2 align-items-center">
       {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
       {% if featured_is_live and current_user.is_authenticated and current_user.is_admin %}
@@ -93,24 +104,30 @@
     </div>
   </div>
   <div class="card-body">
-    {% set can_explore = current_user.is_authenticated and (not featured_fixture.played or featured_fixture.in_progress) %}
-    {{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=featured_before_adv, explore=can_explore, live=can_explore) }}
+
+    {# Render each concurrent fixture with its own explore/live-score panels #}
+    {% for fx_match in featured_fixtures %}
+    {%- set fid = loop.index0 %}
+    {%- set can_explore = current_user.is_authenticated and (not fx_match.played or fx_match.in_progress) %}
+    {% if not loop.first %}<hr class="my-3">{% endif %}
+    {{ fx.large_fixture(fx_match, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=featured_before_adv, explore=can_explore, live=can_explore, idx=fid) }}
+
     {% if can_explore %}
-    <div id="explore-panel" class="d-none mt-3">
+    <div id="explore-panel-{{ fid }}" class="d-none mt-3">
       <div class="small text-muted mb-2">
         What if this match ended differently? Edit the score below and explore the hypothetical scenario.
       </div>
-      <form id="hypothetical-form"></form>
-      <div id="explore-fixture">{{ fx.large_fixture(featured_fixture, editable=true, form_id="hypothetical-form") }}</div>
+      <form id="hypothetical-form-{{ fid }}"></form>
+      <div>{{ fx.large_fixture(fx_match, editable=true, form_id="hypothetical-form-" + fid|string) }}</div>
     </div>
     <script>
-    document.getElementById('explore-toggle-btn')?.addEventListener('click', function () {
-      document.getElementById('explore-panel')?.classList.toggle('d-none');
+    document.getElementById('explore-toggle-btn{{ fid }}')?.addEventListener('click', function () {
+      document.getElementById('explore-panel-{{ fid }}')?.classList.toggle('d-none');
     });
-    document.getElementById('hypothetical-form')?.addEventListener('submit', async function (e) {
+    document.getElementById('hypothetical-form-{{ fid }}')?.addEventListener('submit', async function (e) {
       e.preventDefault();
       const fd = new FormData(this);
-      const btn = document.querySelector('button[type=submit][form="hypothetical-form"]');
+      const btn = document.querySelector('button[type=submit][form="hypothetical-form-{{ fid }}"]');
       btn.disabled = true;
       btn.textContent = 'Computing...';
       document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
@@ -119,12 +136,12 @@
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            group: '{{ featured_fixture._group }}',
-            home: '{{ featured_fixture.home_team }}',
-            away: '{{ featured_fixture.away_team }}',
+            group: {{ fx_match._group|tojson }},
+            home: {{ fx_match.home_team|tojson }},
+            away: {{ fx_match.away_team|tojson }},
             home_goals: parseInt(fd.get('home_goals') || '0', 10),
             away_goals: parseInt(fd.get('away_goals') || '0', 10),
-            base: '{{ scenario_id }}',
+            base: {{ scenario_id|tojson }},
           })
         });
         const data = await resp.json();
@@ -139,67 +156,65 @@
       }
     });
     </script>
-    {% endif %}
 
-    {% if can_explore %}
-    <div id="live-score-panel" class="d-none mt-3">
+    <div id="live-score-panel-{{ fid }}" class="d-none mt-3">
       <div class="small text-muted mb-2">
         Enter the current live scoreline. The match will be marked as in progress and propagated into the standings/brackets as if completed.
       </div>
-      <form id="live-score-form"></form>
-      <div id="live-score-fixture">{{ fx.large_fixture(featured_fixture, editable=true, form_id="live-score-form", submit_label="Save live score") }}</div>
-      {% if featured_fixture.in_progress %}
+      <form id="live-score-form-{{ fid }}"></form>
+      <div>{{ fx.large_fixture(fx_match, editable=true, form_id="live-score-form-" + fid|string, submit_label="Save live score") }}</div>
+      {% if fx_match.in_progress %}
       <div class="text-center mt-2">
-        <button type="button" id="finish-live-btn" class="btn btn-outline-danger btn-sm">Finish match</button>
+        <button type="button" id="finish-live-btn-{{ fid }}" class="btn btn-outline-danger btn-sm">Finish match</button>
       </div>
       {% endif %}
     </div>
     <script>
-    document.getElementById('live-score-toggle-btn')?.addEventListener('click', function () {
-      document.getElementById('live-score-panel')?.classList.toggle('d-none');
+    document.getElementById('live-score-toggle-btn{{ fid }}')?.addEventListener('click', function () {
+      document.getElementById('live-score-panel-{{ fid }}')?.classList.toggle('d-none');
     });
-    async function saveLiveScore(finished) {
-      const form = document.getElementById('live-score-form');
-      const fd = new FormData(form);
-      const btn = finished
-        ? document.getElementById('finish-live-btn')
-        : document.querySelector('button[type=submit][form="live-score-form"]');
-      const originalText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = finished ? 'Finishing...' : 'Saving...';
-      document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
-      try {
-        const resp = await fetch(`${window.API_ROOT}/actuals/live_score${window.location.search}`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            group: '{{ featured_fixture._group }}',
-            home: '{{ featured_fixture.home_team }}',
-            away: '{{ featured_fixture.away_team }}',
-            home_goals: parseInt(fd.get('home_goals') || '0', 10),
-            away_goals: parseInt(fd.get('away_goals') || '0', 10),
-            finished: !!finished,
-          })
-        });
-        const data = await resp.json();
-        if (!resp.ok) { alert(data.error || 'Failed to save live score.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = originalText; return; }
-        window.location.reload();
-      } catch (err) {
-        alert('Failed: ' + err);
-        document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
-        btn.disabled = false;
-        btn.textContent = originalText;
+    (function () {
+      const fxGroup = {{ fx_match._group|tojson }};
+      const fxHome  = {{ fx_match.home_team|tojson }};
+      const fxAway  = {{ fx_match.away_team|tojson }};
+      const fid = {{ fid }};
+      async function saveLiveScore(finished) {
+        const form = document.getElementById('live-score-form-' + fid);
+        const fd = new FormData(form);
+        const btn = finished
+          ? document.getElementById('finish-live-btn-' + fid)
+          : document.querySelector('button[type=submit][form="live-score-form-' + fid + '"]');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = finished ? 'Finishing...' : 'Saving...';
+        document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
+        try {
+          const resp = await fetch(`${window.API_ROOT}/actuals/live_score${window.location.search}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              group: fxGroup, home: fxHome, away: fxAway,
+              home_goals: parseInt(fd.get('home_goals') || '0', 10),
+              away_goals: parseInt(fd.get('away_goals') || '0', 10),
+              finished: !!finished,
+            })
+          });
+          const data = await resp.json();
+          if (!resp.ok) { alert(data.error || 'Failed to save live score.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = originalText; return; }
+          window.location.reload();
+        } catch (err) {
+          alert('Failed: ' + err);
+          document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
       }
-    }
-    document.getElementById('live-score-form')?.addEventListener('submit', function (e) {
-      e.preventDefault();
-      saveLiveScore(false);
-    });
-    document.getElementById('finish-live-btn')?.addEventListener('click', function () {
-      saveLiveScore(true);
-    });
+      document.getElementById('live-score-form-' + fid)?.addEventListener('submit', function (e) { e.preventDefault(); saveLiveScore(false); });
+      document.getElementById('finish-live-btn-' + fid)?.addEventListener('click', function () { saveLiveScore(true); });
+    })();
     </script>
     {% endif %}
+    {% endfor %}{# end featured_fixtures loop #}
 
     {% if qualification_stakes %}
     <div class="qual-stake-box mt-3">
@@ -246,23 +261,23 @@
     </div>
     {% endif %}
 
-    {% if featured_fixture._group %}
+    {% if _featured_group %}
     {% if featured_group_table_before %}
     <hr class="mt-4">
-    <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings — with live score</div>
+    <div class="small text-muted fw-bold mb-2">Group {{ _featured_group }} standings — with live score{{ "s" if _featured_concurrent else "" }}</div>
     {{ fx.group_table(featured_group_table, results) }}
     <div class="mt-3">
-      {{ fx.group_table_collapsed(featured_group_table_before, "Group " + featured_fixture._group + " standings — before this match", "before-table-featured") }}
+      {{ fx.group_table_collapsed(featured_group_table_before, "Group " + _featured_group + " standings — before these matches", "before-table-featured") }}
     </div>
     {% elif featured_group_table %}
     <hr class="mt-4">
-    <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings</div>
+    <div class="small text-muted fw-bold mb-2">Group {{ _featured_group }} standings</div>
     {{ fx.group_table(featured_group_table, results) }}
     {% endif %}
     {% else %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-2">Next opponent</div>
-    {% for side, cands in [(featured_fixture.get('home_candidates'), 'home'), (featured_fixture.get('away_candidates'), 'away')] %}
+    {% for side, cands in [(featured_fixtures[0].get('home_candidates'), 'home'), (featured_fixtures[0].get('away_candidates'), 'away')] %}
       {% if cands %}
       <div class="mb-2">
         {% for cand, p in cands.items() %}
@@ -279,29 +294,43 @@
 {% if featured_is_live %}
 <script>
 (function () {
-  // Live updater: while the featured match is in play, tick the minute badge
-  // in place every 30s, and reload the page when the score or events change
-  // (so standings + championship projections refresh) or the match finishes.
+  // Live updater: poll all featured live matches every 30 s; reload when any
+  // score/event changes or a match finishes.
   const LIVE_POLL = 30 * 1000;
-  const home = {{ featured_fixture.home_team|tojson }};
-  const away = {{ featured_fixture.away_team|tojson }};
-  let lastKey = "{{ featured_fixture.home_goals if featured_fixture.played else 0 }}-{{ featured_fixture.away_goals if featured_fixture.played else 0 }}-{{ (featured_fixture.events or [])|length }}";
-  const badge = document.querySelector('#featured-fixture .live-badge');
+  const liveFixtures = {{ featured_fixtures | selectattr('in_progress') | list | map(attribute='home_team') | list | tojson }};
+  const watchPairs = [
+    {% for m in featured_fixtures if m.in_progress %}
+    {home: {{ m.home_team|tojson }}, away: {{ m.away_team|tojson }},
+     key: "{{ (m.home_goals or 0) }}-{{ (m.away_goals or 0) }}-{{ (m.events or [])|length }}"},
+    {% endfor %}
+  ];
+  const badges = document.querySelectorAll('#featured-fixture .live-badge');
 
   async function tick() {
     try {
       const resp = await fetch(`${window.API_ROOT}/live`);
       if (!resp.ok) return;
       const data = await resp.json();
-      const m = (data.live || []).find(x =>
-        (x.home === home && x.away === away) || (x.home === away && x.away === home));
-      if (!m) { window.location.reload(); return; }  // no longer live → finished
-      if (badge) badge.textContent = (m.minute != null ? "🔴 " + m.minute + "'" : "🔴 LIVE");
-      const gh = (m.goals_by_team && m.goals_by_team[home] != null) ? m.goals_by_team[home] : 0;
-      const ga = (m.goals_by_team && m.goals_by_team[away] != null) ? m.goals_by_team[away] : 0;
-      const key = gh + "-" + ga + "-" + (m.events ? m.events.length : 0);
-      if (key !== lastKey) window.location.reload();
-    } catch (e) { /* network blip — try again next tick */ }
+      let needsReload = false;
+      for (const wp of watchPairs) {
+        const m = (data.live || []).find(x =>
+          (x.home === wp.home && x.away === wp.away) || (x.home === wp.away && x.away === wp.home));
+        if (!m) { needsReload = true; break; }  // finished
+        const gh = (m.goals_by_team && m.goals_by_team[wp.home] != null) ? m.goals_by_team[wp.home] : 0;
+        const ga = (m.goals_by_team && m.goals_by_team[wp.away] != null) ? m.goals_by_team[wp.away] : 0;
+        const key = gh + "-" + ga + "-" + (m.events ? m.events.length : 0);
+        if (key !== wp.key) { needsReload = true; break; }
+      }
+      if (needsReload) { window.location.reload(); return; }
+      // Update minute badges (best-effort: update first badge for first match)
+      {% for m in featured_fixtures if m.in_progress %}
+      {
+        const mi = (data.live || []).find(x => (x.home === {{ m.home_team|tojson }} && x.away === {{ m.away_team|tojson }}) || (x.home === {{ m.away_team|tojson }} && x.away === {{ m.home_team|tojson }}));
+        const badge = badges[{{ loop.index0 }}];
+        if (mi && badge) badge.textContent = (mi.minute != null ? "🔴 " + mi.minute + "'" : "🔴 LIVE");
+      }
+      {% endfor %}
+    } catch (e) { /* network blip */ }
   }
   setInterval(tick, LIVE_POLL);
 })();
@@ -309,16 +338,19 @@
 {% endif %}
 {% endif %}
 
-{% if previous_fixture %}
+{% if previous_fixtures %}
 <div class="card shadow-sm mb-4" id="previous-fixture">
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-    <span class="fw-bold">Latest result — Group {{ previous_fixture._group }}</span>
+    <span class="fw-bold">Latest result{{ "s" if previous_fixtures|length > 1 else "" }} — Group {{ previous_fixtures[0]._group }}</span>
   </div>
   <div class="card-body">
-    {{ fx.large_fixture(previous_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=previous_before_adv) }}
+    {% for prev_match in previous_fixtures %}
+    {% if not loop.first %}<hr class="my-3">{% endif %}
+    {{ fx.large_fixture(prev_match, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=previous_before_adv) }}
+    {% endfor %}
     {% if previous_group_table %}
     <hr class="mt-2">
-    <div class="small text-muted fw-bold mb-2">Group {{ previous_fixture._group }} standings</div>
+    <div class="small text-muted fw-bold mb-2">Group {{ previous_fixtures[0]._group }} standings</div>
     {{ fx.group_table(previous_group_table, results) }}
     {% endif %}
   </div>

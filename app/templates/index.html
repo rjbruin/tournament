@@ -275,17 +275,51 @@
     {{ fx.group_table(featured_group_table, results) }}
     {% endif %}
     {% else %}
+    {# Knockout stage: show "Path to the Cup" for each team #}
+    {%- set _ko_round = featured_fixtures[0].round %}
+    {%- set _opp_round_seq = ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"] %}
+    {%- set _bracket_to_opp = {"Round of 32": "Round of 32", "Round of 16": "Round of 16", "Quarterfinal": "Quarterfinals", "Semifinal": "Semifinals", "Final": "Final"} %}
+    {%- set _current_opp_round = _bracket_to_opp.get(_ko_round, _ko_round) %}
+    {%- set _ns = namespace(past=False, future_rounds=[]) %}
+    {%- for r in _opp_round_seq %}
+      {%- if _ns.past %}{%- set _ns.future_rounds = _ns.future_rounds + [r] %}{%- endif %}
+      {%- if r == _current_opp_round %}{%- set _ns.past = True %}{%- endif %}
+    {%- endfor %}
+    {%- set _path_teams = [] %}
+    {%- for fm in featured_fixtures %}
+      {%- if fm.home_team %}{%- if _path_teams.append(fm.home_team) %}{% endif %}{%- endif %}
+      {%- if fm.away_team %}{%- if _path_teams.append(fm.away_team) %}{% endif %}{%- endif %}
+    {%- endfor %}
+    {% if _ns.future_rounds and results and results.opponent_probs %}
     <hr class="mt-4">
-    <div class="small text-muted fw-bold mb-2">Next opponent</div>
-    {% for side, cands in [(featured_fixtures[0].get('home_candidates'), 'home'), (featured_fixtures[0].get('away_candidates'), 'away')] %}
-      {% if cands %}
-      <div class="mb-2">
-        {% for cand, p in cands.items() %}
-        <span class="small text-muted me-3">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</span>
+    <div class="small text-muted fw-bold mb-3">Path to the Cup</div>
+    <div class="row g-3">
+      {% for path_team in _path_teams %}
+      {%- set _team_opp = results.opponent_probs.get(path_team) %}
+      {% if _team_opp %}
+      <div class="col-12 col-md-6">
+        <div class="fw-semibold mb-2">{{ path_team|flag }} {{ path_team }}</div>
+        {% for r in _ns.future_rounds %}
+        {%- set _opps = _team_opp.get(r) %}
+        {% if _opps %}
+        <div class="mb-2">
+          <span class="text-muted small">{{ r }}:</span><br>
+          {% if _opps[0].probability >= 0.999 %}
+          <span class="small">{{ _opps[0].team|flag }} {{ _opps[0].team }}</span>
+          {% else %}
+          {%- set _shown = _opps[:4] if _opps|length > 2 else _opps %}
+          {% for o in _shown %}
+          <span class="small me-2">{{ o.team|flag }} {{ o.team }} <span class="text-muted">({{ o.probability|pct(0) }})</span></span>
+          {% endfor %}
+          {% endif %}
+        </div>
+        {% endif %}
         {% endfor %}
       </div>
       {% endif %}
-    {% endfor %}
+      {% endfor %}
+    </div>
+    {% endif %}
     {% endif %}
 
   </div>
@@ -341,14 +375,14 @@
 {% if previous_fixtures %}
 <div class="card shadow-sm mb-4" id="previous-fixture">
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-    <span class="fw-bold">Latest result{{ "s" if previous_fixtures|length > 1 else "" }} — Group {{ previous_fixtures[0]._group }}</span>
+    <span class="fw-bold">Latest result{{ "s" if previous_fixtures|length > 1 else "" }}{% if previous_fixtures[0]._group %} — Group {{ previous_fixtures[0]._group }}{% else %} — {{ previous_fixtures[0].round }}{% endif %}</span>
   </div>
   <div class="card-body">
     {% for prev_match in previous_fixtures %}
     {% if not loop.first %}<hr class="my-3">{% endif %}
     {{ fx.large_fixture(prev_match, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=previous_before_adv) }}
     {% endfor %}
-    {% if previous_group_table %}
+    {% if previous_group_table and previous_fixtures[0]._group %}
     <hr class="mt-2">
     <div class="small text-muted fw-bold mb-2">Group {{ previous_fixtures[0]._group }} standings</div>
     {{ fx.group_table(previous_group_table, results) }}
@@ -360,7 +394,7 @@
 {{ fx.thirds_table(group_tables, groups, results) }}
 
 {% if results %}
-{% set top10 = results.winner_prob.items() | sort(attribute=1, reverse=True) | list %}
+{% set top10 = results.winner_prob.items() | selectattr(1, 'gt', 0) | sort(attribute=1, reverse=True) | list %}
 <h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 Champion Projection 🏆</h2>
 
 <div class="row g-3 mb-3 justify-content-center">

@@ -253,7 +253,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         {% if match.home_team %}
         <div class="fixture-team-side">
           <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
-          <div class="fixture-team-name">{{ match.home_team }}</div>
+          <div class="fixture-team-name{% if match.actual_winner is defined and match.actual_winner and match.actual_winner != match.home_team %} knocked-out{% endif %}">{{ match.home_team }}</div>
           {% if editable %}
           <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
           {% else %}
@@ -276,9 +276,9 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       <div class="col-2 d-flex flex-column align-items-center justify-content-center" style="gap:.4rem;">
         {% if match.played and not editable %}
         <div class="fixture-score">
-          <span>{{ match.home_goals }}</span>
+          {% if match.home_penalties is defined and match.home_penalties is not none %}<span class="fixture-score-pen">({{ match.home_penalties }})</span> {% endif %}<span>{{ match.home_goals }}</span>
           <span class="fixture-score-sep">–</span>
-          <span>{{ match.away_goals }}</span>
+          <span>{{ match.away_goals }}</span>{% if match.away_penalties is defined and match.away_penalties is not none %} <span class="fixture-score-pen">({{ match.away_penalties }})</span>{% endif %}
         </div>
         {% if match.in_progress %}<span class="badge bg-danger live-badge" style="font-size:.7rem;">🔴 {% if match.minute is defined and match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
         {% elif editable %}
@@ -295,7 +295,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         {% if match.away_team %}
         <div class="fixture-team-side">
           <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
-          <div class="fixture-team-name">{{ match.away_team }}</div>
+          <div class="fixture-team-name{% if match.actual_winner is defined and match.actual_winner and match.actual_winner != match.away_team %} knocked-out{% endif %}">{{ match.away_team }}</div>
           {% if editable %}
           <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
           {% else %}
@@ -420,7 +420,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       {% if match.home_team %}
       <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% endif %}">{{ match.home_team }}</span>
+        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
         {% if match.home_prob is defined %}<span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}
       </div>
       {% else %}
@@ -440,7 +440,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       {% if match.away_team %}
       <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% endif %}">{{ match.away_team }}</span>
+        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
         {% if match.away_prob is defined %}<span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}
       </div>
       {% else %}

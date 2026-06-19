@@ -472,6 +472,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   border-radius: .4rem;
 }
 .fixture-score-sep { color: rgba(255,255,255,.45); font-size: 1.2rem; }
+.fixture-score-pen { font-size: 0.75rem; opacity: 0.75; }
 .fixture-vs {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
@@ -715,6 +716,9 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 
 /* misc */
 .navbar-brand .ball { filter: drop-shadow(0 0 4px rgba(255,255,255,0.4)); }
+
+/* Knocked-out team styling */
+.knocked-out { text-decoration: line-through; opacity: 0.5; }
 
 /* ---------- Markdown rendering in chat ---------- */
 .markdown-body { white-space: normal; text-align: left; }

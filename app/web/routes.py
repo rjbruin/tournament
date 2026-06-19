@@ -117,6 +117,22 @@ def _advance_prob_before(engine, actuals, group_name, pairs, n=30_000):
         return {}
 
 
+def _knocked_out_teams(results) -> set:
+    """Return team names eliminated in any completed knockout match."""
+    knocked_out = set()
+    if not results or "bracket_matches" not in results:
+        return knocked_out
+    for m in results["bracket_matches"].values():
+        winner = m.get("actual_winner")
+        if not winner:
+            continue
+        for side in ("home", "away"):
+            slot = m.get(side, {})
+            if slot.get("determined") and slot.get("team") and slot["team"] != winner:
+                knocked_out.add(slot["team"])
+    return knocked_out
+
+
 def _group_table_before(g, raw_fixtures, live_matches, teams_by_name, results):
     """Standings for group `g` as they were before `live_matches` (a list of
     normalized match dicts) were played. Pass a single-element list for the
@@ -276,6 +292,9 @@ def index():
     groups = _groups_for_results(engine, results)
     teams_by_name = {t["name"]: t for t in engine.data["teams"]}
 
+    actuals = data_store.load_actuals()
+    ko_scores = actuals.get("knockout_scores", {})
+
     all_normalized = []
     for g in (groups if not _is_pre_draw(scenario_id) else []):
         raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
@@ -284,6 +303,16 @@ def index():
             m["_group"] = g["name"]
             m["_sort_key"] = _utc_sort_key(raw)
             all_normalized.append(m)
+
+    # Include bracket matches so the featured fixture can be a knockout match
+    # once all group-stage games have been played.
+    bracket_matches_raw = (results or {}).get("bracket_matches", {})
+    if bracket_matches_raw and not _is_pre_draw(scenario_id):
+        for mno, m in bracket_matches_raw.items():
+            nm = normalize_bracket_match(m, ko_scores=ko_scores)
+            nm["_group"] = None
+            nm["_sort_key"] = _utc_sort_key(m)
+            all_normalized.append(nm)
 
     # The "current/next fixture" card: prefer an in-progress (live) match,
     # then a fixture without a result yet (upcoming), otherwise fall back to
@@ -352,7 +381,6 @@ def index():
             any_live_fx = any(m.get("in_progress") for m in featured_fixtures)
             any_played_fx = any(m.get("played") for m in featured_fixtures)
             if any_live_fx or any_played_fx:
-                actuals = data_store.load_actuals()
                 featured_before_adv = _advance_prob_before(engine, actuals, g["name"], pairs)
                 if any_live_fx:
                     live_featured = [m for m in featured_fixtures if m.get("in_progress")]
@@ -378,7 +406,6 @@ def index():
         if pg:
             raw_fixtures = (results or {}).get("fixtures", {}).get(pg["name"], [])
             previous_group_table = compute_group_table(pg, raw_fixtures, teams_by_name, results)
-            actuals = data_store.load_actuals()
             prev_pairs = [(m.get("home_team"), m.get("away_team")) for m in previous_fixtures]
             previous_before_adv = _advance_prob_before(engine, actuals, pg["name"], prev_pairs)
 
@@ -444,6 +471,7 @@ def index():
         previous_before_adv=previous_before_adv,
         groups=groups,
         group_tables=index_group_tables,
+        knocked_out_teams=_knocked_out_teams(results),
     )
 
 
@@ -527,10 +555,12 @@ def teams():
         favorite_team = current_user.settings.get("favorite_team") or None
     favorite = next((t for t in teams_sorted if t["name"] == favorite_team), None)
 
+    actuals = data_store.load_actuals()
     return render_template(
         "teams.html",
         teams=teams_sorted,
         favorite=favorite,
+        knocked_out_teams=_knocked_out_teams(_results_for_scenario(scenario_id)),
     )
 
 
@@ -560,12 +590,13 @@ def team(name: str):
                 fixtures_for_team.append(normalize_group_match(m))
 
     bracket_for_team = []
+    ko_scores = data_store.load_actuals().get("knockout_scores", {})
     if results and results.get("bracket_matches"):
         for mno, m in results["bracket_matches"].items():
             home = m.get("home", {})
             away = m.get("away", {})
             if home.get("team") == name or away.get("team") == name:
-                bracket_for_team.append(normalize_bracket_match(m))
+                bracket_for_team.append(normalize_bracket_match(m, ko_scores=ko_scores))
         bracket_for_team.sort(key=lambda m: m.get("match", 0))
 
     all_team_names = sorted(t["name"] for t in engine.data["teams"])
@@ -624,6 +655,7 @@ def team(name: str):
                 sid = data_store.match_scenario_id(cp["index"])
         odds_history.append({"label": f"After {rname}", **(_odds_for_scenario(sid) or _empty_odds)})
 
+    knocked_out = _knocked_out_teams(results)
     return render_template(
         "team.html",
         team=teams_by_name[name],
@@ -634,6 +666,8 @@ def team(name: str):
         results=results,
         scenario_id=scenario_id,
         odds_history=odds_history,
+        knocked_out_teams=knocked_out,
+        team_is_knocked_out=(name in knocked_out),
     )
 
 
@@ -663,14 +697,18 @@ def bracket():
     order_r16 = [x for m in order_qf for x in (qf_by_match[m]["home"], qf_by_match[m]["away"])]
     order_r32 = [x for m in order_r16 for x in (r16_by_match[m]["home"], r16_by_match[m]["away"])]
 
-    rounds = [
-        ("Round of 32", [normalize_bracket_match(bm[m]) for m in order_r32]),
-        ("Round of 16", [normalize_bracket_match(bm[m]) for m in order_r16]),
-        ("Quarterfinals", [normalize_bracket_match(bm[m]) for m in order_qf]),
-        ("Semifinals", [normalize_bracket_match(bm[m]) for m in order_sf]),
-        ("Final", [normalize_bracket_match(bm[103])]),
-    ]
-    return render_template("bracket.html", results=results, rounds=rounds, scenario_id=scenario_id)
+    ko_scores = data_store.load_actuals().get("knockout_scores", {})
+    rounds_with_scores = [
+        (rname, [normalize_bracket_match(bm[m], ko_scores=ko_scores) for m in order])
+        for rname, order in [
+            ("Round of 32", order_r32),
+            ("Round of 16", order_r16),
+            ("Quarterfinals", order_qf),
+            ("Semifinals", order_sf),
+        ]
+    ] + [("Final", [normalize_bracket_match(bm[103], ko_scores=ko_scores)])]
+    return render_template("bracket.html", results=results, rounds=rounds_with_scores,
+                           scenario_id=scenario_id, knocked_out_teams=_knocked_out_teams(results))
 
 
 @web_bp.get("/fixtures")
@@ -711,7 +749,7 @@ def fixtures():
                 buckets[f"md{matchday}"].append(nm)
 
         bm = results.get("bracket_matches", {})
-        # Map the singular round name (from ROUND_NAMES) to its section id.
+        ko_scores = data_store.load_actuals().get("knockout_scores", {})
         round_to_section = {
             "Round of 32": "Round-of-32",
             "Round of 16": "Round-of-16",
@@ -721,7 +759,7 @@ def fixtures():
         }
         for m in engine.all_knockout_defs:
             match = bm[m["match"]]
-            nm = normalize_bracket_match(match)
+            nm = normalize_bracket_match(match, ko_scores=ko_scores)
             nm["header"] = nm["round"]
             nm["header_url"] = url_for("web.bracket") + f"#round-{nm['round'].replace(' ', '-')}"
             nm["sort_key"] = _utc_sort_key(match)
@@ -744,6 +782,7 @@ def fixtures():
         sections=sections,
         results=results,
         scenario_id=scenario_id,
+        knocked_out_teams=_knocked_out_teams(results),
     )
 
 

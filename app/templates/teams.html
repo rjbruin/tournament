@@ -35,7 +35,8 @@
       </thead>
       <tbody>
         {% for t in teams %}
-        <tr {% if favorite and t.name == favorite.name %}class="table-success"{% endif %}>
+        {% set _is_ko = t.name in (knocked_out_teams or set()) %}
+        <tr {% if favorite and t.name == favorite.name %}class="table-success"{% elif _is_ko %}class="text-muted"{% endif %}>
           <td>
             {{ loop.index }}
             {% if t.rank_change > 0 %}
@@ -45,7 +46,7 @@
             {% endif %}
           </td>
           <td>
-            <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none text-dark">
+            <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none {% if _is_ko %}knocked-out text-muted{% else %}text-dark{% endif %}">
               {{ t.name|flag }} {{ t.name }}
             </a>
           </td>

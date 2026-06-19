@@ -325,6 +325,8 @@
 </div>
 {% endif %}
 
+{{ fx.thirds_table(group_tables, groups, results) }}
+
 {% if results %}
 {% set top10 = results.winner_prob.items() | sort(attribute=1, reverse=True) | list %}
 <h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 Champion Projection 🏆</h2>

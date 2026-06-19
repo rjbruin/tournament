@@ -388,8 +388,36 @@ h1, h2 { color: var(--wc-green); }
 
 /* Odds-type icons (cup for the title, advancement marker for the knockouts) */
 .odds-icon { font-weight: 700; font-style: normal; }
-.advance-badge .odds-icon { margin-right: .1rem; }
 .winner-odds .odds-icon { margin-right: .15rem; }
+
+/* Split advance-odds badge: icon on neutral left, percentage on colored right */
+.advance-badge {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 1rem;
+  overflow: hidden;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.advance-badge__icon {
+  background: #6c757d;
+  color: #fff;
+  padding: .28em .5em;
+  display: flex;
+  align-items: center;
+}
+.advance-badge__val {
+  padding: .28em .5em;
+  display: flex;
+  align-items: center;
+}
+
+/* Third-place ranking table: thick border above rank 9 marks the cutoff */
+tr.thirds-cutoff td { border-top: 2px solid #adb5bd !important; }
+tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 
 .fixtures-section-title {
   font-family: 'Bebas Neue', sans-serif;

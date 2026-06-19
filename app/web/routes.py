@@ -341,6 +341,12 @@ def index():
 
     gs = data_store.load_global_settings()
 
+    pre_draw = _is_pre_draw(scenario_id)
+    index_group_tables = {}
+    for g in (groups if not pre_draw else []):
+        raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
+        index_group_tables[g["name"]] = compute_group_table(g, raw_fixtures, teams_by_name, results)
+
     return render_template(
         "index.html",
         tournament=engine.data["tournament"],
@@ -361,6 +367,8 @@ def index():
         qualification_full=qualification_full,
         previous_fixture=previous_fixture,
         previous_group_table=previous_group_table,
+        groups=groups,
+        group_tables=index_group_tables,
     )
 
 

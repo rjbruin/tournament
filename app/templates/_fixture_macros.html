@@ -27,16 +27,80 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
   {%- endif %}
 {%- endmacro %}
 
-{# Advancement odds badge. Shows Q ✓ when guaranteed, >99.9% when near-certain but not exact. #}
+{# Advancement odds badge: icon on neutral left, value on coloured right. #}
 {% macro advance_badge(adv) -%}
 {%- if adv is not none and adv >= 1.0 -%}
-<span class="badge advance-badge advance-badge--certain bg-success" title="Qualification secured">{{ ADVANCE_ICON }}&nbsp;✅</span>
-{%- elif adv is not none and adv >= 0.9995 -%}
-<span class="badge advance-badge bg-success">&gt;99.9%</span>
-{%- elif adv is not none -%}
-<span class="badge advance-badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-  <span class="odds-icon" title="Chance to advance from the group">{{ ADVANCE_ICON }}</span> {{ adv|pct(0) }}
+<span class="advance-badge" title="Qualification secured">
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">✅</span>
 </span>
+{%- elif adv is not none and adv >= 0.9995 -%}
+<span class="advance-badge">
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>
+</span>
+{%- elif adv is not none -%}
+<span class="advance-badge" title="Chance to advance from the group">
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger text-white{% endif %}">{{ adv|pct(0) }}</span>
+</span>
+{%- endif %}
+{%- endmacro %}
+
+{# Live third-place ranking table for all 12 groups. group_tables is a dict
+   {group_name: [row, ...]}, sorted by current standing. Shows only during
+   matchday 3 (when any team has gp >= 2). #}
+{% macro thirds_table(group_tables, groups, results) -%}
+{%- set max_gp = namespace(v=0) %}
+{%- for group in groups %}
+  {%- for row in group_tables[group.name] %}
+    {%- if row.gp > max_gp.v %}{%- set max_gp.v = row.gp %}{%- endif %}
+  {%- endfor %}
+{%- endfor %}
+{%- if max_gp.v >= 2 %}
+{%- set thirds = [] %}
+{%- for group in groups %}
+  {%- set rows = group_tables[group.name] %}
+  {%- if rows | length >= 3 %}
+    {%- set r = rows[2] %}
+    {%- if thirds.append({"group": group.name, "name": r.name, "gp": r.gp, "gf": r.gf, "ga": r.ga, "gd": r.gd, "pts": r.pts, "advance_prob": r.advance_prob}) %}{% endif %}
+  {%- endif %}
+{%- endfor %}
+{%- set sorted_thirds = thirds | sort(attribute='pts', reverse=True) %}
+{# Secondary sort by GD then GF — Jinja can't multi-sort, so we pre-sort by GF, then GD, then pts #}
+{%- set sorted_thirds = thirds | sort(attribute='gf', reverse=True) | sort(attribute='gd', reverse=True) | sort(attribute='pts', reverse=True) %}
+<div class="card shadow-sm mt-3" id="thirds-table">
+  <div class="card-header fw-bold">3rd-place standings <small class="text-muted fw-normal">(top 8 advance)</small></div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>Grp</th>
+          <th class="text-end">GP</th>
+          <th class="text-end">GF</th>
+          <th class="text-end">GA</th>
+          <th class="text-end">GD</th>
+          <th class="text-end">P</th>
+          {% if results %}<th class="text-end">Advance</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in sorted_thirds %}
+        <tr{% if loop.index == 9 %} class="thirds-cutoff"{% endif %}>
+          <td>{{ loop.index }}</td>
+          <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark fw-semibold">{{ row.name|flag }} {{ row.name }}</a></td>
+          <td class="text-muted">{{ row.group }}</td>
+          <td class="text-end">{{ row.gp }}</td>
+          <td class="text-end">{{ row.gf }}</td>
+          <td class="text-end">{{ row.ga }}</td>
+          <td class="text-end">{{ row.gd }}</td>
+          <td class="text-end fw-bold">{{ row.pts }}</td>
+          {% if results %}<td class="text-end">{{ advance_badge(row.advance_prob) }}</td>{% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {%- endif %}
 {%- endmacro %}
 

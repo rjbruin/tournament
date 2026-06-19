@@ -9,6 +9,11 @@
     {% for group in groups %}
     <a class="group-nav-btn" href="#group-{{ group.name }}">{{ group.name }}</a>
     {% endfor %}
+    {%- set max_gp = namespace(v=0) %}
+    {%- for group in groups %}{%- for row in group_tables[group.name] %}{%- if row.gp > max_gp.v %}{%- set max_gp.v = row.gp %}{%- endif %}{%- endfor %}{%- endfor %}
+    {% if max_gp.v >= 2 %}
+    <a class="group-nav-btn" href="#thirds-table">3rd</a>
+    {% endif %}
   </div>
 </div>
 
@@ -83,57 +88,7 @@
 </div>
 {% endfor %}
 
-{% if results and results.group_finish and not (active_scenario and active_scenario.is_pre_draw) %}
-<div class="row mt-4">
-  <div class="col-12">
-    <div class="card shadow-sm">
-      <div class="card-header fw-bold">Best 3rd-placed teams (8 of 12 advance)</div>
-      <div class="card-body p-0">
-        <table class="table table-sm table-hover mb-0">
-          <thead class="table-dark">
-            <tr>
-              <th>#</th>
-              <th>Team</th>
-              <th>Group</th>
-              <th class="text-end">Elo</th>
-              <th class="text-end">P(3rd)</th>
-              <th class="text-end">P(advance)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% set rows = [] %}
-            {% for group in groups %}
-              {% for tname in group.teams %}
-                {% set finish = results.group_finish[group.name][tname] %}
-                {% if rows.append((finish.third_prob, group.name, tname, finish)) %}{% endif %}
-              {% endfor %}
-            {% endfor %}
-            {% set sorted_rows = rows | sort(attribute=0, reverse=True) %}
-            {% for third_prob, gname, tname, finish in sorted_rows[:8] %}
-            {% set t = teams_by_name[tname] %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>
-                <a href="{{ url_for('web.team', name=tname) }}" class="text-decoration-none text-dark fw-semibold">{{ tname }}</a>
-              </td>
-              <td>{{ gname }}</td>
-              <td class="text-end text-muted">{{ t.elo }}</td>
-              <td class="text-end">{{ third_prob|pct }}</td>
-              <td class="text-end">
-                {% set adv = finish.advance_prob %}
-                <span class="badge {% if adv > 0.6 %}bg-success{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                  {{ adv|pct(0) }}
-                </span>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
+{{ fx.thirds_table(group_tables, groups, results) }}
 
 <script>
 (function () {

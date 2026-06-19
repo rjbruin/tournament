@@ -92,7 +92,7 @@ def _candidates_dict(side: dict) -> dict:
     return {c["team"]: c["probability"] for c in side.get("candidates", [])}
 
 
-def normalize_bracket_match(m: dict) -> dict:
+def normalize_bracket_match(m: dict, ko_scores: dict = None) -> dict:
     out = {
         "match": m["match"],
         "round": m.get("round", ""),
@@ -121,6 +121,14 @@ def normalize_bracket_match(m: dict) -> dict:
 
     if m.get("actual_winner"):
         out["played"] = True
+        # Attach score and penalty info if available.
+        if ko_scores:
+            s = ko_scores.get(str(m["match"]))
+            if s:
+                out["home_goals"] = s.get("home_goals")
+                out["away_goals"] = s.get("away_goals")
+                out["home_penalties"] = s.get("home_penalties")
+                out["away_penalties"] = s.get("away_penalties")
     return out
 
 

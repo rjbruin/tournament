@@ -27,6 +27,151 @@ from app.simulation.probability import compute_lambdas_vec, penalty_win_prob, ma
 # Group-stage match order: index pairs into a group's 4-team list.
 GROUP_MATCH_PAIRS = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
 
+
+def _rank_group_with_h2h(
+    n: int,
+    pts: np.ndarray,
+    gf: np.ndarray,
+    ga: np.ndarray,
+    scorelines: dict,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Rank 4 teams per simulation according to the official FIFA WC tiebreaker rules.
+
+    Step 1 (applied only among teams tied on overall points):
+      H2H points → H2H goal difference → H2H goals scored
+    Step 2 (still tied after step 1):
+      Overall goal difference → overall goals scored
+
+    Args:
+        n: number of simulations
+        pts, gf, ga: (n, 4) int arrays — overall group stats
+        scorelines: {(i, j): (goals_i, goals_j)} each (n,) array
+
+    Returns:
+        order: (n, 4) local team indices (0-3) best→worst
+        key:   (n, 4) overall ranking key at each position
+               (pts * 1e8 + shifted-gd * 1e5 + gf, for cross-group 3rd-place comparison)
+    """
+    gd = gf - ga
+
+    # Overall key used for cross-group 3rd-place ranking and as the initial sort.
+    # Use a generous GD offset so the packed int is always positive.
+    GD_OFFSET = 100
+    overall_key = (
+        pts.astype(np.int64) * 100_000_000
+        + (gd + GD_OFFSET).astype(np.int64) * 100_000
+        + gf.astype(np.int64)
+    )
+    order = np.argsort(-overall_key, axis=1, kind="stable")
+
+    # Precompute pairwise H2H stats: [s, i, j] = stat team i earned from match vs j
+    h2h_p = np.zeros((n, 4, 4), dtype=np.int32)   # pts
+    h2h_f = np.zeros((n, 4, 4), dtype=np.int32)   # goals for
+    h2h_d = np.zeros((n, 4, 4), dtype=np.int32)   # goal diff
+
+    for i, j in GROUP_MATCH_PAIRS:
+        gi_s = scorelines[(i, j)][0].astype(np.int32)
+        gj_s = scorelines[(i, j)][1].astype(np.int32)
+        wi = gi_s > gj_s; wj = gj_s > gi_s; dw = gi_s == gj_s
+        h2h_p[:, i, j] = 3 * wi + dw
+        h2h_p[:, j, i] = 3 * wj + dw
+        h2h_f[:, i, j] = gi_s;  h2h_f[:, j, i] = gj_s
+        h2h_d[:, i, j] = gi_s - gj_s
+        h2h_d[:, j, i] = gj_s - gi_s
+
+    # Group simulations by their (sorted-descending) pts pattern so we can
+    # apply H2H corrections in bulk rather than one simulation at a time.
+    # Max pts per team = 9 (3 wins), so a 4-digit base-10 key is sufficient.
+    pts_sorted = np.sort(pts, axis=1)[:, ::-1]  # (n, 4) descending
+    pattern_key = (
+        pts_sorted[:, 0].astype(np.int32) * 1000
+        + pts_sorted[:, 1].astype(np.int32) * 100
+        + pts_sorted[:, 2].astype(np.int32) * 10
+        + pts_sorted[:, 3].astype(np.int32)
+    )
+
+    for pk in np.unique(pattern_key):
+        sim_idx = np.where(pattern_key == pk)[0]   # simulations with this pts pattern
+        m = sim_idx.size
+
+        # Identify consecutive tied positions in the pts pattern.
+        sample = pts_sorted[sim_idx[0]]
+        tie_groups: list[list[int]] = []
+        i = 0
+        while i < 4:
+            j = i + 1
+            while j < 4 and sample[j] == sample[i]:
+                j += 1
+            if j - i > 1:
+                tie_groups.append(list(range(i, j)))
+            i = j
+
+        if not tie_groups:
+            continue  # all distinct pts → initial sort already correct
+
+        cur_order = order[sim_idx].copy()   # (m, 4)
+        cur_gd = np.take_along_axis(gd[sim_idx], cur_order, axis=1)   # (m, 4)
+        cur_gf = np.take_along_axis(gf[sim_idx], cur_order, axis=1)   # (m, 4)
+
+        h2h_p_sub = h2h_p[sim_idx]   # (m, 4, 4)
+        h2h_d_sub = h2h_d[sim_idx]
+        h2h_f_sub = h2h_f[sim_idx]
+        arange_m = np.arange(m)
+
+        for pos_group in tie_groups:
+            ng = len(pos_group)
+            # Original team indices at the tied positions
+            tied_teams = cur_order[:, pos_group]   # (m, ng)
+
+            # Accumulate H2H stats for each tied team against all other tied teams.
+            sum_p = np.zeros((m, ng), dtype=np.int32)
+            sum_d = np.zeros((m, ng), dtype=np.int32)
+            sum_f = np.zeros((m, ng), dtype=np.int32)
+            for k in range(ng):
+                t_k = tied_teams[:, k]
+                for l in range(ng):
+                    if k == l:
+                        continue
+                    t_l = tied_teams[:, l]
+                    sum_p[:, k] += h2h_p_sub[arange_m, t_k, t_l]
+                    sum_d[:, k] += h2h_d_sub[arange_m, t_k, t_l]
+                    sum_f[:, k] += h2h_f_sub[arange_m, t_k, t_l]
+
+            grp_gd = cur_gd[:, pos_group]   # (m, ng)  overall GD (step 2 fallback)
+            grp_gf = cur_gf[:, pos_group]
+
+            # Packed key: H2H pts, H2H GD, H2H GF, overall GD, overall GF.
+            # GD values can be negative → shift by 100 before packing.
+            # Scale verification (int64 safe):
+            #   sum_p ≤ 9,  *1e12 → 9e12
+            #   sum_d+100 ≤ 127, *1e9 → 1.27e11 < 1e12 gap ✓
+            #   sum_f ≤ 27, *1e6 → 2.7e7 < 1e9 gap ✓
+            #   grp_gd+100 ≤ 127, *1e3 → 1.27e5 < 1e6 gap ✓
+            #   grp_gf ≤ 27 < 1e3 gap ✓
+            h2h_key = (
+                sum_p.astype(np.int64)          * 1_000_000_000_000
+                + (sum_d + 100).astype(np.int64) *     1_000_000_000
+                + sum_f.astype(np.int64)         *         1_000_000
+                + (grp_gd + 100).astype(np.int64) *          1_000
+                + grp_gf.astype(np.int64)
+            )
+
+            within_order = np.argsort(-h2h_key, axis=1, kind="stable")   # (m, ng)
+            cur_order[:, pos_group] = np.take_along_axis(tied_teams, within_order, axis=1)
+            cur_gd[:, pos_group] = np.take_along_axis(grp_gd, within_order, axis=1)
+            cur_gf[:, pos_group] = np.take_along_axis(grp_gf, within_order, axis=1)
+
+        order[sim_idx] = cur_order
+
+    # Build the per-position ranking key (used for cross-group 3rd-place comparison).
+    out_key = np.empty((n, 4), dtype=np.int64)
+    for pos in range(4):
+        out_key[:, pos] = np.take_along_axis(
+            overall_key, order[:, pos : pos + 1], axis=1
+        )[:, 0]
+
+    return order, out_key
+
 ROUND_NAMES = {}
 for _m in range(73, 89):
     ROUND_NAMES[_m] = "Round of 32"
@@ -200,13 +345,11 @@ class SimulationEngine:
         for gi, tidx in enumerate(self._group_indices):
             gname = self.group_letters[gi]
             fixed_pairs = fixed_group_results.get(gname, {})
-            pts, gf, ga = self._simulate_group(n, tidx, fixed_pairs)
-            gd = gf - ga
-            key = pts.astype(np.int64) * 1_000_000 + gd.astype(np.int64) * 1_000 + gf.astype(np.int64)
-            order = np.argsort(-key, axis=1, kind="stable")  # (n, 4) descending
+            pts, gf, ga, scorelines = self._simulate_group_capture(n, tidx, fixed_pairs)
+            order, key = _rank_group_with_h2h(n, pts, gf, ga, scorelines)
             for pos in range(4):
                 group_order[:, gi, pos] = tidx[order[:, pos]]
-                group_key[:, gi, pos] = np.take_along_axis(key, order[:, pos:pos+1], axis=1)[:, 0]
+                group_key[:, gi, pos] = key[:, pos]
 
         return group_order, group_key
 
@@ -300,16 +443,13 @@ class SimulationEngine:
         for gi, tidx in enumerate(self._group_indices):
             gname = self.group_letters[gi]
             fixed_pairs = fixed_group_results.get(gname, {})
+            pts, gf, ga, grp_scorelines = self._simulate_group_capture(n, tidx, fixed_pairs)
             if gi == target_gi:
-                pts, gf, ga, scorelines = self._simulate_group_capture(n, tidx, fixed_pairs)
-            else:
-                pts, gf, ga = self._simulate_group(n, tidx, fixed_pairs)
-            gd = gf - ga
-            key = pts.astype(np.int64) * 1_000_000 + gd.astype(np.int64) * 1_000 + gf.astype(np.int64)
-            order = np.argsort(-key, axis=1, kind="stable")
+                scorelines = grp_scorelines
+            order, key = _rank_group_with_h2h(n, pts, gf, ga, grp_scorelines)
             for pos in range(4):
                 group_order[:, gi, pos] = tidx[order[:, pos]]
-                group_key[:, gi, pos] = np.take_along_axis(key, order[:, pos:pos+1], axis=1)[:, 0]
+                group_key[:, gi, pos] = key[:, pos]
 
         # Which groups' third-placed team is among the best 8 (and so qualifies).
         third_key = group_key[:, :, 2]

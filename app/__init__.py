@@ -248,17 +248,16 @@ def create_app():
 
     @app.template_filter("pct")
     def pct_filter(value, decimals=1):
-        """Format a probability (0-1) as a percentage.
-        Returns ✅ when the value rounds to 100% at the requested precision,
-        and ❌ when it rounds to 0%."""
+        """Format a probability (0-1) as a percentage, using a checkmark
+        for certainties (exactly 100%) and a red cross for impossibilities
+        (exactly 0%)."""
         if value is None:
             return "—"
-        pct = round(value * 100, decimals)
-        if pct >= 100:
+        if value >= 1:
             return "✅"
-        if pct <= 0:
+        if value <= 0:
             return "❌"
-        return f"{pct:.{decimals}f}%"
+        return f"{value * 100:.{decimals}f}%"
 
     @app.template_filter("timestamp_to_date")
     def timestamp_to_date(value, fmt="%Y-%m-%d"):

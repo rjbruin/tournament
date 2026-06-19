@@ -218,7 +218,7 @@
             <span class="qual-odds-caption">Advance odds:</span>
             {% for key, label in [('win', 'Win'), ('draw', 'Draw'), ('loss', 'Loss')] %}
             {% if s.odds[key] is not none %}
-            <span class="qual-odds-chip"><span class="qual-odds-label">{{ label }}</span> {{ s.odds[key]|pct(0) }}</span>
+            <span class="qual-odds-chip"><span class="qual-odds-label">{{ label }}</span> {%- if s.odds[key] >= 1.0 %} ✅{%- elif s.odds[key] >= 0.995 %} &gt;99%{%- else %} {{ s.odds[key]|pct(0) }}{%- endif %}</span>
             {% endif %}
             {% endfor %}
           </div>

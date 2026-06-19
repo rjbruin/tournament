@@ -2,13 +2,31 @@
 
 {# ---------- Form badge: Elo modifier vs. expected results ---------- #}
 {% macro form_badge(team) %}
-  {% set f = (team_form or {}).get(team) %}
-  {% if f is not none and f != 0 %}
-  <span class="badge rounded-pill {% if f > 1 %}bg-success{% elif f < -1 %}bg-danger{% else %}bg-secondary{% endif %}"
+  {%- set f = (team_form or {}).get(team) %}
+  {%- if f is not none %}
+    {%- if f >= 15 %}{%- set _icon = '↑↑' %}{%- set _cls = 'bg-success' %}
+    {%- elif f >= 5 %}{%- set _icon = '↑' %}{%- set _cls = 'bg-success' %}
+    {%- elif f <= -15 %}{%- set _icon = '↓↓' %}{%- set _cls = 'bg-danger' %}
+    {%- elif f <= -5 %}{%- set _icon = '↓' %}{%- set _cls = 'bg-danger' %}
+    {%- else %}{%- set _icon = '→' %}{%- set _cls = 'bg-secondary' %}
+    {%- endif %}
+  <span class="badge rounded-pill {{ _cls }} text-white form-badge"
         title="Form: {{ '%+.1f'|format(f) }} Elo vs. expected results"
-        style="font-size:0.65em; vertical-align:middle;">{{ '%+.0f'|format(f) }}</span>
-  {% endif %}
+        style="cursor:default;">{{ _icon }}</span>
+  {%- endif %}
 {% endmacro %}
+
+{# Star-rating badge derived from base Elo (1.0–5.0 scale, hover shows raw Elo).
+   Call with explicit elo, or omit to look up from the global team_elos dict. #}
+{% macro star_badge(elo=none, team=none) %}
+  {%- set _elo = elo if elo is not none else ((team_elos or {}).get(team)) %}
+  {%- if _elo is not none %}
+    {%- set _stars = [5.0, [1.0, (1 + 4 * (_elo - 1600) / 490)] | max] | min | round(1) %}
+<span class="badge rounded-pill bg-secondary text-white star-badge"
+      title="Base Elo: {{ _elo }}"
+      style="font-size:0.65em; vertical-align:middle; cursor:default;">{{ _stars }}&thinsp;★</span>
+  {%- endif %}
+{%- endmacro %}
 
 
 {# ---------- Qualification styling for standings rows ---------- #}
@@ -27,19 +45,21 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
   {%- endif %}
 {%- endmacro %}
 
-{# Advancement odds badge: icon on neutral left, value on coloured right. #}
-{% macro advance_badge(adv) -%}
+{# Advancement odds badge: icon on neutral left, value on coloured right,
+   optional delta segment on far right. delta is a float (e.g. 0.06 = +6pp). #}
+{% macro advance_badge(adv, delta=none) -%}
+{%- set _show_delta = delta is not none and (delta >= 0.005 or delta <= -0.005) -%}
 {%- if adv is not none and adv >= 1.0 -%}
 <span class="advance-badge" title="Qualification secured">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">✅</span>
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">✅</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
 </span>
 {%- elif adv is not none and adv >= 0.9995 -%}
 <span class="advance-badge">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
 </span>
 {%- elif adv is not none -%}
 <span class="advance-badge" title="Chance to advance from the group">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger text-white{% endif %}">{{ adv|pct(0) }}</span>
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger text-white{% endif %}">{{ adv|pct(0) }}</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
 </span>
 {%- endif %}
 {%- endmacro %}
@@ -220,7 +240,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 
 
 {# ---------- Large fixture card: header + odds row + meta line ---------- #}
-{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, editable=False, explore=False, form_id=None, live=False, submit_label=None) %}
+{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, before_adv=None, editable=False, explore=False, form_id=None, live=False, submit_label=None) %}
 <div class="card fixture-card mb-3">
   {% if header %}
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
@@ -233,14 +253,17 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         {% if match.home_team %}
         <div class="fixture-team-side">
           <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
-          <div class="fixture-team-name">{{ match.home_team }}{% if not match.played or match.in_progress %} {{ form_badge(match.home_team) }}{% endif %}</div>
+          <div class="fixture-team-name">{{ match.home_team }}</div>
           {% if editable %}
           <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
           {% else %}
           {% if match.home_prob is defined %}<div class="fixture-odds mt-1">{{ match.home_prob|pct(0) }}</div>{% endif %}
-          {% if show_advance and match.home_team and advance_prob is not none %}
-          <div class="mt-1">{{ advance_badge(advance_prob.get(match.home_team, 0)) }}</div>
-          {% endif %}
+          {%- if match.home_team %}
+          {%- set _home_adv = advance_prob.get(match.home_team) if (show_advance and advance_prob is not none) else none %}
+          {%- set _home_prev = before_adv[match.home_team] if before_adv and match.home_team in before_adv else none %}
+          {%- set _home_delta = (_home_adv - _home_prev) if (_home_adv is not none and _home_prev is not none) else none %}
+          <div class="mt-1">{{ star_badge(team=match.home_team) }} {{ form_badge(match.home_team) }}{% if _home_adv is not none %} {{ advance_badge(_home_adv, delta=_home_delta) }}{% endif %}</div>
+          {%- endif %}
           {% endif %}
         </div>
         {% else %}
@@ -272,14 +295,17 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         {% if match.away_team %}
         <div class="fixture-team-side">
           <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
-          <div class="fixture-team-name">{{ match.away_team }}{% if not match.played or match.in_progress %} {{ form_badge(match.away_team) }}{% endif %}</div>
+          <div class="fixture-team-name">{{ match.away_team }}</div>
           {% if editable %}
           <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
           {% else %}
           {% if match.away_prob is defined %}<div class="fixture-odds mt-1">{{ match.away_prob|pct(0) }}</div>{% endif %}
-          {% if show_advance and match.away_team and advance_prob is not none %}
-          <div class="mt-1">{{ advance_badge(advance_prob.get(match.away_team, 0)) }}</div>
-          {% endif %}
+          {%- if match.away_team %}
+          {%- set _away_adv = advance_prob.get(match.away_team) if (show_advance and advance_prob is not none) else none %}
+          {%- set _away_prev = before_adv[match.away_team] if before_adv and match.away_team in before_adv else none %}
+          {%- set _away_delta = (_away_adv - _away_prev) if (_away_adv is not none and _away_prev is not none) else none %}
+          <div class="mt-1">{{ star_badge(team=match.away_team) }} {{ form_badge(match.away_team) }}{% if _away_adv is not none %} {{ advance_badge(_away_adv, delta=_away_delta) }}{% endif %}</div>
+          {%- endif %}
           {% endif %}
         </div>
         {% else %}
@@ -322,7 +348,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 
 
 {# ---------- Group standings table ---------- #}
-{% macro group_table(rows, results, show_form=True, before_adv=none) %}
+{% macro group_table(rows, results, show_form=True) %}
 <div class="table-responsive">
   <table class="table table-sm table-hover mb-0 group-standings-table">
     <thead class="table-dark">
@@ -339,25 +365,14 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
     <tbody>
       {% for row in rows %}
       <tr class="{{ qual_row_class(row) }}">
-        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {% if show_form %}{{ form_badge(row.name) }}{% endif %}{{ qual_marker(row) }}</td>
+        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {{ star_badge(team=row.name) }}{% if show_form %} {{ form_badge(row.name) }}{% endif %}{{ qual_marker(row) }}</td>
         <td class="text-end">{{ row.gp }}</td>
         <td class="text-end">{{ row.gf }}</td>
         <td class="text-end">{{ row.ga }}</td>
         <td class="text-end">{{ row.gd }}</td>
         <td class="text-end fw-bold">{{ row.pts }}</td>
         {% if results %}
-        <td class="text-end">
-          {%- set prev = before_adv[row.name] if before_adv and row.name in before_adv else none %}
-          {%- if prev is not none and row.advance_prob is not none %}
-            {%- set delta = row.advance_prob - prev %}
-            {%- if delta >= 0.005 %}
-              <span class="adv-delta adv-delta--up">+{{ (delta * 100) | round(0) | int }}pp</span>
-            {%- elif delta <= -0.005 %}
-              <span class="adv-delta adv-delta--down">{{ (delta * 100) | round(0) | int }}pp</span>
-            {%- endif %}
-          {%- endif %}
-          {{ advance_badge(row.advance_prob) }}
-        </td>
+        <td class="text-end">{{ advance_badge(row.advance_prob) }}</td>
         {% endif %}
       </tr>
       {% endfor %}

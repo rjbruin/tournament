@@ -415,19 +415,14 @@ h1, h2 { color: var(--wc-green); }
   align-items: center;
 }
 
-/* Advance-odds delta chips (shown next to the badge when before-odds exist) */
-.adv-delta {
-  display: inline-block;
-  font-size: .68rem;
-  font-weight: 700;
-  border-radius: .3rem;
-  padding: .1em .3em;
-  margin-right: .2rem;
-  vertical-align: middle;
-  white-space: nowrap;
+/* Delta segment attached to the right of the advance badge pill */
+.advance-badge__delta {
+  padding: .28em .5em;
+  display: flex;
+  align-items: center;
 }
-.adv-delta--up   { background: rgba(25,135,84,.12); color: #0f5132; }
-.adv-delta--down { background: rgba(220,53,69,.10); color: #842029; }
+.advance-badge__delta--up   { background: rgba(25,135,84,.18); color: #0f5132; }
+.advance-badge__delta--down { background: rgba(220,53,69,.14); color: #842029; }
 
 /* Third-place ranking table: thick border above rank 9 marks the cutoff */
 tr.thirds-cutoff td { border-top: 2px solid #adb5bd !important; }
@@ -449,6 +444,15 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   letter-spacing: .04em;
   color: var(--wc-green);
   line-height: 1.1;
+}
+.form-badge {
+  font-size: 0.625rem;
+  font-family: var(--bs-font-sans-serif);
+  vertical-align: middle;
+  letter-spacing: 0;
+}
+.fixture-team-name .form-badge {
+  vertical-align: 0.1em;
 }
 .fixture-odds {
   font-family: 'Bebas Neue', sans-serif;

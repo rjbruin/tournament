@@ -10,9 +10,34 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.2.0",
+        "date": "2026-06-19",
+        "features": [
+            "Qualification scenarios now show per-outcome advancement odds "
+            "(Win / Draw / Loss) and a one-line headline, replacing the verbose "
+            "decision tree. On the final matchday, the full scenario tree is "
+            "still available in an expandable section.",
+            "Group standings tiebreakers now follow the official FIFA procedure: "
+            "head-to-head points, then head-to-head goal difference, then "
+            "head-to-head goals scored — before falling back to overall goal "
+            "difference and goals scored.",
+            "The advance odds badge in the standings and fixture display shows a "
+            "green Q ✓ when qualification is mathematically secured, and "
+            ">99.9 % when it rounds to 100 % but is not yet certain.",
+            "Admin usage statistics page: page views, unique visitors, hourly "
+            "traffic chart, and top pages/users.",
+            "Admin-only button on the live match card to immediately fetch fresh "
+            "results from the data feed.",
+        ],
+        "fixes": [
+            "The separate grey Q ✓ badge after team names in the standings "
+            "has been removed — the advance column badge covers that information.",
+        ],
+    },
     {
         "version": "1.1.0",
         "date": "2026-06-18",

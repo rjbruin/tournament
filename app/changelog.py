@@ -10,9 +10,24 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.4.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.4.0",
+        "date": "2026-06-19",
+        "features": [
+            "Fixture cards redesigned with a full-bleed flag image on each "
+            "team side, fading into the dark green background. Flag images "
+            "are loaded from flagcdn.com for all 48 teams. Team names are "
+            "much larger with a text stroke so they stand out against any "
+            "flag colour.",
+            "Live goal and full-time notifications: when the backend detects "
+            "a score change, a banner slides in below the navbar showing "
+            "'GOAL!' with the scoring team's flag, or 'Full Time' with the "
+            "result. Banners auto-dismiss after 12 seconds.",
+        ],
+    },
     {
         "version": "1.3.1",
         "date": "2026-06-19",

@@ -149,15 +149,49 @@ function alignBracket() {
 
   const scrollEl = document.querySelector('.bracket-scroll');
   const anchor = getAnchorIndex(scrollEl ? scrollEl.scrollLeft : 0);
+  const anchorCards = roundMatches[anchor];
+
+  // Find the anchor card closest to the viewport vertical centre BEFORE we
+  // reset any margins.  We'll keep that card pinned in place so that cards
+  // the user is actually looking at don't jump upward when the compact stack
+  // collapses the extra spacing that was there for tree alignment.
+  const viewCenterDoc = window.scrollY + window.innerHeight / 2;
+  let pivotIdx = 0, pivotDist = Infinity;
+  anchorCards.forEach((m, i) => {
+    const r = m.getBoundingClientRect();
+    const d = Math.abs(window.scrollY + r.top + r.height / 2 - viewCenterDoc);
+    if (d < pivotDist) { pivotDist = d; pivotIdx = i; }
+  });
+  // Record pivot's document-relative centre before any style changes.
+  const pivotBefore = (() => {
+    const r = anchorCards[pivotIdx].getBoundingClientRect();
+    return window.scrollY + r.top + r.height / 2;
+  })();
 
   // Reset margins on the anchor round and everything to its right.
   for (let r = anchor; r < roundMatches.length; r++) {
     roundMatches[r].forEach(m => { m.style.marginTop = ''; });
   }
 
-  // Compact stacking for the anchor round gives us its centers.
-  let cursor = 0;
-  let centers = roundMatches[anchor].map(m => {
+  // After the reset, compute where the pivot card's centre would land in a
+  // plain compact stack (cursor from the first card's natural top).
+  const firstTop = (() => {
+    const r = anchorCards[0].getBoundingClientRect();
+    return window.scrollY + r.top;
+  })();
+  let compactOffset = 0;
+  for (let i = 0; i < pivotIdx; i++) compactOffset += anchorCards[i].offsetHeight + GAP;
+  const compactPivotCenter = firstTop + compactOffset + anchorCards[pivotIdx].offsetHeight / 2;
+
+  // Shift the whole anchor column downward so the pivot card stays where it
+  // was.  Clamp to ≥ 0 so we never push cards above the column's natural top.
+  const shift = Math.max(0, pivotBefore - compactPivotCenter);
+  if (shift > 0) anchorCards[0].style.marginTop = shift + 'px';
+
+  // Compact stacking for the anchor round gives us its centres.
+  // cursor starts after the shift on the first card.
+  let cursor = shift;
+  let centers = anchorCards.map(m => {
     const h = m.offsetHeight;
     const center = cursor + h / 2;
     cursor += h + GAP;

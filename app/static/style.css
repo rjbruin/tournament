@@ -415,6 +415,20 @@ h1, h2 { color: var(--wc-green); }
   align-items: center;
 }
 
+/* Advance-odds delta chips (shown next to the badge when before-odds exist) */
+.adv-delta {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 700;
+  border-radius: .3rem;
+  padding: .1em .3em;
+  margin-right: .2rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.adv-delta--up   { background: rgba(25,135,84,.12); color: #0f5132; }
+.adv-delta--down { background: rgba(220,53,69,.10); color: #842029; }
+
 /* Third-place ranking table: thick border above rank 9 marks the cutoff */
 tr.thirds-cutoff td { border-top: 2px solid #adb5bd !important; }
 tr.thirds-cutoff { background: rgba(0,0,0,.03); }

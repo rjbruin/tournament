@@ -322,7 +322,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 
 
 {# ---------- Group standings table ---------- #}
-{% macro group_table(rows, results, show_form=True) %}
+{% macro group_table(rows, results, show_form=True, before_adv=none) %}
 <div class="table-responsive">
   <table class="table table-sm table-hover mb-0 group-standings-table">
     <thead class="table-dark">
@@ -346,7 +346,18 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         <td class="text-end">{{ row.gd }}</td>
         <td class="text-end fw-bold">{{ row.pts }}</td>
         {% if results %}
-        <td class="text-end">{{ advance_badge(row.advance_prob) }}</td>
+        <td class="text-end">
+          {%- set prev = before_adv[row.name] if before_adv and row.name in before_adv else none %}
+          {%- if prev is not none and row.advance_prob is not none %}
+            {%- set delta = row.advance_prob - prev %}
+            {%- if delta >= 0.005 %}
+              <span class="adv-delta adv-delta--up">+{{ (delta * 100) | round(0) | int }}pp</span>
+            {%- elif delta <= -0.005 %}
+              <span class="adv-delta adv-delta--down">{{ (delta * 100) | round(0) | int }}pp</span>
+            {%- endif %}
+          {%- endif %}
+          {{ advance_badge(row.advance_prob) }}
+        </td>
         {% endif %}
       </tr>
       {% endfor %}

@@ -96,6 +96,26 @@ def _results_up_to_date(engine) -> bool:
     return True
 
 
+def _advance_prob_before(engine, actuals, group_name, home_team, away_team, n=30_000):
+    """Run a mini simulation with the home vs away match removed from actuals
+    and return group_advance_prob for all teams (used to show odds deltas)."""
+    import copy
+    before = copy.deepcopy(actuals)
+    pair = frozenset([home_team, away_team])
+    before.setdefault("group_results", {})[group_name] = [
+        r for r in before["group_results"].get(group_name, [])
+        if frozenset([r.get("home"), r.get("away")]) != pair
+    ]
+    before["live_matches"] = [
+        lm for lm in before.get("live_matches", [])
+        if frozenset([lm.get("home"), lm.get("away")]) != pair
+    ]
+    try:
+        return engine.run(n, actuals=before).get("group_advance_prob", {})
+    except Exception:
+        return {}
+
+
 def _group_table_before(g, raw_fixtures, live_match, teams_by_name, results):
     """Standings for group `g` as they were before `live_match` (a
     normalized match dict) was played."""
@@ -294,6 +314,7 @@ def index():
 
     featured_group_table = None
     featured_group_table_before = None
+    featured_before_adv = None
     if featured_fixture and featured_fixture.get("_group"):
         g = next((g for g in groups if g["name"] == featured_fixture["_group"]), None)
         if g:
@@ -302,11 +323,21 @@ def index():
 
             if featured_is_live:
                 featured_group_table_before = _group_table_before(g, raw_fixtures, featured_fixture, teams_by_name, results)
+                actuals = data_store.load_actuals()
+                featured_before_adv = _advance_prob_before(
+                    engine, actuals, g["name"],
+                    featured_fixture.get("home_team"), featured_fixture.get("away_team"))
+            elif featured_fixture.get("played"):
+                actuals = data_store.load_actuals()
+                featured_before_adv = _advance_prob_before(
+                    engine, actuals, g["name"],
+                    featured_fixture.get("home_team"), featured_fixture.get("away_team"))
 
     # Previous match: the most recently played non-live match, shown only when
     # the featured fixture is upcoming (not itself a played result).
     previous_fixture = None
     previous_group_table = None
+    previous_before_adv = None
     played = [m for m in all_normalized if m.get("played") and not m.get("in_progress")]
     if played and featured_fixture and not featured_fixture.get("played"):
         previous_fixture = played[-1]
@@ -314,6 +345,10 @@ def index():
         if g:
             raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
             previous_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
+            actuals = data_store.load_actuals()
+            previous_before_adv = _advance_prob_before(
+                engine, actuals, g["name"],
+                previous_fixture.get("home_team"), previous_fixture.get("away_team"))
 
     qualification_stakes = []
     qualification_full = []
@@ -363,10 +398,12 @@ def index():
         invite_only=gs.get("invite_only", True),
         featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
+        featured_before_adv=featured_before_adv,
         qualification_stakes=qualification_stakes,
         qualification_full=qualification_full,
         previous_fixture=previous_fixture,
         previous_group_table=previous_group_table,
+        previous_before_adv=previous_before_adv,
         groups=groups,
         group_tables=index_group_tables,
     )

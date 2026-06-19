@@ -250,14 +250,14 @@
     {% if featured_group_table_before %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings — with live score</div>
-    {{ fx.group_table(featured_group_table, results) }}
+    {{ fx.group_table(featured_group_table, results, before_adv=featured_before_adv) }}
     <div class="mt-3">
       {{ fx.group_table_collapsed(featured_group_table_before, "Group " + featured_fixture._group + " standings — before this match", "before-table-featured") }}
     </div>
     {% elif featured_group_table %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings</div>
-    {{ fx.group_table(featured_group_table, results) }}
+    {{ fx.group_table(featured_group_table, results, before_adv=featured_before_adv) }}
     {% endif %}
     {% else %}
     <hr class="mt-4">
@@ -319,7 +319,7 @@
     {% if previous_group_table %}
     <hr class="mt-2">
     <div class="small text-muted fw-bold mb-2">Group {{ previous_fixture._group }} standings</div>
-    {{ fx.group_table(previous_group_table, results) }}
+    {{ fx.group_table(previous_group_table, results, before_adv=previous_before_adv) }}
     {% endif %}
   </div>
 </div>

@@ -239,107 +239,119 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 {% endmacro %}
 
 
-{# ---------- Large fixture card: header + odds row + meta line ---------- #}
+{# ---------- Large fixture card: dark hero layout ---------- #}
 {% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, before_adv=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='') %}
+{%- set _home_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.home_team %}
+{%- set _away_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.away_team %}
+{%- if match.home_team and show_advance and advance_prob is not none %}
+  {%- set _home_adv = advance_prob.get(match.home_team) %}
+  {%- set _home_prev = before_adv[match.home_team] if before_adv and match.home_team in before_adv else none %}
+  {%- set _home_delta = (_home_adv - _home_prev) if (_home_adv is not none and _home_prev is not none) else none %}
+{%- else %}
+  {%- set _home_adv = none %}
+  {%- set _home_delta = none %}
+{%- endif %}
+{%- if match.away_team and show_advance and advance_prob is not none %}
+  {%- set _away_adv = advance_prob.get(match.away_team) %}
+  {%- set _away_prev = before_adv[match.away_team] if before_adv and match.away_team in before_adv else none %}
+  {%- set _away_delta = (_away_adv - _away_prev) if (_away_adv is not none and _away_prev is not none) else none %}
+{%- else %}
+  {%- set _away_adv = none %}
+  {%- set _away_delta = none %}
+{%- endif %}
 <div class="card fixture-card mb-3">
   {% if header %}
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
     {% if header_url %}<a href="{{ header_url }}">{{ header }}</a>{% else %}{{ header }}{% endif %}
   </div>
   {% endif %}
-  <div class="card-body px-3 py-3">
-    <div class="row align-items-center text-center g-0">
-      <div class="col-5">
+  <div class="fixture-card-body">
+    <div class="fixture-hero">
+
+      {# Home team panel #}
+      <div class="fixture-team-panel home">
         {% if match.home_team %}
-        <div class="fixture-team-side">
-          <div class="fixture-flag-lg">{{ match.home_team|flag }}</div>
-          <div class="fixture-team-name{% if match.actual_winner is defined and match.actual_winner and match.actual_winner != match.home_team %} knocked-out{% endif %}">{{ match.home_team }}</div>
-          {% if editable %}
-          <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
-          {% else %}
-          {% if match.home_prob is defined %}<div class="fixture-odds mt-1">{{ match.home_prob|pct(0) }}</div>{% endif %}
-          {%- if match.home_team %}
-          {%- set _home_adv = advance_prob.get(match.home_team) if (show_advance and advance_prob is not none) else none %}
-          {%- set _home_prev = before_adv[match.home_team] if before_adv and match.home_team in before_adv else none %}
-          {%- set _home_delta = (_home_adv - _home_prev) if (_home_adv is not none and _home_prev is not none) else none %}
-          <div class="mt-1">{{ star_badge(team=match.home_team) }} {{ form_badge(match.home_team) }}{% if _home_adv is not none %} {{ advance_badge(_home_adv, delta=_home_delta) }}{% endif %}</div>
-          {%- endif %}
-          {% endif %}
+        <div class="fixture-flag-watermark">{{ match.home_team|flag }}</div>
+        <div class="fixture-team-name{% if _home_ko %} knocked-out{% endif %}">{{ match.home_team }}</div>
+        <div class="fixture-badge-row">
+          {{ star_badge(team=match.home_team) }}
+          {{ form_badge(match.home_team) }}
+          {% if _home_adv is not none %}{{ advance_badge(_home_adv, delta=_home_delta) }}{% endif %}
         </div>
+        {% if editable %}
+        <input type="number" min="0" class="form-control form-control-sm text-center mt-2" style="width:4rem;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
+        {% endif %}
         {% else %}
+        {# TBD candidates #}
         {% for cand, p in (match.home_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
+        <div class="small" style="color:rgba(255,255,255,.7);">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
         {% endfor %}
         {% endif %}
       </div>
 
-      <div class="col-2 d-flex flex-column align-items-center justify-content-center" style="gap:.4rem;">
+      {# Centre column: score / odds #}
+      <div class="fixture-center-col">
         {% if match.played and not editable %}
         <div class="fixture-score">
           {% if match.home_penalties is defined and match.home_penalties is not none %}<span class="fixture-score-pen">({{ match.home_penalties }})</span> {% endif %}<span>{{ match.home_goals }}</span>
           <span class="fixture-score-sep">–</span>
           <span>{{ match.away_goals }}</span>{% if match.away_penalties is defined and match.away_penalties is not none %} <span class="fixture-score-pen">({{ match.away_penalties }})</span>{% endif %}
         </div>
-        {% if match.in_progress %}<span class="badge bg-danger live-badge" style="font-size:.7rem;">🔴 {% if match.minute is defined and match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
+        {% if match.in_progress %}<span class="fixture-live-badge live-badge">🔴 {% if match.minute is defined and match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
         {% elif editable %}
-        <div class="fixture-vs">-</div>
-        {% elif match.draw_prob is defined %}
-        <div class="fixture-vs">vs</div>
-        <div class="fixture-odds" style="font-size:1rem; color:#aaa;">{{ match.draw_prob|pct(0) }}</div>
+        <div class="fixture-vs">–</div>
         {% else %}
-        <div class="fixture-vs">vs</div>
+        <div class="fixture-vs">VS</div>
+        {% if match.home_prob is defined %}
+        <div class="fixture-odds-row">
+          <span class="odds-home">{{ match.home_prob|pct(0) }}</span>
+          {% if match.draw_prob is defined %}
+          <span class="odds-sep">·</span>
+          <span class="odds-draw">{{ match.draw_prob|pct(0) }}</span>
+          <span class="odds-sep">·</span>
+          {% endif %}
+          <span class="odds-away">{{ match.away_prob|pct(0) }}</span>
+        </div>
+        {% endif %}
         {% endif %}
       </div>
 
-      <div class="col-5">
+      {# Away team panel #}
+      <div class="fixture-team-panel away">
         {% if match.away_team %}
-        <div class="fixture-team-side">
-          <div class="fixture-flag-lg">{{ match.away_team|flag }}</div>
-          <div class="fixture-team-name{% if match.actual_winner is defined and match.actual_winner and match.actual_winner != match.away_team %} knocked-out{% endif %}">{{ match.away_team }}</div>
-          {% if editable %}
-          <input type="number" min="0" class="form-control form-control-sm text-center mx-auto mt-2" style="width:4rem" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
-          {% else %}
-          {% if match.away_prob is defined %}<div class="fixture-odds mt-1">{{ match.away_prob|pct(0) }}</div>{% endif %}
-          {%- if match.away_team %}
-          {%- set _away_adv = advance_prob.get(match.away_team) if (show_advance and advance_prob is not none) else none %}
-          {%- set _away_prev = before_adv[match.away_team] if before_adv and match.away_team in before_adv else none %}
-          {%- set _away_delta = (_away_adv - _away_prev) if (_away_adv is not none and _away_prev is not none) else none %}
-          <div class="mt-1">{{ star_badge(team=match.away_team) }} {{ form_badge(match.away_team) }}{% if _away_adv is not none %} {{ advance_badge(_away_adv, delta=_away_delta) }}{% endif %}</div>
-          {%- endif %}
-          {% endif %}
+        <div class="fixture-flag-watermark">{{ match.away_team|flag }}</div>
+        <div class="fixture-team-name{% if _away_ko %} knocked-out{% endif %}">{{ match.away_team }}</div>
+        <div class="fixture-badge-row away">
+          {% if _away_adv is not none %}{{ advance_badge(_away_adv, delta=_away_delta) }}{% endif %}
+          {{ form_badge(match.away_team) }}
+          {{ star_badge(team=match.away_team) }}
         </div>
+        {% if editable %}
+        <input type="number" min="0" class="form-control form-control-sm text-center mt-2" style="width:4rem;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
+        {% endif %}
         {% else %}
         {% for cand, p in (match.away_candidates or {}).items() %}
-        <div class="small text-muted">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
+        <div class="small" style="color:rgba(255,255,255,.7);">{{ cand|flag }} {{ cand }} ({{ p|pct(0) }})</div>
         {% endfor %}
         {% endif %}
       </div>
     </div>
 
     {% if not editable and match.events %}
-    <div class="fixture-events mt-3 pt-2 border-top" data-fixture-events>
+    <div style="border-top:1px solid rgba(255,255,255,.1);padding:.75rem 1rem 0;" data-fixture-events>
       {{ match_events(match) }}
     </div>
     {% endif %}
 
     {% if editable %}
-    <div class="text-center mt-3">
-      <button type="submit" {% if form_id %}form="{{ form_id }}"{% endif %} class="btn btn-primary btn-sm">{{ submit_label or "Show hypothetical scenario" }}</button>
+    <div class="text-center" style="padding:.75rem;">
+      <button type="submit" {% if form_id %}form="{{ form_id }}"{% endif %} class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);">{{ submit_label or "Show hypothetical scenario" }}</button>
     </div>
     {% elif match.date or explore or live %}
-    <div class="text-muted small text-center mt-2 border-top pt-2">
-      {% if match.date %}
-      {{ match|local_time }}
-      {% if match.venue %} &middot; {{ match.venue }}{% if match.place %}, {{ match.place }}{% endif %}{% endif %}
-      {% endif %}
-      {% if explore %}
-      {% if match.date %} &middot; {% endif %}
-      <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="explore-toggle-btn{{ idx }}">🔍 Explore</span>
-      {% endif %}
-      {% if live %}
-      {% if match.date or explore %} &middot; {% endif %}
-      <span class="text-primary text-decoration-underline" style="cursor:pointer;" id="live-score-toggle-btn{{ idx }}">📡 Edit live score</span>
-      {% endif %}
+    <div class="fixture-meta">
+      {% if match.date %}{{ match|local_time }}{% if match.venue %} &middot; {{ match.venue }}{% if match.place %}, {{ match.place }}{% endif %}{% endif %}{% endif %}
+      {% if explore %}{% if match.date %} &middot; {% endif %}<span style="color:rgba(255,255,255,.6);text-decoration:underline;cursor:pointer;" id="explore-toggle-btn{{ idx }}">🔍 Explore</span>{% endif %}
+      {% if live %}{% if match.date or explore %} &middot; {% endif %}<span style="color:rgba(255,255,255,.6);text-decoration:underline;cursor:pointer;" id="live-score-toggle-btn{{ idx }}">📡 Edit live score</span>{% endif %}
     </div>
     {% endif %}
   </div>

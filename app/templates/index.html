@@ -328,40 +328,116 @@
 {% if featured_is_live %}
 <script>
 (function () {
-  // Live updater: poll /api/live/status every 10 s.
-  // The backend polls football-data.org every 10 s, re-runs the simulation,
-  // then increments its version. We reload only when the backend version
-  // advances past what we saw at page-load AND it's no longer processing.
-  // While waiting we update the in-play minute badge directly from /api/live.
   const LIVE_POLL = 10 * 1000;
   const pageVersion = {{ live_version }};
   const badges = document.querySelectorAll('#featured-fixture .live-badge');
+  const notifBar = document.getElementById('live-notification-bar');
+
+  // Keyed state we knew about at last poll — detect score changes.
+  const knownScores = {
+    {% for m in featured_fixtures if m.in_progress %}
+    {{ m.home_team|tojson }}: {{ (m.home_goals or 0) }},
+    {{ m.away_team|tojson }}: {{ (m.away_goals or 0) }},
+    {% endfor %}
+  };
+  let knownFinished = new Set();
+
+  function showNotif(type, html) {
+    if (!notifBar) return;
+    const div = document.createElement('div');
+    div.className = 'live-notif ' + (type === 'goal' ? 'notif-goal' : 'notif-fulltime');
+    div.innerHTML = html +
+      '<button class="live-notif-dismiss" onclick="dismissNotif(this)">✕</button>';
+    notifBar.appendChild(div);
+    // Auto-dismiss after 12 s.
+    setTimeout(() => dismissNotif(div.querySelector('.live-notif-dismiss')), 12000);
+  }
+
+  window.dismissNotif = function(btn) {
+    const el = btn.closest('.live-notif');
+    if (!el || el.classList.contains('hiding')) return;
+    el.classList.add('hiding');
+    setTimeout(() => el.remove(), 300);
+  };
+
+  function goalHtml(scorerTeamFlag, scorerTeam, hg, ag, minute) {
+    const minStr = minute != null ? minute + '\'' : '';
+    return `<div class="live-notif-left">
+      <span class="live-notif-word">Goal!</span>
+      <span style="font-size:1.4rem;">${scorerTeamFlag}</span>
+      <span class="live-notif-detail">${scorerTeam}${minStr ? ' &middot; ' + minStr : ''}</span>
+    </div>
+    <span class="live-notif-score">${hg} &ndash; ${ag}</span>`;
+  }
+
+  function ftHtml(homeFlag, homeTeam, awayFlag, awayTeam, hg, ag) {
+    let result;
+    if (hg > ag) result = `${homeFlag} <strong>${homeTeam}</strong> win`;
+    else if (ag > hg) result = `${awayFlag} <strong>${awayTeam}</strong> win`;
+    else result = 'Draw';
+    return `<div class="live-notif-left">
+      <span class="live-notif-word">Full Time</span>
+      <span class="live-notif-detail">${homeFlag} ${awayFlag} &middot; ${result}</span>
+    </div>
+    <span class="live-notif-score">${hg} &ndash; ${ag}</span>`;
+  }
 
   async function tick() {
     try {
-      // Check whether the backend has a newer processed result.
       const sr = await fetch(`${window.API_ROOT}/live/status`);
       if (!sr.ok) return;
       const status = await sr.json();
-      if (!status.processing && status.version > pageVersion) {
-        window.location.reload();
-        return;
-      }
 
-      // No new result yet — update minute badges in place from /api/live.
       const lr = await fetch(`${window.API_ROOT}/live`);
       if (!lr.ok) return;
       const data = await lr.json();
+
+      // Check score changes and finished matches for notifications.
       {% for m in featured_fixtures if m.in_progress %}
       {
+        const home = {{ m.home_team|tojson }};
+        const away = {{ m.away_team|tojson }};
+        const homeFlag = {{ (m.home_team|flag)|tojson }};
+        const awayFlag = {{ (m.away_team|flag)|tojson }};
         const mi = (data.live || []).find(x =>
-          (x.home === {{ m.home_team|tojson }} && x.away === {{ m.away_team|tojson }}) ||
-          (x.home === {{ m.away_team|tojson }} && x.away === {{ m.home_team|tojson }}));
-        const badge = badges[{{ loop.index0 }}];
-        if (mi && badge) badge.textContent = (mi.minute != null ? "🔴 " + mi.minute + "'" : "🔴 LIVE");
+          (x.home === home && x.away === away) ||
+          (x.home === away && x.away === home));
+        const pairKey = home + '|' + away;
+
+        if (!mi) {
+          // Match disappeared from live feed — full time.
+          if (!knownFinished.has(pairKey)) {
+            knownFinished.add(pairKey);
+            const hg = knownScores[home] || 0;
+            const ag = knownScores[away] || 0;
+            showNotif('fulltime', ftHtml(homeFlag, home, awayFlag, away, hg, ag));
+          }
+        } else {
+          // Update minute badge.
+          const badge = badges[{{ loop.index0 }}];
+          if (badge) badge.textContent = (mi.minute != null ? "🔴 " + mi.minute + "'" : "🔴 LIVE");
+
+          // Detect goal.
+          const gh = (mi.goals_by_team && mi.goals_by_team[home] != null) ? mi.goals_by_team[home] : 0;
+          const ga = (mi.goals_by_team && mi.goals_by_team[away] != null) ? mi.goals_by_team[away] : 0;
+          const prevH = knownScores[home] || 0;
+          const prevA = knownScores[away] || 0;
+          if (gh > prevH) {
+            showNotif('goal', goalHtml(homeFlag, home, gh, ga, mi.minute));
+            knownScores[home] = gh; knownScores[away] = ga;
+          } else if (ga > prevA) {
+            showNotif('goal', goalHtml(awayFlag, away, gh, ga, mi.minute));
+            knownScores[home] = gh; knownScores[away] = ga;
+          }
+        }
       }
       {% endfor %}
-    } catch (e) { /* network blip — try again next tick */ }
+
+      // Reload when backend has a newer processed simulation.
+      if (!status.processing && status.version > pageVersion) {
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } catch (e) { /* network blip */ }
   }
   setInterval(tick, LIVE_POLL);
 })();

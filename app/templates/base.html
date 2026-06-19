@@ -61,6 +61,8 @@
     </div>
   </div>
 
+  <div id="live-notification-bar" style="position:sticky;top:var(--navbar-height,56px);z-index:1040;pointer-events:none;"></div>
+
   <div class="container mt-4">
     {% if active_scenario and not active_scenario.is_current and request.endpoint != 'web.index' %}
     <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2">

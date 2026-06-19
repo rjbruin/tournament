@@ -217,6 +217,19 @@
     {% endfor %}{# end featured_fixtures loop #}
 
     {% if qualification_stakes %}
+    {# Build a mapping: team name → current outcome key ('win'/'draw'/'loss') for live matches #}
+    {%- set _ns = namespace(live_outcome={}) %}
+    {%- for m in featured_fixtures if m.in_progress %}
+      {%- set _hg = m.home_goals if m.home_goals is not none else 0 %}
+      {%- set _ag = m.away_goals if m.away_goals is not none else 0 %}
+      {%- if _hg > _ag %}
+        {%- set _ns.live_outcome = _ns.live_outcome | combine({m.home_team: 'win', m.away_team: 'loss'}) %}
+      {%- elif _ag > _hg %}
+        {%- set _ns.live_outcome = _ns.live_outcome | combine({m.home_team: 'loss', m.away_team: 'win'}) %}
+      {%- else %}
+        {%- set _ns.live_outcome = _ns.live_outcome | combine({m.home_team: 'draw', m.away_team: 'draw'}) %}
+      {%- endif %}
+    {%- endfor %}
     <div class="qual-stake-box mt-3">
       {% for s in qualification_stakes %}
       <div class="qual-stake-item qual-stake-{{ s.status }}">
@@ -229,11 +242,12 @@
         <span class="qual-stake-text">
           <strong>{{ s.team|flag }} {{ s.team }}</strong>{% if s.headline %} — {{ s.headline }}{% endif %}
           {% if s.status not in ('certain', 'impossible') %}
+          {%- set _team_outcome = _ns.live_outcome.get(s.team) %}
           <div class="qual-odds mt-1">
             <span class="qual-odds-caption">Advance odds:</span>
             {% for key, label in [('win', 'Win'), ('draw', 'Draw'), ('loss', 'Loss')] %}
             {% if s.odds[key] is not none %}
-            <span class="qual-odds-chip"><span class="qual-odds-label">{{ label }}</span> {%- if s.odds[key] >= 1.0 %} ✅{%- elif s.odds[key] >= 0.9995 %} &gt;99.9%{%- else %} {{ s.odds[key]|pct(1) }}{%- endif %}</span>
+            <span class="qual-odds-chip{% if _team_outcome == key %} qual-odds-chip--active{% endif %}"><span class="qual-odds-label">{{ label }}</span> {%- if s.odds[key] >= 1.0 %} ✅{%- elif s.odds[key] >= 0.9995 %} &gt;99.9%{%- else %} {{ s.odds[key]|pct(1) }}{%- endif %}</span>
             {% endif %}
             {% endfor %}
           </div>

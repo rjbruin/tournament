@@ -381,6 +381,12 @@ h1, h2 { color: var(--wc-green); }
   padding: .05rem .4rem;
 }
 .qual-odds-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; color: #6c757d; }
+.qual-odds-chip--active {
+  background: rgba(0,132,61,.22);
+  color: var(--wc-green);
+  outline: 1.5px solid rgba(0,132,61,.45);
+}
+.qual-odds-chip--active .qual-odds-label { color: rgba(0,100,50,.8); }
 
 /* "Full scenarios" expander */
 .qual-full > summary { cursor: pointer; font-size: .82rem; color: var(--wc-green); }
@@ -421,8 +427,8 @@ h1, h2 { color: var(--wc-green); }
   display: flex;
   align-items: center;
 }
-.advance-badge__delta--up   { background: #198754; color: #fff; }
-.advance-badge__delta--down { background: #dc3545; color: #fff; }
+.advance-badge__delta--up   { background: rgba(25,135,84,.72); color: #fff; }
+.advance-badge__delta--down { background: rgba(220,53,69,.72); color: #fff; }
 
 /* Third-place ranking table: thick border above rank 9 marks the cutoff */
 tr.thirds-cutoff td { border-top: 2px solid #adb5bd !important; }

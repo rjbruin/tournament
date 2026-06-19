@@ -10,9 +10,18 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.4.5"
+APP_VERSION = "1.4.6"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.4.6",
+        "date": "2026-06-20",
+        "fixes": [
+            "App icon replaced with a hand-crafted design: two soccer balls "
+            "with a diagonal green bar. Served as an SVG favicon in modern "
+            "browsers, with PNG fallbacks at 180, 192 and 512 px.",
+        ],
+    },
     {
         "version": "1.4.5",
         "date": "2026-06-20",

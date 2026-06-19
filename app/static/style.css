@@ -421,8 +421,8 @@ h1, h2 { color: var(--wc-green); }
   display: flex;
   align-items: center;
 }
-.advance-badge__delta--up   { background: rgba(25,135,84,.18); color: #0f5132; }
-.advance-badge__delta--down { background: rgba(220,53,69,.14); color: #842029; }
+.advance-badge__delta--up   { background: #198754; color: #fff; }
+.advance-badge__delta--down { background: #dc3545; color: #fff; }
 
 /* Third-place ranking table: thick border above rank 9 marks the cutoff */
 tr.thirds-cutoff td { border-top: 2px solid #adb5bd !important; }
@@ -872,6 +872,12 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   flex-shrink: 0;
 }
 .live-notif-dismiss:hover { color: rgba(255,255,255,.8); }
+
+/* ---------- Responsive fixture card ---------- */
+@media (max-width: 576px) {
+  .fixture-team-name { font-size: 1.5rem; }
+  .fixture-hero { min-height: 130px; }
+}
 
 /* ---------- Markdown rendering in chat ---------- */
 .markdown-body { white-space: normal; text-align: left; }

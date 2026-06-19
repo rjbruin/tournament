@@ -492,11 +492,11 @@ def match_stakes(engine, actuals: dict, group_name: str, home: str, away: str,
             if not mask.any():
                 odds[label] = None
                 continue
-            rate = float(achieved[mask].mean())
-            odds[label] = round(rate, 3)
-            if rate >= 1 - TOL:
+            rate = round(float(achieved[mask].mean()), 3)
+            odds[label] = rate
+            if rate >= 1.0:
                 clinch.add(label)
-            elif rate <= TOL:
+            elif rate <= 0.0:
                 elim.add(label)
         headline, status = _stake_headline(clinch, elim)
         if clinch or elim:

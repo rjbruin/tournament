@@ -37,8 +37,11 @@ import numpy as np
 # this is cheap; enough resolution to make near-certain leaves read as certain.
 DEFAULT_N = 40_000
 
-# A leaf whose achieved-rate is within TOL of 0 or 1 is treated as certain.
-TOL = 0.004
+# A per-outcome rate must be exactly 0 or 1 (within floating-point noise) to
+# be treated as a true clinch/elimination. Using a nonzero tolerance caused
+# near-certain outcomes (e.g. 99.7%) to generate misleading "A draw is enough"
+# headlines even though a small fraction of simulations end differently.
+TOL = 0.0
 
 # Caps on how many routes to spell out, to keep the explanation readable.
 MAX_CERTAIN_LINES = 6

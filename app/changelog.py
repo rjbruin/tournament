@@ -10,9 +10,25 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.3.1",
+        "date": "2026-06-19",
+        "features": [
+            "Knockout stage support: frontpage now shows 'Path to the Cup' "
+            "with likely opponents by round when a knockout match is featured. "
+            "Knocked-out teams are greyed out with strikethrough on the teams "
+            "page, the bracket, and fixture displays. The winner prediction "
+            "hides eliminated teams. Penalty shootout scores display as "
+            "(5) 1–1 (4).",
+            "Live score polling is now done entirely in the backend every 10 s "
+            "(previously 60 s). The frontpage polls a lightweight status "
+            "endpoint and reloads only once the backend has finished "
+            "re-simulating, so refreshed odds are available instantly.",
+        ],
+    },
     {
         "version": "1.3.0",
         "date": "2026-06-19",

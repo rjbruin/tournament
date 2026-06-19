@@ -10,9 +10,18 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.4.1"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.4.1",
+        "date": "2026-06-19",
+        "fixes": [
+            "Fixed TypeError in production: normalize_bracket_match() was "
+            "updated to accept penalty score data but the change was never "
+            "committed, causing a crash on any page showing knockout fixtures.",
+        ],
+    },
     {
         "version": "1.4.0",
         "date": "2026-06-19",

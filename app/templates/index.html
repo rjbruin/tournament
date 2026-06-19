@@ -94,7 +94,7 @@
   </div>
   <div class="card-body">
     {% set can_explore = current_user.is_authenticated and (not featured_fixture.played or featured_fixture.in_progress) %}
-    {{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none, explore=can_explore, live=can_explore) }}
+    {{ fx.large_fixture(featured_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=featured_before_adv, explore=can_explore, live=can_explore) }}
     {% if can_explore %}
     <div id="explore-panel" class="d-none mt-3">
       <div class="small text-muted mb-2">
@@ -250,14 +250,14 @@
     {% if featured_group_table_before %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings — with live score</div>
-    {{ fx.group_table(featured_group_table, results, before_adv=featured_before_adv) }}
+    {{ fx.group_table(featured_group_table, results) }}
     <div class="mt-3">
       {{ fx.group_table_collapsed(featured_group_table_before, "Group " + featured_fixture._group + " standings — before this match", "before-table-featured") }}
     </div>
     {% elif featured_group_table %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-2">Group {{ featured_fixture._group }} standings</div>
-    {{ fx.group_table(featured_group_table, results, before_adv=featured_before_adv) }}
+    {{ fx.group_table(featured_group_table, results) }}
     {% endif %}
     {% else %}
     <hr class="mt-4">
@@ -315,11 +315,11 @@
     <span class="fw-bold">Latest result — Group {{ previous_fixture._group }}</span>
   </div>
   <div class="card-body">
-    {{ fx.large_fixture(previous_fixture) }}
+    {{ fx.large_fixture(previous_fixture, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=previous_before_adv) }}
     {% if previous_group_table %}
     <hr class="mt-2">
     <div class="small text-muted fw-bold mb-2">Group {{ previous_fixture._group }} standings</div>
-    {{ fx.group_table(previous_group_table, results, before_adv=previous_before_adv) }}
+    {{ fx.group_table(previous_group_table, results) }}
     {% endif %}
   </div>
 </div>

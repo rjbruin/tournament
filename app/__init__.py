@@ -314,7 +314,8 @@ def create_app():
             team_form = compute_form(scenario["actuals"], _engine)
         except Exception:
             team_form = {}
-        return {"team_form": team_form, "active_scenario": scenario}
+        team_elos = {t["name"]: t["elo"] for t in _engine.data["teams"]} if _engine else {}
+        return {"team_form": team_form, "active_scenario": scenario, "team_elos": team_elos}
 
     return app
 

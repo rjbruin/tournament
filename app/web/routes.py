@@ -458,6 +458,7 @@ def index():
         featured_fixture=featured_fixtures[0] if featured_fixtures else None,
         featured_fixtures=featured_fixtures,
         featured_is_live=featured_is_live,
+        live_version=app_module.get_live_status()["version"],
         pending_approvals=pending_approvals,
         invite_only=gs.get("invite_only", True),
         featured_group_table_before=featured_group_table_before,

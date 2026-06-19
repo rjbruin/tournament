@@ -16,6 +16,23 @@ from app.flags import flag_emoji
 _simulation_results: dict[tuple, dict] = {}
 _engine: SimulationEngine = None
 
+# Live-results state shared between the background poller and the status API.
+# _live_version increments each time the poller writes new data AND the
+# corresponding re-simulation completes. _live_processing is True while the
+# simulation is running (so callers know to wait). _live_any_live mirrors
+# whether any match is currently in play.
+_live_version: int = 0
+_live_processing: bool = False
+_live_any_live: bool = False
+
+
+def get_live_status() -> dict:
+    return {
+        "version": _live_version,
+        "processing": _live_processing,
+        "any_live": _live_any_live,
+    }
+
 
 def get_engine() -> SimulationEngine:
     return _engine
@@ -77,13 +94,25 @@ def _average_results(per_draw_results: list[dict]) -> dict:
     return out
 
 
+_POLLER_USER = "_system"
+
+
 def get_or_run_results(username: str, scenario_id: str = "current", n: int = None):
     """Return cached simulation results for (account, scenario), running and
-    caching a fresh simulation against that scenario's actuals if needed."""
+    caching a fresh simulation against that scenario's actuals if needed.
+
+    For the "current" scenario with default N, the background poller pre-warms
+    a shared cache entry under _POLLER_USER. Users without a custom N setting
+    fall through to that entry, avoiding a redundant re-simulation."""
     scenario_id = scenario_id or "current"
     cached = get_simulation_results(username, scenario_id)
     if cached is not None:
         return cached
+    # Fall back to the poller's pre-warmed result when no custom N is set.
+    if scenario_id == "current" and n is None and username != _POLLER_USER:
+        cached = get_simulation_results(_POLLER_USER, "current")
+        if cached is not None:
+            return cached
     from app import data_store
     from app.simulation.draw import simulate_many_draws, is_draw_complete
 
@@ -337,17 +366,28 @@ def _live_poller_loop(app):
     import time
     from app import live_source
 
+    global _live_version, _live_processing, _live_any_live
+
     while True:
         delay = live_source.IDLE_MAX
         try:
             summary = live_source.poll_live_matches(_engine)
+            any_live = summary.get("any_live", False)
+            _live_any_live = any_live
             if summary.get("changed"):
                 invalidate_results("current")
+                _live_processing = True
+                try:
+                    get_or_run_results(_POLLER_USER, "current")
+                    _live_version += 1
+                except Exception:
+                    app.logger.exception("live poller: re-simulation failed")
+                finally:
+                    _live_processing = False
             if summary.get("error"):
-                # API/network error — back off, but keep retrying.
                 delay = max(live_source.LIVE_INTERVAL, 120)
             else:
-                delay = live_source.compute_poll_delay(_engine, summary.get("any_live", False))
+                delay = live_source.compute_poll_delay(_engine, any_live)
         except Exception:
             app.logger.exception("live poller iteration failed")
             delay = 120

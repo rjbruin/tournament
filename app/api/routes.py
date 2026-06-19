@@ -64,6 +64,20 @@ def actuals_timestamp():
     return jsonify({"last_updated": ts})
 
 
+@api_bp.get("/live/status")
+def live_status():
+    """Lightweight poll endpoint for the frontpage live updater.
+
+    Returns the current live-data version (an integer that increments each time
+    the backend detects a score change AND finishes re-simulating), a processing
+    flag (true while the simulation is running), and whether any match is live.
+
+    The frontpage JS records the version at page-load time and reloads only when
+    it sees a higher version with processing=false."""
+    status = app_module.get_live_status()
+    return jsonify(status)
+
+
 @api_bp.get("/live")
 def live():
     """Public endpoint: current in-play group matches with live score, minute,
@@ -498,8 +512,10 @@ def post_group_result():
 
 @api_bp.post("/actuals/knockout_result")
 def post_knockout_result():
-    """Body: {"match": 73, "winner": "Spain"}. Same `s`/`fork` params as
-    /actuals/group_result."""
+    """Body: {"match": 73, "winner": "Spain", "home_goals": 1, "away_goals": 1,
+    "home_penalties": 5, "away_penalties": 4}. Score and penalty fields are
+    optional (for display only; winner drives the simulation). Same `s`/`fork`
+    params as /actuals/group_result."""
     body = request.get_json()
     if not body or "match" not in body or "winner" not in body:
         return jsonify({"error": "Missing fields, required: match, winner"}), 400
@@ -513,7 +529,17 @@ def post_knockout_result():
     if actuals is None:
         return jsonify({"error": "Unknown scenario"}), 404
 
-    actuals["knockout_results"][str(int(body["match"]))] = body["winner"]
+    mno = str(int(body["match"]))
+    actuals["knockout_results"][mno] = body["winner"]
+
+    # Optional score/penalty data (display only).
+    if any(k in body for k in ("home_goals", "away_goals", "home_penalties", "away_penalties")):
+        actuals.setdefault("knockout_scores", {})[mno] = {
+            "home_goals": body.get("home_goals"),
+            "away_goals": body.get("away_goals"),
+            "home_penalties": body.get("home_penalties"),
+            "away_penalties": body.get("away_penalties"),
+        }
 
     return _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork)
 

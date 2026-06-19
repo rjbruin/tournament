@@ -124,7 +124,7 @@ def _kickoff_utc(sm: dict):
 
 
 # Poll cadences (seconds).
-LIVE_INTERVAL = 60      # at least once a minute while a match is in play
+LIVE_INTERVAL = 10      # poll every 10 seconds while a match is in play
 IDLE_MAX = 900          # longest nap when nothing is happening
 KICKOFF_WINDOW_H = 3    # treat a match as "should be live" up to 3h post-kickoff
 

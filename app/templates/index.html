@@ -328,43 +328,40 @@
 {% if featured_is_live %}
 <script>
 (function () {
-  // Live updater: poll all featured live matches every 30 s; reload when any
-  // score/event changes or a match finishes.
-  const LIVE_POLL = 30 * 1000;
-  const liveFixtures = {{ featured_fixtures | selectattr('in_progress') | list | map(attribute='home_team') | list | tojson }};
-  const watchPairs = [
-    {% for m in featured_fixtures if m.in_progress %}
-    {home: {{ m.home_team|tojson }}, away: {{ m.away_team|tojson }},
-     key: "{{ (m.home_goals or 0) }}-{{ (m.away_goals or 0) }}-{{ (m.events or [])|length }}"},
-    {% endfor %}
-  ];
+  // Live updater: poll /api/live/status every 10 s.
+  // The backend polls football-data.org every 10 s, re-runs the simulation,
+  // then increments its version. We reload only when the backend version
+  // advances past what we saw at page-load AND it's no longer processing.
+  // While waiting we update the in-play minute badge directly from /api/live.
+  const LIVE_POLL = 10 * 1000;
+  const pageVersion = {{ live_version }};
   const badges = document.querySelectorAll('#featured-fixture .live-badge');
 
   async function tick() {
     try {
-      const resp = await fetch(`${window.API_ROOT}/live`);
-      if (!resp.ok) return;
-      const data = await resp.json();
-      let needsReload = false;
-      for (const wp of watchPairs) {
-        const m = (data.live || []).find(x =>
-          (x.home === wp.home && x.away === wp.away) || (x.home === wp.away && x.away === wp.home));
-        if (!m) { needsReload = true; break; }  // finished
-        const gh = (m.goals_by_team && m.goals_by_team[wp.home] != null) ? m.goals_by_team[wp.home] : 0;
-        const ga = (m.goals_by_team && m.goals_by_team[wp.away] != null) ? m.goals_by_team[wp.away] : 0;
-        const key = gh + "-" + ga + "-" + (m.events ? m.events.length : 0);
-        if (key !== wp.key) { needsReload = true; break; }
+      // Check whether the backend has a newer processed result.
+      const sr = await fetch(`${window.API_ROOT}/live/status`);
+      if (!sr.ok) return;
+      const status = await sr.json();
+      if (!status.processing && status.version > pageVersion) {
+        window.location.reload();
+        return;
       }
-      if (needsReload) { window.location.reload(); return; }
-      // Update minute badges (best-effort: update first badge for first match)
+
+      // No new result yet — update minute badges in place from /api/live.
+      const lr = await fetch(`${window.API_ROOT}/live`);
+      if (!lr.ok) return;
+      const data = await lr.json();
       {% for m in featured_fixtures if m.in_progress %}
       {
-        const mi = (data.live || []).find(x => (x.home === {{ m.home_team|tojson }} && x.away === {{ m.away_team|tojson }}) || (x.home === {{ m.away_team|tojson }} && x.away === {{ m.home_team|tojson }}));
+        const mi = (data.live || []).find(x =>
+          (x.home === {{ m.home_team|tojson }} && x.away === {{ m.away_team|tojson }}) ||
+          (x.home === {{ m.away_team|tojson }} && x.away === {{ m.home_team|tojson }}));
         const badge = badges[{{ loop.index0 }}];
         if (mi && badge) badge.textContent = (mi.minute != null ? "🔴 " + mi.minute + "'" : "🔴 LIVE");
       }
       {% endfor %}
-    } catch (e) { /* network blip */ }
+    } catch (e) { /* network blip — try again next tick */ }
   }
   setInterval(tick, LIVE_POLL);
 })();

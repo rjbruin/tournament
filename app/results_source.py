@@ -33,6 +33,7 @@ TEAM_NAME_MAP = {
     "Czech Republic": "Czech Republic",
     "Bosnia & Herzegovina": "Bosnia and Herzegovina",
     "Bosnia and Herzegovina": "Bosnia and Herzegovina",
+    "Bosnia-Herzegovina": "Bosnia and Herzegovina",
     "DR Congo": "DR Congo",
     "Congo DR": "DR Congo",
     "Cape Verde Islands": "Cape Verde",

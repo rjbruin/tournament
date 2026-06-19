@@ -30,7 +30,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 {# Advancement odds badge. Shows Q ✓ when guaranteed, >99.9% when near-certain but not exact. #}
 {% macro advance_badge(adv) -%}
 {%- if adv is not none and adv >= 1.0 -%}
-<span class="badge advance-badge advance-badge--certain bg-success" title="Qualification secured">{{ ADVANCE_ICON }}&nbsp;✓</span>
+<span class="badge advance-badge advance-badge--certain bg-success" title="Qualification secured">{{ ADVANCE_ICON }}&nbsp;✅</span>
 {%- elif adv is not none and adv >= 0.9995 -%}
 <span class="badge advance-badge bg-success">&gt;99.9%</span>
 {%- elif adv is not none -%}

@@ -306,7 +306,9 @@ def explain_qualification(engine, actuals: dict, group_name: str, team_name: str
         return None
 
     achieved = sim["outcomes"][team_name][_OUTCOME_KEY[outcome]]
-    matches = sim["matches"]
+    # Present the remaining matches in chronological (kickoff) order, so the
+    # decision tree reads next-match-first rather than in internal pairing order.
+    matches = _chronological(engine, group_name, sim["matches"])
     verb = _OUTCOME_VERB[outcome]
     base_rate = float(achieved.mean())
 
@@ -387,22 +389,78 @@ def explain_qualification(engine, actuals: dict, group_name: str, team_name: str
             "status": "conditional", "summary": summary, "lines": lines}
 
 
-def match_clinch_status(engine, actuals: dict, group_name: str, home: str, away: str,
-                        n: int = DEFAULT_N) -> dict | None:
-    """Determine whether a single result of the group match ``home`` vs ``away``
-    can *settle* either team's fate, marginalizing over all other remaining
-    group matches.
+def _chronological(engine, group_name: str, matches: list[dict]) -> list[dict]:
+    """Reorder a group's remaining-match dicts by scheduled kickoff (earliest
+    first). Matches without a resolvable kickoff sort last but keep their order."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from app.simulation.engine import GROUP_MATCH_PAIRS
 
-    A result "clinches" advancement for a team if, across every simulation with
-    that result, the team reaches the knockouts; it "eliminates" the team if it
-    never does. Returns::
+    groups = getattr(engine, "groups", None)
+    data = getattr(engine, "data", {})
+    g = next((g for g in groups if g["name"] == group_name), None) if groups else None
+    sched = data.get("schedule", {}).get("groups", {}).get(group_name, [])
+    if g is None or not sched:
+        return matches
+
+    far = datetime.max.replace(tzinfo=ZoneInfo("UTC"))
+    key_by_pair = {}
+    for (i, j), sm in zip(GROUP_MATCH_PAIRS, sched):
+        pair = frozenset((g["teams"][i], g["teams"][j]))
+        try:
+            dt = datetime.fromisoformat(f"{sm['date']}T{sm['local_time']}")
+            dt = dt.replace(tzinfo=ZoneInfo(sm.get("local_timezone") or "UTC")).astimezone(ZoneInfo("UTC"))
+        except Exception:
+            dt = far
+        key_by_pair[pair] = dt
+
+    return sorted(
+        matches,
+        key=lambda m: key_by_pair.get(frozenset((m["home"], m["away"])), far),
+    )
+
+
+def _stake_headline(clinch: set, elim: set) -> tuple[str, str]:
+    """A one-line, this-match-framed summary from the set of outcomes
+    ({'win','draw','loss'}) that clinch advancement / cause elimination.
+    Returns ``(headline, status)`` where status is one of
+    ``certain | impossible | swing | open``."""
+    cw, cd = "win" in clinch, "draw" in clinch
+    ew, el = "win" in elim, "loss" in elim
+    ed = "draw" in elim
+
+    if {"win", "draw", "loss"} <= clinch:
+        return "Already through to the knockouts.", "certain"
+    if {"win", "draw", "loss"} <= elim:
+        return "Can no longer advance.", "impossible"
+    if cw and cd:
+        return "A draw is enough to go through.", "swing"
+    if cw:
+        if el:
+            return "Win to go through; defeat sends them out.", "swing"
+        return "Win to go through.", "swing"
+    if ed and el:
+        return "Must win to stay alive.", "swing"
+    if el:
+        return "Defeat sends them out.", "swing"
+    return "", "open"
+
+
+def match_stakes(engine, actuals: dict, group_name: str, home: str, away: str,
+                 n: int = DEFAULT_N) -> dict | None:
+    """What's at stake for the two teams in the group match ``home`` vs ``away``.
+
+    For each team, marginalizing over every other remaining group match,
+    computes the chance to reach the knockouts conditional on this match being a
+    win / draw / loss, and an acute one-line headline. Returns::
 
         {"any_decisive": bool,
-         "teams": {team: {"clinch": [results], "eliminate": [results]}}}
+         "teams": [
+            {"team", "status", "headline",
+             "odds": {"win": p|None, "draw": p|None, "loss": p|None}}, ...]}
 
-    where each ``results`` is a subset of {1: home win, 0: draw, -1: away win}.
-    Returns ``None`` if the match isn't a remaining match of the group (e.g.
-    already played) or the group is unknown.
+    in the given (home, away) order. ``None`` if the match isn't a remaining
+    match of the group or the group is unknown.
     """
     if group_name not in engine.group_pos:
         return None
@@ -413,26 +471,36 @@ def match_clinch_status(engine, actuals: dict, group_name: str, home: str, away:
     if f is None:
         return None
     res = matches[f]["result"]
+    sim_home = matches[f]["home"]
 
-    out = {"any_decisive": False, "teams": {}}
+    any_decisive = False
+    teams = []
     for team in (home, away):
         if team not in sim["outcomes"]:
             continue
         achieved = sim["outcomes"][team]["advanced"]
-        info = {"clinch": [], "eliminate": []}
-        for v in (1, 0, -1):
+        # Result sign from THIS team's perspective (+1 win, 0 draw, -1 loss).
+        signs = {"win": 1, "draw": 0, "loss": -1} if team == sim_home \
+            else {"win": -1, "draw": 0, "loss": 1}
+        odds = {}
+        clinch, elim = set(), set()
+        for label, v in signs.items():
             mask = res == v
             if not mask.any():
+                odds[label] = None
                 continue
             rate = float(achieved[mask].mean())
+            odds[label] = round(rate, 3)
             if rate >= 1 - TOL:
-                info["clinch"].append(v)
+                clinch.add(label)
             elif rate <= TOL:
-                info["eliminate"].append(v)
-        if info["clinch"] or info["eliminate"]:
-            out["any_decisive"] = True
-        out["teams"][team] = info
-    return out
+                elim.add(label)
+        headline, status = _stake_headline(clinch, elim)
+        if clinch or elim:
+            any_decisive = True
+        teams.append({"team": team, "status": status, "headline": headline, "odds": odds})
+
+    return {"any_decisive": any_decisive, "teams": teams}
 
 
 _CACHE: dict = {}

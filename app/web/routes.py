@@ -163,40 +163,41 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     """Build "what's at stake" info for the two teams in the featured group
     fixture, from the second group matchday onwards.
 
-    Returns ``(notes, message)``:
-      - ``notes``: per-team qualification explanation dicts (see
-        app/qualification.py) when some result of this match can clinch
-        advancement or confirm elimination for either team;
-      - ``message``: a fixed string when no result of this match settles either
-        team's fate, else ``None``.
+    Returns ``(stakes, full_scenarios)``:
+      - ``stakes``: one acute entry per team — ``{team, status, headline,
+        odds: {win, draw, loss}}`` — where the odds are the chance to advance
+        conditional on each result of this match (see qualification.match_stakes);
+      - ``full_scenarios``: the detailed, chronologically-ordered decision-tree
+        explanations, only on the final matchday (where they're short enough to
+        read); empty otherwise.
 
-    Both are empty/None on the first matchday or for non-group fixtures."""
+    Both are empty on the first matchday or for non-group fixtures."""
     from app import qualification
 
     if not featured_fixture or not featured_fixture.get("_group"):
-        return [], None
+        return [], []
     if featured_fixture.get("played") and not featured_fixture.get("in_progress"):
-        return [], None
+        return [], []
 
     gname = featured_fixture["_group"]
     cutoff = featured_fixture["_sort_key"]
     home = featured_fixture.get("home_team")
     away = featured_fixture.get("away_team")
     if not home or not away:
-        return [], None
+        return [], []
 
     # Which matchday is this fixture? Each group plays 6 matches across 3
     # matchdays (2 per matchday), in chronological order. Only show
-    # qualification scenarios from matchday 2 onwards.
+    # qualification info from matchday 2 onwards.
     group_matches = sorted((m for m in all_normalized if m.get("_group") == gname),
                            key=lambda m: m["_sort_key"])
     fidx = next((i for i, m in enumerate(group_matches)
                  if {m.get("home_team"), m.get("away_team")} == {home, away}), None)
     if fidx is None:
-        return [], None
+        return [], []
     matchday = fidx // 2 + 1
     if matchday < 2:
-        return [], None
+        return [], []
 
     # Reconstruct the state *before* this match: every group match that kicked
     # off earlier is kept (using its real result); this match and all later
@@ -212,18 +213,22 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
         if kept:
             before["group_results"][g] = kept
 
-    # Can a result of this match settle either team's fate? If not, say so
-    # plainly rather than spelling out a multi-match decision tree.
-    clinch = qualification.match_clinch_status(engine, before, gname, home, away)
-    if clinch is not None and not clinch["any_decisive"]:
-        return [], "Neither team can clinch advancement to the knockout round in this match."
+    # Acute, this-match-framed stakes: headline + per-outcome advance odds.
+    info = qualification.match_stakes(engine, before, gname, home, away)
+    if info is None:
+        return [], []
+    stakes = info["teams"]
 
-    notes = []
-    for team in (home, away):
-        expl = qualification.explain_qualification_cached(engine, before, gname, team, "advances")
-        if expl:
-            notes.append(expl)
-    return notes, None
+    # The detailed decision tree is only legible on the final matchday (at most
+    # the two last group games remain), so reserve it for then.
+    full_scenarios = []
+    if matchday >= 3:
+        for team in (home, away):
+            expl = qualification.explain_qualification_cached(engine, before, gname, team, "advances")
+            if expl and (expl.get("lines") or expl.get("summary")):
+                full_scenarios.append(expl)
+
+    return stakes, full_scenarios
 
 
 @web_bp.get("/")
@@ -297,14 +302,14 @@ def index():
             raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
             previous_group_table = compute_group_table(g, raw_fixtures, teams_by_name, results)
 
-    qualification_notes = []
-    qualification_message = None
+    qualification_stakes = []
+    qualification_full = []
     if featured_fixture and not _is_pre_draw(scenario_id):
         try:
-            qualification_notes, qualification_message = _qualification_notes(
+            qualification_stakes, qualification_full = _qualification_notes(
                 engine, scenario_id, featured_fixture, all_normalized)
         except Exception:
-            qualification_notes, qualification_message = [], None
+            qualification_stakes, qualification_full = [], []
 
     scenario_list = data_store.list_scenarios(_username())
     active_scenario = data_store.load_scenario(scenario_id, _username())
@@ -339,8 +344,8 @@ def index():
         invite_only=gs.get("invite_only", True),
         featured_group_table_before=featured_group_table_before,
         featured_group_table=featured_group_table,
-        qualification_notes=qualification_notes,
-        qualification_message=qualification_message,
+        qualification_stakes=qualification_stakes,
+        qualification_full=qualification_full,
         previous_fixture=previous_fixture,
         previous_group_table=previous_group_table,
     )

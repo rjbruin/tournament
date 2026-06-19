@@ -340,6 +340,52 @@ h1, h2 { color: var(--wc-green); }
 }
 .qual-marker-secured { background: var(--wc-green); color: #fff; }
 
+/* "What's at stake" — neutral note vs. styled qualification box */
+.qual-stake-neutral { font-style: italic; }
+.qual-stake-box {
+  border: 1px solid rgba(10,59,42,.12);
+  border-radius: .6rem;
+  background: rgba(10,59,42,.03);
+  padding: .6rem .8rem;
+}
+.qual-stake-item {
+  display: flex;
+  gap: .5rem;
+  align-items: flex-start;
+  padding: .3rem 0;
+}
+.qual-stake-item + .qual-stake-item { border-top: 1px solid rgba(10,59,42,.07); }
+.qual-stake-icon { flex-shrink: 0; line-height: 1.4; }
+.qual-stake-text { flex: 1; }
+.qual-stake-lines { color: #6c757d; }
+/* Per-case emphasis */
+.qual-stake-certain    { color: #0f5132; }
+.qual-stake-certain strong { color: var(--wc-green); }
+.qual-stake-impossible { color: #842029; }
+.qual-stake-impossible strong { color: #b02a37; }
+.qual-stake-swing strong { color: var(--wc-green); }
+.qual-stake-open strong { color: var(--wc-green); }
+
+/* Per-outcome advancement odds chips */
+.qual-odds { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.qual-odds-caption { font-size: .75rem; color: #6c757d; margin-right: .1rem; }
+.qual-odds-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .25rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--wc-green);
+  background: rgba(0,132,61,.08);
+  border-radius: .4rem;
+  padding: .05rem .4rem;
+}
+.qual-odds-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; color: #6c757d; }
+
+/* "Full scenarios" expander */
+.qual-full > summary { cursor: pointer; font-size: .82rem; color: var(--wc-green); }
+.qual-full-item { color: #495057; }
+
 /* Odds-type icons (cup for the title, advancement marker for the knockouts) */
 .odds-icon { font-weight: 700; font-style: normal; }
 .advance-badge .odds-icon { margin-right: .1rem; }

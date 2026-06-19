@@ -169,7 +169,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
           {% else %}
           {% if match.home_prob is defined %}<div class="fixture-odds mt-1">{{ match.home_prob|pct(0) }}</div>{% endif %}
           {% if show_advance and match.home_team and advance_prob is not none %}
-          <div class="small text-muted mt-1">Advance: {{ advance_prob.get(match.home_team, 0)|pct(0) }}</div>
+          <div class="mt-1">{{ advance_badge(advance_prob.get(match.home_team, 0)) }}</div>
           {% endif %}
           {% endif %}
         </div>
@@ -208,7 +208,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
           {% else %}
           {% if match.away_prob is defined %}<div class="fixture-odds mt-1">{{ match.away_prob|pct(0) }}</div>{% endif %}
           {% if show_advance and match.away_team and advance_prob is not none %}
-          <div class="small text-muted mt-1">Advance: {{ advance_prob.get(match.away_team, 0)|pct(0) }}</div>
+          <div class="mt-1">{{ advance_badge(advance_prob.get(match.away_team, 0)) }}</div>
           {% endif %}
           {% endif %}
         </div>

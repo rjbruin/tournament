@@ -196,6 +196,51 @@
     </script>
     {% endif %}
 
+    {% if qualification_stakes %}
+    <div class="qual-stake-box mt-3">
+      {% for s in qualification_stakes %}
+      <div class="qual-stake-item qual-stake-{{ s.status }}">
+        <span class="qual-stake-icon">
+          {%- if s.status == 'certain' %}✅
+          {%- elif s.status == 'impossible' %}❌
+          {%- elif s.status == 'swing' %}🎯
+          {%- else %}⚖️{% endif %}
+        </span>
+        <span class="qual-stake-text">
+          <strong>{{ s.team|flag }} {{ s.team }}</strong>{% if s.headline %} — {{ s.headline }}{% endif %}
+          {% if s.status not in ('certain', 'impossible') %}
+          <div class="qual-odds mt-1">
+            <span class="qual-odds-caption">Advance odds:</span>
+            {% for key, label in [('win', 'Win'), ('draw', 'Draw'), ('loss', 'Loss')] %}
+            {% if s.odds[key] is not none %}
+            <span class="qual-odds-chip"><span class="qual-odds-label">{{ label }}</span> {{ s.odds[key]|pct(0) }}</span>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+      {% if qualification_full %}
+      <details class="qual-full mt-2">
+        <summary>Full scenarios</summary>
+        <div class="mt-2">
+          {% for note in qualification_full %}
+          <div class="qual-full-item small mb-2">
+            <strong>{{ note.team|flag }} {{ note.team }}</strong> — {{ note.summary }}
+            {% if note.lines %}
+            <ul class="qual-stake-lines mb-0 mt-1">
+              {% for line in note.lines %}<li>{{ line }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+    </div>
+    {% endif %}
+
     {% if featured_fixture._group %}
     {% if featured_group_table_before %}
     <hr class="mt-4">
@@ -223,35 +268,6 @@
     {% endfor %}
     {% endif %}
 
-    {% if qualification_message %}
-    <hr class="mt-4">
-    <div class="small text-muted fw-bold mb-2">What's at stake</div>
-    <div class="qual-note text-muted">{{ qualification_message }}</div>
-    {% endif %}
-
-    {% if qualification_notes %}
-    <hr class="mt-4">
-    <div class="small text-muted fw-bold mb-2">What's at stake</div>
-    {% for note in qualification_notes %}
-    <div class="qual-note mb-2">
-      <span class="me-1">
-        {%- if note.status == 'certain' %}✅
-        {%- elif note.status == 'impossible' %}❌
-        {%- else %}🎯{% endif %}
-      </span>
-      <span>
-        <strong>{{ note.team|flag }} {{ note.team }}</strong> — {{ note.summary }}
-      </span>
-      {% if note.lines %}
-      <ul class="small text-muted mb-0 mt-1">
-        {% for line in note.lines %}
-        <li>{{ line }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-    </div>
-    {% endfor %}
-    {% endif %}
   </div>
 </div>
 

@@ -556,12 +556,41 @@ def teams():
         favorite_team = current_user.settings.get("favorite_team") or None
     favorite = next((t for t in teams_sorted if t["name"] == favorite_team), None)
 
+    knocked_out = _knocked_out_teams(results)
+
+    # Build per-team elimination info for display.
+    # Keys: "stage" (round name or "group stage"), "opponent" (team that beat them).
+    elimination_info: dict[str, dict] = {}
+
+    # Group-stage eliminations: advance_prob is exactly 0.
+    group_results_played = {}
     actuals = data_store.load_actuals()
+    for gname, entries in actuals.get("group_results", {}).items():
+        group_results_played[gname] = entries
+    for t in teams_sorted:
+        adv = t.get("group_advance_prob")
+        if adv is not None and adv <= 0 and t["name"] not in knocked_out:
+            elimination_info[t["name"]] = {"stage": "group stage", "opponent": None}
+
+    # Knockout eliminations: find which bracket match they lost and who beat them.
+    if results and "bracket_matches" in results:
+        for m in results["bracket_matches"].values():
+            winner = m.get("actual_winner")
+            if not winner:
+                continue
+            round_name = m.get("round", "")
+            for side in ("home", "away"):
+                slot = m.get(side, {})
+                team = slot.get("team")
+                if slot.get("determined") and team and team != winner:
+                    elimination_info[team] = {"stage": round_name, "opponent": winner}
+
     return render_template(
         "teams.html",
         teams=teams_sorted,
         favorite=favorite,
-        knocked_out_teams=_knocked_out_teams(_results_for_scenario(scenario_id)),
+        knocked_out_teams=knocked_out,
+        elimination_info=elimination_info,
     )
 
 
@@ -657,13 +686,6 @@ def team(name: str):
                 sid = data_store.match_scenario_id(cp["index"])
         odds_history.append({"label": f"After {rname}", **(_odds_for_scenario(sid) or _empty_odds)})
 
-    # Always append the current live odds as the final "Now" point so the
-    # chart ends at the actual present state rather than the last checkpoint.
-    current_odds = {
-        "group_advance_prob": (results or {}).get("group_advance_prob", {}).get(name),
-        "winner_prob": (results or {}).get("winner_prob", {}).get(name),
-    }
-    odds_history.append({"label": "Now", **current_odds})
 
     knocked_out = _knocked_out_teams(results)
     return render_template(

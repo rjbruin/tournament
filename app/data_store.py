@@ -44,7 +44,7 @@ _SUMMARY_KEYS = [
 
 
 def _empty_actuals():
-    return {"group_results": {}, "knockout_results": {}, "live_matches": []}
+    return {"group_results": {}, "knockout_results": {}, "knockout_scores": {}, "live_matches": []}
 
 
 def load_actuals() -> dict:
@@ -54,6 +54,7 @@ def load_actuals() -> dict:
         data = json.load(f)
     data.setdefault("group_results", {})
     data.setdefault("knockout_results", {})
+    data.setdefault("knockout_scores", {})
     data.setdefault("live_matches", [])
     return data
 

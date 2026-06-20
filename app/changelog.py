@@ -10,9 +10,21 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.5.1"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.5.1",
+        "date": "2026-06-20",
+        "features": [
+            "Teams page now shows a single Status column: active teams show advance and win odds badges; eliminated teams show a KO badge with the stage and opponent they lost to.",
+            "Win odds badges are now always yellow; eliminated teams show a red badge with a cross.",
+            "Bracket page shows win probability once both opponents in a fixture are confirmed.",
+        ],
+        "fixes": [
+            "Cross symbol in eliminated badges is now visible (was a red emoji on a red background).",
+        ],
+    },
     {
         "version": "1.5.0",
         "date": "2026-06-20",

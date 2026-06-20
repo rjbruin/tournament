@@ -28,9 +28,7 @@
           <th>Team</th>
           <th class="text-end">Rating</th>
           <th class="text-end">FIFA rank</th>
-          <th class="text-end">Knockout odds</th>
-          <th class="text-end">Win odds</th>
-          <th>Confederation</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
@@ -52,9 +50,15 @@
           </td>
           <td class="text-end">{{ fx.star_badge(t.elo) }} {{ fx.form_badge(t.name) }}</td>
           <td class="text-end">#{{ t.fifa_rank }}</td>
-          <td class="text-end">{{ t.group_advance_prob|pct }}</td>
-          <td class="text-end">{{ t.winner_prob|pct }}</td>
-          <td>{{ t.confederation }}</td>
+          <td>
+            {%- set _elim = (elimination_info or {}).get(t.name) %}
+            {%- if _elim %}
+              <span class="badge bg-danger text-white me-1" style="font-size:.7rem; letter-spacing:.03em;">KO</span>
+              <span class="text-muted small">{{ _elim.stage }}{% if _elim.opponent %} <span class="text-muted">(vs. {{ _elim.opponent|flag }} {{ _elim.opponent }})</span>{% endif %}</span>
+            {%- else %}
+              {{ fx.advance_badge(t.group_advance_prob) }} {{ fx.win_badge(t.winner_prob) }}
+            {%- endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

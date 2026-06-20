@@ -45,6 +45,23 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
   {%- endif %}
 {%- endmacro %}
 
+{# Win-tournament odds badge: same shape as advance_badge but with a 🏆 icon. #}
+{% macro win_badge(prob) -%}
+{%- if prob is not none and prob >= 1.0 -%}
+<span class="advance-badge" title="Tournament winner">
+  <span class="advance-badge__icon">🏆</span><span class="advance-badge__val bg-success text-white">✅</span>
+</span>
+{%- elif prob is not none and prob >= 0.9995 -%}
+<span class="advance-badge">
+  <span class="advance-badge__icon">🏆</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>
+</span>
+{%- elif prob is not none -%}
+<span class="advance-badge" title="Chance to win the tournament">
+  <span class="advance-badge__icon">🏆</span><span class="advance-badge__val {% if prob <= 0 %}bg-danger text-dark{% else %}bg-warning text-dark{% endif %}">{% if prob <= 0 %}✗{% else %}{{ prob|pct(0) }}{% endif %}</span>
+</span>
+{%- endif %}
+{%- endmacro %}
+
 {# Advancement odds badge: icon on neutral left, value on coloured right,
    optional delta segment on far right. delta is a float (e.g. 0.06 = +6pp). #}
 {% macro advance_badge(adv, delta=none) -%}
@@ -59,7 +76,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 </span>
 {%- elif adv is not none -%}
 <span class="advance-badge" title="Chance to advance from the group">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger text-white{% endif %}">{{ adv|pct(0) }}</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger {% if adv <= 0 %}text-dark{% else %}text-white{% endif %}{% endif %}">{% if adv <= 0 %}✗{% else %}{{ adv|pct(0) }}{% endif %}</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
 </span>
 {%- endif %}
 {%- endmacro %}
@@ -431,7 +448,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
         <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
-        <span class="bracket-team-badges">{{ star_badge(team=match.home_team) }} {{ form_badge(match.home_team) }}</span>
+        <span class="bracket-team-badges">{{ star_badge(team=match.home_team) }} {{ form_badge(match.home_team) }}{% if match.home_team and match.away_team and match.home_prob is defined %} <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}</span>
       </div>
       {% else %}
       {% for cand, p in (match.home_candidates or {}).items() %}
@@ -451,7 +468,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
         <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
-        <span class="bracket-team-badges">{{ star_badge(team=match.away_team) }} {{ form_badge(match.away_team) }}</span>
+        <span class="bracket-team-badges">{{ star_badge(team=match.away_team) }} {{ form_badge(match.away_team) }}{% if match.home_team and match.away_team and match.away_prob is defined %} <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}</span>
       </div>
       {% else %}
       {% for cand, p in (match.away_candidates or {}).items() %}

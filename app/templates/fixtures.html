@@ -4,12 +4,6 @@
 {% block content %}
 
 <h2 class="mb-4">Fixtures</h2>
-<p class="text-muted">
-  All matches by round — the three group-stage matchdays, then each knockout
-  round ({{ app_settings.display_timezone }}). For matches not yet played, the
-  model's outcome odds are shown; played matches show the actual scoreline /
-  winner. Use the bar below to jump between rounds.
-</p>
 
 {% if not results %}
 <div class="alert alert-info">Run a simulation to see fixtures.</div>

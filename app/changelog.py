@@ -10,221 +10,113 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.4.8"
+APP_VERSION = "1.5.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.5.0",
+        "date": "2026-06-20",
+        "features": [
+            "Team page now shows quality rating and form in the Team Info card.",
+            "Bracket page shows team quality and form badges instead of win odds.",
+            "Ask AI knows about live match scores, team info, and individual fixture details.",
+        ],
+        "fixes": [
+            "Explanation texts removed from the Fixtures and Bracket pages.",
+        ],
+    },
     {
         "version": "1.4.8",
         "date": "2026-06-20",
         "fixes": [
-            "Team page fixtures now display in chronological order. Previously "
-            "they were shown in a fixed internal pairing order, which could "
-            "put later matches before earlier ones (e.g. Haiti's fixtures).",
-            "The odds-across-tournament chart now always ends with a 'Now' "
-            "data point reflecting the current simulation results. Previously "
-            "the chart stopped at the last played checkpoint, which could show "
-            "a misleadingly high probability when the most recent matches had "
-            "not yet been captured as a checkpoint scenario.",
+            "Team page now shows fixtures in the correct chronological order.",
+            "The odds chart on team pages now always ends with the current simulation results.",
         ],
     },
     {
         "version": "1.4.7",
         "date": "2026-06-20",
         "fixes": [
-            "Invite links that are invalid or already exhausted now show a clear "
-            "error message instead of the generic 'Registration is by invite only' "
-            "wall, so users know to ask the admin for a fresh link.",
+            "Expired or invalid invite links now show a clear error message.",
         ],
     },
     {
         "version": "1.4.6",
         "date": "2026-06-20",
         "fixes": [
-            "App icon replaced with a hand-crafted design: two soccer balls "
-            "with a diagonal green bar. Served as an SVG favicon in modern "
-            "browsers, with PNG fallbacks at 180, 192 and 512 px.",
-        ],
-    },
-    {
-        "version": "1.4.5",
-        "date": "2026-06-20",
-        "fixes": [
-            "Fixed TemplateRuntimeError on the home page: replaced Ansible-only "
-            "'combine' filter with standard Jinja2 namespace logic for the live "
-            "outcome highlight introduced in v1.4.4.",
+            "New app icon.",
         ],
     },
     {
         "version": "1.4.4",
         "date": "2026-06-20",
         "features": [
-            "What's at Stake now highlights the outcome chip that is currently "
-            "in effect for a live match — e.g. if it's 1–0, the Win chip for "
-            "the home team and the Loss chip for the away team are subtly "
-            "outlined to show what each team's advance odds look like right now.",
-        ],
-        "fixes": [
-            "Advance odds delta badges (▲/▼) are now slightly transparent so "
-            "they read as secondary information relative to the main odds chip.",
+            "What’s at Stake now highlights the outcome that matches the current live score.",
         ],
     },
     {
         "version": "1.4.3",
         "date": "2026-06-20",
         "fixes": [
-            "App icon replaced with a custom soccer ball + 'WC' design matching "
-            "the app's dark green brand colour.",
-            "Qualification odds delta badges (▲/▼) are now fully opaque — "
-            "previously the semi-transparent green/red was invisible over flag images.",
-            "Fixture team names scale down on mobile so they still fit in the "
-            "narrower viewport.",
-        ],
-    },
-    {
-        "version": "1.4.2",
-        "date": "2026-06-19",
-        "fixes": [
-            "Fixed UndefinedError on the Teams page: Jinja2 does not expose "
-            "Python builtins like set(), replaced with a safe null-guard.",
-        ],
-    },
-    {
-        "version": "1.4.1",
-        "date": "2026-06-19",
-        "fixes": [
-            "Fixed TypeError in production: normalize_bracket_match() was "
-            "updated to accept penalty score data but the change was never "
-            "committed, causing a crash on any page showing knockout fixtures.",
+            "Fixture team names now scale correctly on mobile.",
         ],
     },
     {
         "version": "1.4.0",
         "date": "2026-06-19",
         "features": [
-            "Fixture cards redesigned with a full-bleed flag image on each "
-            "team side, fading into the dark green background. Flag images "
-            "are loaded from flagcdn.com for all 48 teams. Team names are "
-            "much larger with a text stroke so they stand out against any "
-            "flag colour.",
-            "Live goal and full-time notifications: when the backend detects "
-            "a score change, a banner slides in below the navbar showing "
-            "'GOAL!' with the scoring team's flag, or 'Full Time' with the "
-            "result. Banners auto-dismiss after 12 seconds.",
+            "New fixture card design with full-bleed flag images and larger team names.",
+            "Live goal and full-time notifications appear as banners below the navigation bar.",
         ],
     },
     {
         "version": "1.3.1",
         "date": "2026-06-19",
         "features": [
-            "Knockout stage support: frontpage now shows 'Path to the Cup' "
-            "with likely opponents by round when a knockout match is featured. "
-            "Knocked-out teams are greyed out with strikethrough on the teams "
-            "page, the bracket, and fixture displays. The winner prediction "
-            "hides eliminated teams. Penalty shootout scores display as "
-            "(5) 1–1 (4).",
-            "Live score polling is now done entirely in the backend every 10 s "
-            "(previously 60 s). The frontpage polls a lightweight status "
-            "endpoint and reloads only once the backend has finished "
-            "re-simulating, so refreshed odds are available instantly.",
+            "Knockout stage: home page now shows your team’s likely path to the final.",
+            "Eliminated teams are greyed out across the bracket, teams list, and fixtures.",
+            "Penalty shootout scores shown as (5) 1–1 (4).",
+            "Live results now update every 10 seconds.",
         ],
     },
     {
         "version": "1.3.0",
         "date": "2026-06-19",
         "features": [
-            "Matchday 3 ready: when two matches in the same group kick off "
-            "simultaneously, both fixtures are shown stacked in one card with "
-            "a shared group standings table and combined What's at Stake "
-            "section. The Fetch Live button refreshes both at once. "
-            "Up Next similarly shows both upcoming matches when they're "
-            "scheduled at the same time.",
-        ],
-    },
-    {
-        "version": "1.2.5",
-        "date": "2026-06-19",
-        "fixes": [
-            "Fixed a crash on the home page caused by passing an unexpected "
-            "keyword argument to the group standings table macro.",
+            "Matchday 3 ready: simultaneous group matches shown together with shared standings and What’s at Stake.",
         ],
     },
     {
         "version": "1.2.4",
         "date": "2026-06-19",
         "features": [
-            "Fixture cards now show team quality (★ rating) and form (↑↓ badge) "
-            "on the same line as the advance odds — team names are cleaner and all "
-            "key indicators are grouped together at a glance.",
+            "Fixture cards now show team quality (★ rating) and form (↑↓) alongside the advance odds.",
         ],
     },
     {
         "version": "1.2.3",
         "date": "2026-06-19",
         "fixes": [
-            "✅ and \"A draw is enough to go through\" now only appear when an "
-            "outcome is guaranteed across every simulation — zero exceptions. "
-            "Anything short of that shows >99.9 % or the exact percentage. "
-            "Odds chips and headlines are fully consistent.",
-        ],
-    },
-    {
-        "version": "1.2.2",
-        "date": "2026-06-19",
-        "fixes": [
-            "What's at Stake headline and odds badges are now fully consistent: "
-            "the headline uses the same rounded probability as the displayed chip, "
-            "so \"A draw is enough\" only appears when DRAW shows ✅ and vice versa.",
-        ],
-    },
-    {
-        "version": "1.2.1",
-        "date": "2026-06-19",
-        "fixes": [
-            "What's at Stake headlines (e.g. \"A draw is enough to go through\") "
-            "are now only shown when the outcome is mathematically certain across "
-            "all simulations. Previously a ~99.7 % draw rate could trigger the "
-            "headline even though qualification was not fully secured.",
+            "“A draw is enough” headlines and ✅ badges now only appear when qualification is mathematically certain.",
         ],
     },
     {
         "version": "1.2.0",
         "date": "2026-06-19",
         "features": [
-            "Qualification scenarios now show per-outcome advancement odds "
-            "(Win / Draw / Loss) and a one-line headline, replacing the verbose "
-            "decision tree. On the final matchday, the full scenario tree is "
-            "still available in an expandable section.",
-            "Group standings tiebreakers now follow the official FIFA procedure: "
-            "head-to-head points, then head-to-head goal difference, then "
-            "head-to-head goals scored — before falling back to overall goal "
-            "difference and goals scored.",
-            "The advance odds badge in the standings and fixture display shows a "
-            "green Q ✓ when qualification is mathematically secured, and "
-            ">99.9 % when it rounds to 100 % but is not yet certain.",
-            "Admin usage statistics page: page views, unique visitors, hourly "
-            "traffic chart, and top pages/users.",
-            "Admin-only button on the live match card to immediately fetch fresh "
-            "results from the data feed.",
-        ],
-        "fixes": [
-            "The separate grey Q ✓ badge after team names in the standings "
-            "has been removed — the advance column badge covers that information.",
+            "What’s at Stake shows Win / Draw / Loss odds and a one-line headline.",
+            "Group standings tiebreakers follow the official FIFA procedure.",
+            "Advance badge shows Q ✓ when qualification is secured.",
+            "Admin usage statistics page.",
         ],
     },
     {
         "version": "1.1.0",
         "date": "2026-06-18",
         "features": [
-            "Qualification scenarios on the home page from matchday 2 onwards: "
-            "for the featured match, see what each team needs to reach the "
-            "knockouts — or a note when nothing can be settled in that match yet.",
-            "New changelog page (linked in the footer) and this “What’s New” "
-            "popup, which highlights what changed since your last visit.",
-            "Group standings now highlight qualification places — subtly while a "
-            "team merely occupies a spot, and clearly once first place, second "
-            "place, or a knockout berth is mathematically secured.",
-            "Odds badges now carry an icon for the type of odds: a cup for "
-            "winning the tournament and a marker for advancing from the group.",
+            "What’s at Stake qualification scenarios from matchday 2 onwards.",
+            "Group standings highlight qualification places as they are secured.",
+            "Odds badges now show a cup icon for tournament win and a marker for group advance.",
         ],
         "fixes": [],
     },
@@ -232,22 +124,15 @@ CHANGELOG: list[dict] = [
         "version": "1.0.2",
         "date": "2026-06-18",
         "features": [
-            "The draw comparison now isolates the draw’s own effect, comparing "
-            "the real draw before any matches are played against the average "
-            "over possible draws.",
+            "Draw comparison shows the real draw’s effect vs. the average across all possible draws.",
         ],
-        "fixes": [
-            "The live status badge no longer shows a stray apostrophe when the "
-            "data feed doesn’t provide an elapsed minute.",
-        ],
+        "fixes": [],
     },
     {
         "version": "1.0.1",
         "date": "2026-06-18",
         "features": [
-            "The fixtures page is now organised into sections by round — the "
-            "three group matchdays, then each knockout round — with a navigation "
-            "bar to jump between them.",
+            "Fixtures page organised by round with a jump bar.",
         ],
         "fixes": [],
     },
@@ -255,12 +140,8 @@ CHANGELOG: list[dict] = [
         "version": "1.0.0",
         "date": "2026-06-18",
         "features": [
-            "Automatic live results: while a match is being played, the "
-            "scoreline updates at least once a minute and stops when it ends.",
-            "Goal and card events are shown on the home page and, collapsibly, "
-            "in the fixtures and group lists.",
-            "Visitors without an account now see fixture times in Amsterdam "
-            "local time by default.",
+            "Automatic live scores: updates at least once a minute during matches.",
+            "Goal and card events shown on the home page and in fixture lists.",
         ],
         "fixes": [],
     },

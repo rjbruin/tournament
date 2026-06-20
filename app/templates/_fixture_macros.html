@@ -431,7 +431,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
         <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
-        {% if match.home_prob is defined %}<span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}
+        <span class="bracket-team-badges">{{ star_badge(team=match.home_team) }} {{ form_badge(match.home_team) }}</span>
       </div>
       {% else %}
       {% for cand, p in (match.home_candidates or {}).items() %}
@@ -451,7 +451,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
         <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
-        {% if match.away_prob is defined %}<span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}
+        <span class="bracket-team-badges">{{ star_badge(team=match.away_team) }} {{ form_badge(match.away_team) }}</span>
       </div>
       {% else %}
       {% for cand, p in (match.away_candidates or {}).items() %}

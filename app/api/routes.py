@@ -5,6 +5,7 @@ import app as app_module
 from app import auth, data_store
 from app.llm.interface import answer_question
 from app.results_source import fetch_and_apply_official_results
+from app.web.view_helpers import normalize_group_match, normalize_bracket_match, utc_sort_key
 
 api_bp = Blueprint("api", __name__)
 
@@ -353,10 +354,27 @@ def team_detail(team_name: str):
     tidx = engine.team_idx[team_name]
     team_data = engine.data["teams"][tidx]
     group = next(g for g in engine.groups if team_name in g["teams"])
+
+    from app.form import compute_form
+    scenario_id = request.args.get("s") or "current"
+    try:
+        scenario = data_store.load_scenario(scenario_id, g.user.username) or data_store.load_scenario("current")
+        team_form = compute_form(scenario["actuals"], engine)
+    except Exception:
+        team_form = {}
+
+    form_val = team_form.get(team_name)
+    base_order = sorted(engine.data["teams"], key=lambda t: -t["elo"])
+    elo_rank = next((i + 1 for i, t in enumerate(base_order) if t["name"] == team_name), None)
+
     return jsonify({
         "name": team_name,
         "elo": team_data["elo"],
+        "elo_rank": elo_rank,
+        "form": form_val,
+        "current_elo": team_data["elo"] + (form_val or 0),
         "confederation": team_data["confederation"],
+        "code": team_data.get("code"),
         "group": group["name"],
         "group_advance_prob": results["group_advance_prob"].get(team_name, 0),
         "round_of_16_prob": results["round_of_16_prob"].get(team_name, 0),
@@ -365,6 +383,93 @@ def team_detail(team_name: str):
         "finalist_prob": results["finalist_prob"].get(team_name, 0),
         "winner_prob": results["winner_prob"].get(team_name, 0),
     })
+
+
+@api_bp.get("/fixture/<int:match_no>")
+def fixture_by_match(match_no: int):
+    """Return fixture details (teams, schedule, result or odds) for a specific match number."""
+    results, err = _require_results()
+    if err:
+        return err
+    engine = app_module.get_engine()
+
+    # Group stage matches
+    for gdef in engine.groups:
+        for m in results.get("fixtures", {}).get(gdef["name"], []):
+            if m.get("match") == match_no:
+                nm = normalize_group_match(m)
+                nm["group"] = gdef["name"]
+                return jsonify(nm)
+
+    # Knockout matches
+    bm = results.get("bracket_matches", {})
+    if match_no in bm:
+        ko_scores = data_store.load_actuals().get("knockout_scores", {})
+        return jsonify(normalize_bracket_match(bm[match_no], ko_scores=ko_scores))
+
+    return jsonify({"error": f"Match {match_no} not found"}), 404
+
+
+@api_bp.get("/fixtures/search")
+def fixtures_search():
+    """Find fixture(s) by filter: ?home=X&away=Y, ?group=A, ?round=semifinal, ?team=X"""
+    results, err = _require_results()
+    if err:
+        return err
+    engine = app_module.get_engine()
+
+    home_filter = (request.args.get("home") or "").strip().lower()
+    away_filter = (request.args.get("away") or "").strip().lower()
+    team_filter = (request.args.get("team") or "").strip().lower()
+    group_filter = (request.args.get("group") or "").strip().upper()
+    round_filter = (request.args.get("round") or "").strip().lower()
+
+    out = []
+    ko_scores = data_store.load_actuals().get("knockout_scores", {})
+
+    for gdef in engine.groups:
+        if group_filter and gdef["name"] != group_filter:
+            continue
+        if round_filter and round_filter not in ("group", "group stage"):
+            continue
+        for m in results.get("fixtures", {}).get(gdef["name"], []):
+            mh = (m.get("home") or "").lower()
+            ma = (m.get("away") or "").lower()
+            if home_filter and home_filter not in (mh, ma):
+                continue
+            if away_filter and away_filter not in (mh, ma):
+                continue
+            if team_filter and team_filter not in (mh, ma):
+                continue
+            nm = normalize_group_match(m)
+            nm["group"] = gdef["name"]
+            nm["sort_key"] = utc_sort_key(m).isoformat()
+            out.append(nm)
+
+    if not group_filter and round_filter not in ("group", "group stage"):
+        bm = results.get("bracket_matches", {})
+        for mdef in engine.all_knockout_defs:
+            match = bm.get(mdef["match"])
+            if not match:
+                continue
+            if round_filter:
+                mround = (match.get("round") or "").lower()
+                if round_filter not in mround:
+                    continue
+            nm = normalize_bracket_match(match, ko_scores=ko_scores)
+            home_team = (nm.get("home_team") or "").lower()
+            away_team = (nm.get("away_team") or "").lower()
+            if home_filter and home_filter not in (home_team, away_team):
+                continue
+            if away_filter and away_filter not in (home_team, away_team):
+                continue
+            if team_filter and team_filter not in (home_team, away_team):
+                continue
+            nm["sort_key"] = utc_sort_key(match).isoformat()
+            out.append(nm)
+
+    out.sort(key=lambda f: f.get("sort_key", ""))
+    return jsonify(out)
 
 
 @api_bp.post("/query")

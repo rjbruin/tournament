@@ -67,7 +67,9 @@ def register():
     gs = data_store.load_global_settings()
     invite_only = gs.get("invite_only", True)
     if invite_only and not invite:
-        return render_template("register.html", invite=None, invite_only=True)
+        # Distinguish: token present but invalid/exhausted vs no token at all
+        bad_token = bool(token)
+        return render_template("register.html", invite=None, invite_only=True, bad_token=bad_token)
     return render_template("register.html", invite=invite, invite_only=invite_only)
 
 

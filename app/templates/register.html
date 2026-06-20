@@ -8,8 +8,13 @@
 
     {% if invite_only and not invite %}
     <div class="card shadow-sm text-center p-4">
+      {% if bad_token %}
+      <p class="mb-3 text-danger fw-bold">This invite link is invalid or has already been used up.</p>
+      <p class="text-muted small mb-0">Ask the admin to generate a new invite link for you.</p>
+      {% else %}
       <p class="mb-3">Registration is by invite only.</p>
       <p class="text-muted small mb-0">Ask the admin for an invite link to get started.</p>
+      {% endif %}
     </div>
     <p class="text-center text-muted small mt-3">
       Already have an account? <a href="{{ url_for('auth.login_get') }}">Log in</a>

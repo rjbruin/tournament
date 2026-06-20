@@ -10,9 +10,18 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.4.6"
+APP_VERSION = "1.4.7"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.4.7",
+        "date": "2026-06-20",
+        "fixes": [
+            "Invite links that are invalid or already exhausted now show a clear "
+            "error message instead of the generic 'Registration is by invite only' "
+            "wall, so users know to ask the admin for a fresh link.",
+        ],
+    },
     {
         "version": "1.4.6",
         "date": "2026-06-20",

@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% import "_fixture_macros.html" as fx with context %}
+{% block title %}
+  {%- if fixture.home_team and fixture.away_team -%}
+    {{ fixture.home_team }} vs. {{ fixture.away_team }} — WC 2026
+  {%- else -%}
+    Match #{{ match_no }} — WC 2026
+  {%- endif -%}
+{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm mb-4" id="featured-fixture">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-bold">
+      {%- if is_live %}🔴 {% endif %}{{ match_label }}
+    </span>
+    <div class="d-flex gap-2 align-items-center">
+      {% if scenario_id and scenario_id != "current" %}
+      <span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>
+      {% endif %}
+      {% if is_live and current_user.is_authenticated and current_user.is_admin %}
+      <button type="button" id="fetch-live-btn" class="btn btn-outline-light btn-sm">⬇ Fetch live</button>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-body">
+    {%- set can_explore = current_user.is_authenticated and (not fixture.played or is_live) %}
+    {{ fx.large_fixture(fixture, show_advance=true,
+        advance_prob=after_adv,
+        before_adv=before_adv,
+        explore=can_explore, live=can_explore, idx=0) }}
+
+    {% if can_explore %}
+    <div id="explore-panel-0" class="d-none mt-3">
+      <div class="small text-muted mb-2">
+        What if this match ended differently? Edit the score below and explore the hypothetical scenario.
+      </div>
+      <form id="hypothetical-form-0"></form>
+      <div>{{ fx.large_fixture(fixture, editable=true, form_id="hypothetical-form-0") }}</div>
+    </div>
+    <script>
+    document.getElementById('explore-toggle-btn0')?.addEventListener('click', function () {
+      document.getElementById('explore-panel-0')?.classList.toggle('d-none');
+    });
+    document.getElementById('hypothetical-form-0')?.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      const btn = document.querySelector('button[type=submit][form="hypothetical-form-0"]');
+      btn.disabled = true; btn.textContent = 'Computing...';
+      document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
+      try {
+        const resp = await fetch(`${window.API_ROOT}/scenarios/hypothetical`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            group: {{ fixture._group|tojson }},
+            home: {{ fixture.home_team|tojson }},
+            away: {{ fixture.away_team|tojson }},
+            home_goals: parseInt(fd.get('home_goals') || '0', 10),
+            away_goals: parseInt(fd.get('away_goals') || '0', 10),
+            base: {{ scenario_id|tojson }},
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) { alert(data.error || 'Failed.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = 'Show hypothetical scenario'; return; }
+        sessionStorage.setItem('wc2026-notice', '🔮 Showing a hypothetical "what if" scenario.');
+        window.location = `${window.location.pathname}?s=${data.scenario.id}`;
+      } catch (err) {
+        alert('Failed: ' + err);
+        document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+        btn.disabled = false; btn.textContent = 'Show hypothetical scenario';
+      }
+    });
+    </script>
+
+    <div id="live-score-panel-0" class="d-none mt-3">
+      <div class="small text-muted mb-2">
+        Enter the current live scoreline.
+      </div>
+      <form id="live-score-form-0"></form>
+      <div>{{ fx.large_fixture(fixture, editable=true, form_id="live-score-form-0", submit_label="Save live score") }}</div>
+      {% if fixture.in_progress %}
+      <div class="text-center mt-2">
+        <button type="button" id="finish-live-btn-0" class="btn btn-outline-danger btn-sm">Finish match</button>
+      </div>
+      {% endif %}
+    </div>
+    <script>
+    document.getElementById('live-score-toggle-btn0')?.addEventListener('click', function () {
+      document.getElementById('live-score-panel-0')?.classList.toggle('d-none');
+    });
+    (function () {
+      const fxGroup = {{ fixture._group|tojson }};
+      const fxHome  = {{ fixture.home_team|tojson }};
+      const fxAway  = {{ fixture.away_team|tojson }};
+      async function saveLiveScore(finished) {
+        const form = document.getElementById('live-score-form-0');
+        const fd = new FormData(form);
+        const btn = finished
+          ? document.getElementById('finish-live-btn-0')
+          : document.querySelector('button[type=submit][form="live-score-form-0"]');
+        const originalText = btn.textContent;
+        btn.disabled = true; btn.textContent = finished ? 'Finishing...' : 'Saving...';
+        document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
+        try {
+          const resp = await fetch(`${window.API_ROOT}/actuals/live_score${window.location.search}`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              group: fxGroup, home: fxHome, away: fxAway,
+              home_goals: parseInt(fd.get('home_goals') || '0', 10),
+              away_goals: parseInt(fd.get('away_goals') || '0', 10),
+              finished: !!finished,
+            })
+          });
+          const data = await resp.json();
+          if (!resp.ok) { alert(data.error || 'Failed.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = originalText; return; }
+          window.location.reload();
+        } catch (err) {
+          alert('Failed: ' + err);
+          document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
+          btn.disabled = false; btn.textContent = originalText;
+        }
+      }
+      document.getElementById('live-score-form-0')?.addEventListener('submit', function (e) { e.preventDefault(); saveLiveScore(false); });
+      document.getElementById('finish-live-btn-0')?.addEventListener('click', function () { saveLiveScore(true); });
+    })();
+    </script>
+    {% endif %}
+
+    {% if qualification_stakes %}
+    <div class="qual-stake-box mt-3">
+      {% for s in qualification_stakes %}
+      {%- set _ns = namespace(team_outcome=none) %}
+      {%- if fixture.in_progress %}
+        {%- set _hg = fixture.home_goals if fixture.home_goals is not none else 0 %}
+        {%- set _ag = fixture.away_goals if fixture.away_goals is not none else 0 %}
+        {%- if fixture.home_team == s.team or fixture.away_team == s.team %}
+          {%- if _hg == _ag %}{%- set _ns.team_outcome = 'draw' %}
+          {%- elif (fixture.home_team == s.team and _hg > _ag) or (fixture.away_team == s.team and _ag > _hg) %}{%- set _ns.team_outcome = 'win' %}
+          {%- else %}{%- set _ns.team_outcome = 'loss' %}{%- endif %}
+        {%- endif %}
+      {%- endif %}
+      <div class="qual-stake-item qual-stake-{{ s.status }}">
+        <span class="qual-stake-icon">
+          {%- if s.status == 'certain' %}✅{%- elif s.status == 'impossible' %}❌{%- elif s.status == 'swing' %}🎯{%- else %}⚖️{% endif %}
+        </span>
+        <span class="qual-stake-text">
+          <strong>{{ s.team|flag }} {{ s.team }}</strong>{% if s.headline %} — {{ s.headline }}{% endif %}
+          {% if s.status not in ('certain', 'impossible') %}
+          <div class="qual-odds mt-1">
+            <span class="qual-odds-caption">Advance odds:</span>
+            {% for key, label in [('win', 'Win'), ('draw', 'Draw'), ('loss', 'Loss')] %}
+            {% if s.odds[key] is not none %}
+            <span class="qual-odds-chip{% if _ns.team_outcome == key %} qual-odds-chip--active{% endif %}">
+              <span class="qual-odds-label">{{ label }}</span>
+              {%- if s.odds[key] >= 1.0 %} ✅{%- elif s.odds[key] >= 0.9995 %} &gt;99.9%{%- else %} {{ s.odds[key]|pct(1) }}{%- endif %}
+            </span>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+      {% if qualification_full %}
+      <details class="qual-full mt-2">
+        <summary>Full scenarios</summary>
+        <div class="mt-2">
+          {% for note in qualification_full %}
+          <div class="qual-full-item small mb-2">
+            <strong>{{ note.team|flag }} {{ note.team }}</strong> — {{ note.summary }}
+            {% if note.lines %}
+            <ul class="qual-stake-lines mb-0 mt-1">
+              {% for line in note.lines %}<li>{{ line }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if fixture_group and group_table %}
+      <hr class="mt-4">
+      <div class="small text-muted fw-bold mb-2">{{ group_table_label }}</div>
+      {{ fx.group_table(group_table, results) }}
+      {% if group_table_before %}
+      <div class="mt-3">
+        {{ fx.group_table_collapsed(group_table_before, "Group " + fixture_group.name + " standings — before this match", "before-table-match") }}
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+{% if is_live %}
+<script>
+(function () {
+  const LIVE_POLL = 10 * 1000;
+  const pageVersion = {{ live_version }};
+  const badges = document.querySelectorAll('#featured-fixture .live-badge');
+  const notifBar = document.getElementById('live-notification-bar');
+  const knownScores = {
+    {{ fixture.home_team|tojson }}: {{ (fixture.home_goals or 0) }},
+    {{ fixture.away_team|tojson }}: {{ (fixture.away_goals or 0) }},
+  };
+  let knownFinished = new Set();
+
+  function showNotif(type, html) {
+    if (!notifBar) return;
+    const div = document.createElement('div');
+    div.className = 'live-notif ' + (type === 'goal' ? 'notif-goal' : 'notif-fulltime');
+    div.innerHTML = html + '<button class="live-notif-dismiss" onclick="dismissNotif(this)">✕</button>';
+    notifBar.appendChild(div);
+    setTimeout(() => dismissNotif(div.querySelector('.live-notif-dismiss')), 12000);
+  }
+  window.dismissNotif = function(btn) {
+    const el = btn.closest('.live-notif');
+    if (!el || el.classList.contains('hiding')) return;
+    el.classList.add('hiding');
+    setTimeout(() => el.remove(), 300);
+  };
+
+  async function tick() {
+    try {
+      const sr = await fetch(`${window.API_ROOT}/live/status`);
+      if (!sr.ok) return;
+      const status = await sr.json();
+      const lr = await fetch(`${window.API_ROOT}/live`);
+      if (!lr.ok) return;
+      const data = await lr.json();
+
+      const home = {{ fixture.home_team|tojson }};
+      const away = {{ fixture.away_team|tojson }};
+      const homeFlag = {{ (fixture.home_team|flag)|tojson }};
+      const awayFlag = {{ (fixture.away_team|flag)|tojson }};
+      const mi = (data.live || []).find(x =>
+        (x.home === home && x.away === away) || (x.home === away && x.away === home));
+      const pairKey = home + '|' + away;
+
+      if (!mi) {
+        if (!knownFinished.has(pairKey)) {
+          knownFinished.add(pairKey);
+          const hg = knownScores[home] || 0, ag = knownScores[away] || 0;
+          let result;
+          if (hg > ag) result = `${homeFlag} <strong>${home}</strong> win`;
+          else if (ag > hg) result = `${awayFlag} <strong>${away}</strong> win`;
+          else result = 'Draw';
+          showNotif('fulltime', `<div class="live-notif-left"><span class="live-notif-word">Full Time</span><span class="live-notif-detail">${homeFlag} ${awayFlag} · ${result}</span></div><span class="live-notif-score">${hg} – ${ag}</span>`);
+        }
+      } else {
+        if (badges[0]) badges[0].textContent = (mi.minute != null ? "🔴 " + mi.minute + "'" : "🔴 LIVE");
+        const gh = (mi.goals_by_team && mi.goals_by_team[home] != null) ? mi.goals_by_team[home] : 0;
+        const ga = (mi.goals_by_team && mi.goals_by_team[away] != null) ? mi.goals_by_team[away] : 0;
+        const prevH = knownScores[home] || 0, prevA = knownScores[away] || 0;
+        if (gh > prevH) {
+          showNotif('goal', `<div class="live-notif-left"><span class="live-notif-word">Goal!</span><span style="font-size:1.4rem;">${homeFlag}</span><span class="live-notif-detail">${home}${mi.minute != null ? ' · ' + mi.minute + "'" : ''}</span></div><span class="live-notif-score">${gh} – ${ga}</span>`);
+          knownScores[home] = gh; knownScores[away] = ga;
+        } else if (ga > prevA) {
+          showNotif('goal', `<div class="live-notif-left"><span class="live-notif-word">Goal!</span><span style="font-size:1.4rem;">${awayFlag}</span><span class="live-notif-detail">${away}${mi.minute != null ? ' · ' + mi.minute + "'" : ''}</span></div><span class="live-notif-score">${gh} – ${ga}</span>`);
+          knownScores[home] = gh; knownScores[away] = ga;
+        }
+      }
+
+      if (!status.processing && status.version > pageVersion) {
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } catch (e) { /* network blip */ }
+  }
+  setInterval(tick, LIVE_POLL);
+})();
+</script>
+{% endif %}
+
+{% endblock %}

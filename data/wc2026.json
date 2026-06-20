@@ -814,7 +814,8 @@
           "local_time": "13:00",
           "local_timezone": "America/Mexico_City",
           "venue": "Estadio Azteca",
-          "place": "Mexico City"
+          "place": "Mexico City",
+          "match": 1
         },
         {
           "home_idx": 0,
@@ -823,7 +824,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Mexico_City",
           "venue": "Estadio Akron",
-          "place": "Zapopan"
+          "place": "Zapopan",
+          "match": 2
         },
         {
           "home_idx": 0,
@@ -832,7 +834,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Mexico_City",
           "venue": "Estadio Azteca",
-          "place": "Mexico City"
+          "place": "Mexico City",
+          "match": 3
         },
         {
           "home_idx": 1,
@@ -841,7 +844,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Monterrey",
           "venue": "Estadio BBVA",
-          "place": "Guadalupe"
+          "place": "Guadalupe",
+          "match": 4
         },
         {
           "home_idx": 1,
@@ -850,7 +854,8 @@
           "local_time": "12:00",
           "local_timezone": "America/New_York",
           "venue": "Mercedes-Benz Stadium",
-          "place": "Atlanta"
+          "place": "Atlanta",
+          "match": 5
         },
         {
           "home_idx": 2,
@@ -859,7 +864,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Mexico_City",
           "venue": "Estadio Akron",
-          "place": "Zapopan"
+          "place": "Zapopan",
+          "match": 6
         }
       ],
       "B": [
@@ -870,7 +876,8 @@
           "local_time": "15:00",
           "local_timezone": "America/Toronto",
           "venue": "BMO Field",
-          "place": "Toronto"
+          "place": "Toronto",
+          "match": 7
         },
         {
           "home_idx": 0,
@@ -879,7 +886,8 @@
           "local_time": "15:00",
           "local_timezone": "America/Vancouver",
           "venue": "BC Place",
-          "place": "Vancouver"
+          "place": "Vancouver",
+          "match": 8
         },
         {
           "home_idx": 0,
@@ -888,7 +896,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Vancouver",
           "venue": "BC Place",
-          "place": "Vancouver"
+          "place": "Vancouver",
+          "match": 9
         },
         {
           "home_idx": 1,
@@ -897,7 +906,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Lumen Field",
-          "place": "Seattle"
+          "place": "Seattle",
+          "match": 10
         },
         {
           "home_idx": 1,
@@ -906,7 +916,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "SoFi Stadium",
-          "place": "Inglewood"
+          "place": "Inglewood",
+          "match": 11
         },
         {
           "home_idx": 2,
@@ -915,7 +926,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Levi's Stadium",
-          "place": "Santa Clara"
+          "place": "Santa Clara",
+          "match": 12
         }
       ],
       "C": [
@@ -926,7 +938,8 @@
           "local_time": "18:00",
           "local_timezone": "America/New_York",
           "venue": "MetLife Stadium",
-          "place": "East Rutherford"
+          "place": "East Rutherford",
+          "match": 13
         },
         {
           "home_idx": 0,
@@ -935,7 +948,8 @@
           "local_time": "20:30",
           "local_timezone": "America/New_York",
           "venue": "Lincoln Financial Field",
-          "place": "Philadelphia"
+          "place": "Philadelphia",
+          "match": 14
         },
         {
           "home_idx": 0,
@@ -944,7 +958,8 @@
           "local_time": "18:00",
           "local_timezone": "America/New_York",
           "venue": "Hard Rock Stadium",
-          "place": "Miami Gardens"
+          "place": "Miami Gardens",
+          "match": 15
         },
         {
           "home_idx": 1,
@@ -953,7 +968,8 @@
           "local_time": "18:00",
           "local_timezone": "America/New_York",
           "venue": "Mercedes-Benz Stadium",
-          "place": "Atlanta"
+          "place": "Atlanta",
+          "match": 16
         },
         {
           "home_idx": 1,
@@ -962,7 +978,8 @@
           "local_time": "18:00",
           "local_timezone": "America/New_York",
           "venue": "Gillette Stadium",
-          "place": "Foxborough"
+          "place": "Foxborough",
+          "match": 17
         },
         {
           "home_idx": 2,
@@ -971,7 +988,8 @@
           "local_time": "21:00",
           "local_timezone": "America/New_York",
           "venue": "Gillette Stadium",
-          "place": "Foxborough"
+          "place": "Foxborough",
+          "match": 18
         }
       ],
       "D": [
@@ -982,7 +1000,8 @@
           "local_time": "18:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "SoFi Stadium",
-          "place": "Inglewood"
+          "place": "Inglewood",
+          "match": 19
         },
         {
           "home_idx": 0,
@@ -991,7 +1010,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Lumen Field",
-          "place": "Seattle"
+          "place": "Seattle",
+          "match": 20
         },
         {
           "home_idx": 0,
@@ -1000,7 +1020,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "SoFi Stadium",
-          "place": "Inglewood"
+          "place": "Inglewood",
+          "match": 21
         },
         {
           "home_idx": 1,
@@ -1009,7 +1030,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Levi's Stadium",
-          "place": "Santa Clara"
+          "place": "Santa Clara",
+          "match": 22
         },
         {
           "home_idx": 1,
@@ -1018,7 +1040,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Levi's Stadium",
-          "place": "Santa Clara"
+          "place": "Santa Clara",
+          "match": 23
         },
         {
           "home_idx": 2,
@@ -1027,7 +1050,8 @@
           "local_time": "21:00",
           "local_timezone": "America/Vancouver",
           "venue": "BC Place",
-          "place": "Vancouver"
+          "place": "Vancouver",
+          "match": 24
         }
       ],
       "E": [
@@ -1038,7 +1062,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Chicago",
           "venue": "NRG Stadium",
-          "place": "Houston"
+          "place": "Houston",
+          "match": 25
         },
         {
           "home_idx": 0,
@@ -1047,7 +1072,8 @@
           "local_time": "16:00",
           "local_timezone": "America/Toronto",
           "venue": "BMO Field",
-          "place": "Toronto"
+          "place": "Toronto",
+          "match": 26
         },
         {
           "home_idx": 0,
@@ -1056,7 +1082,8 @@
           "local_time": "16:00",
           "local_timezone": "America/New_York",
           "venue": "MetLife Stadium",
-          "place": "East Rutherford"
+          "place": "East Rutherford",
+          "match": 27
         },
         {
           "home_idx": 1,
@@ -1065,7 +1092,8 @@
           "local_time": "16:00",
           "local_timezone": "America/New_York",
           "venue": "Lincoln Financial Field",
-          "place": "Philadelphia"
+          "place": "Philadelphia",
+          "match": 28
         },
         {
           "home_idx": 1,
@@ -1074,7 +1102,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Chicago",
           "venue": "Arrowhead Stadium",
-          "place": "Kansas City"
+          "place": "Kansas City",
+          "match": 29
         },
         {
           "home_idx": 2,
@@ -1083,7 +1112,8 @@
           "local_time": "19:00",
           "local_timezone": "America/New_York",
           "venue": "Lincoln Financial Field",
-          "place": "Philadelphia"
+          "place": "Philadelphia",
+          "match": 30
         }
       ],
       "F": [
@@ -1094,7 +1124,8 @@
           "local_time": "15:00",
           "local_timezone": "America/Chicago",
           "venue": "AT&T Stadium",
-          "place": "Arlington"
+          "place": "Arlington",
+          "match": 31
         },
         {
           "home_idx": 0,
@@ -1103,7 +1134,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Chicago",
           "venue": "NRG Stadium",
-          "place": "Houston"
+          "place": "Houston",
+          "match": 32
         },
         {
           "home_idx": 0,
@@ -1112,7 +1144,8 @@
           "local_time": "18:00",
           "local_timezone": "America/Chicago",
           "venue": "Arrowhead Stadium",
-          "place": "Kansas City"
+          "place": "Kansas City",
+          "match": 33
         },
         {
           "home_idx": 1,
@@ -1121,7 +1154,8 @@
           "local_time": "18:00",
           "local_timezone": "America/Chicago",
           "venue": "AT&T Stadium",
-          "place": "Arlington"
+          "place": "Arlington",
+          "match": 34
         },
         {
           "home_idx": 1,
@@ -1130,7 +1164,8 @@
           "local_time": "22:00",
           "local_timezone": "America/Monterrey",
           "venue": "Estadio BBVA",
-          "place": "Guadalupe"
+          "place": "Guadalupe",
+          "match": 35
         },
         {
           "home_idx": 2,
@@ -1139,7 +1174,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Monterrey",
           "venue": "Estadio BBVA",
-          "place": "Guadalupe"
+          "place": "Guadalupe",
+          "match": 36
         }
       ],
       "G": [
@@ -1150,7 +1186,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Lumen Field",
-          "place": "Seattle"
+          "place": "Seattle",
+          "match": 37
         },
         {
           "home_idx": 0,
@@ -1159,7 +1196,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "SoFi Stadium",
-          "place": "Inglewood"
+          "place": "Inglewood",
+          "match": 38
         },
         {
           "home_idx": 0,
@@ -1168,7 +1206,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Vancouver",
           "venue": "BC Place",
-          "place": "Vancouver"
+          "place": "Vancouver",
+          "match": 39
         },
         {
           "home_idx": 1,
@@ -1177,7 +1216,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Lumen Field",
-          "place": "Seattle"
+          "place": "Seattle",
+          "match": 40
         },
         {
           "home_idx": 1,
@@ -1186,7 +1226,8 @@
           "local_time": "18:00",
           "local_timezone": "America/Vancouver",
           "venue": "BC Place",
-          "place": "Vancouver"
+          "place": "Vancouver",
+          "match": 41
         },
         {
           "home_idx": 2,
@@ -1195,7 +1236,8 @@
           "local_time": "18:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "SoFi Stadium",
-          "place": "Inglewood"
+          "place": "Inglewood",
+          "match": 42
         }
       ],
       "H": [
@@ -1206,7 +1248,8 @@
           "local_time": "12:00",
           "local_timezone": "America/New_York",
           "venue": "Mercedes-Benz Stadium",
-          "place": "Atlanta"
+          "place": "Atlanta",
+          "match": 43
         },
         {
           "home_idx": 0,
@@ -1215,7 +1258,8 @@
           "local_time": "12:00",
           "local_timezone": "America/New_York",
           "venue": "Mercedes-Benz Stadium",
-          "place": "Atlanta"
+          "place": "Atlanta",
+          "match": 44
         },
         {
           "home_idx": 0,
@@ -1224,7 +1268,8 @@
           "local_time": "18:00",
           "local_timezone": "America/Mexico_City",
           "venue": "Estadio Akron",
-          "place": "Zapopan"
+          "place": "Zapopan",
+          "match": 45
         },
         {
           "home_idx": 1,
@@ -1233,7 +1278,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Chicago",
           "venue": "NRG Stadium",
-          "place": "Houston"
+          "place": "Houston",
+          "match": 46
         },
         {
           "home_idx": 1,
@@ -1242,7 +1288,8 @@
           "local_time": "18:00",
           "local_timezone": "America/New_York",
           "venue": "Hard Rock Stadium",
-          "place": "Miami Gardens"
+          "place": "Miami Gardens",
+          "match": 47
         },
         {
           "home_idx": 2,
@@ -1251,7 +1298,8 @@
           "local_time": "18:00",
           "local_timezone": "America/New_York",
           "venue": "Hard Rock Stadium",
-          "place": "Miami Gardens"
+          "place": "Miami Gardens",
+          "match": 48
         }
       ],
       "I": [
@@ -1262,7 +1310,8 @@
           "local_time": "15:00",
           "local_timezone": "America/New_York",
           "venue": "MetLife Stadium",
-          "place": "East Rutherford"
+          "place": "East Rutherford",
+          "match": 49
         },
         {
           "home_idx": 0,
@@ -1271,7 +1320,8 @@
           "local_time": "17:00",
           "local_timezone": "America/New_York",
           "venue": "Lincoln Financial Field",
-          "place": "Philadelphia"
+          "place": "Philadelphia",
+          "match": 50
         },
         {
           "home_idx": 0,
@@ -1280,7 +1330,8 @@
           "local_time": "15:00",
           "local_timezone": "America/New_York",
           "venue": "Gillette Stadium",
-          "place": "Foxborough"
+          "place": "Foxborough",
+          "match": 51
         },
         {
           "home_idx": 1,
@@ -1289,7 +1340,8 @@
           "local_time": "15:00",
           "local_timezone": "America/Toronto",
           "venue": "BMO Field",
-          "place": "Toronto"
+          "place": "Toronto",
+          "match": 52
         },
         {
           "home_idx": 1,
@@ -1298,7 +1350,8 @@
           "local_time": "20:00",
           "local_timezone": "America/New_York",
           "venue": "MetLife Stadium",
-          "place": "East Rutherford"
+          "place": "East Rutherford",
+          "match": 53
         },
         {
           "home_idx": 2,
@@ -1307,7 +1360,8 @@
           "local_time": "18:00",
           "local_timezone": "America/New_York",
           "venue": "Gillette Stadium",
-          "place": "Foxborough"
+          "place": "Foxborough",
+          "match": 54
         }
       ],
       "J": [
@@ -1318,7 +1372,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Chicago",
           "venue": "Arrowhead Stadium",
-          "place": "Kansas City"
+          "place": "Kansas City",
+          "match": 55
         },
         {
           "home_idx": 0,
@@ -1327,7 +1382,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Chicago",
           "venue": "AT&T Stadium",
-          "place": "Arlington"
+          "place": "Arlington",
+          "match": 56
         },
         {
           "home_idx": 0,
@@ -1336,7 +1392,8 @@
           "local_time": "21:00",
           "local_timezone": "America/Chicago",
           "venue": "AT&T Stadium",
-          "place": "Arlington"
+          "place": "Arlington",
+          "match": 57
         },
         {
           "home_idx": 1,
@@ -1345,7 +1402,8 @@
           "local_time": "21:00",
           "local_timezone": "America/Chicago",
           "venue": "Arrowhead Stadium",
-          "place": "Kansas City"
+          "place": "Kansas City",
+          "match": 58
         },
         {
           "home_idx": 1,
@@ -1354,7 +1412,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Levi's Stadium",
-          "place": "Santa Clara"
+          "place": "Santa Clara",
+          "match": 59
         },
         {
           "home_idx": 2,
@@ -1363,7 +1422,8 @@
           "local_time": "21:00",
           "local_timezone": "America/Los_Angeles",
           "venue": "Levi's Stadium",
-          "place": "Santa Clara"
+          "place": "Santa Clara",
+          "match": 60
         }
       ],
       "K": [
@@ -1374,7 +1434,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Chicago",
           "venue": "NRG Stadium",
-          "place": "Houston"
+          "place": "Houston",
+          "match": 61
         },
         {
           "home_idx": 0,
@@ -1383,7 +1444,8 @@
           "local_time": "12:00",
           "local_timezone": "America/Chicago",
           "venue": "NRG Stadium",
-          "place": "Houston"
+          "place": "Houston",
+          "match": 62
         },
         {
           "home_idx": 0,
@@ -1392,7 +1454,8 @@
           "local_time": "19:30",
           "local_timezone": "America/New_York",
           "venue": "Hard Rock Stadium",
-          "place": "Miami Gardens"
+          "place": "Miami Gardens",
+          "match": 63
         },
         {
           "home_idx": 1,
@@ -1401,7 +1464,8 @@
           "local_time": "19:30",
           "local_timezone": "America/New_York",
           "venue": "Mercedes-Benz Stadium",
-          "place": "Atlanta"
+          "place": "Atlanta",
+          "match": 64
         },
         {
           "home_idx": 1,
@@ -1410,7 +1474,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Mexico_City",
           "venue": "Estadio Akron",
-          "place": "Zapopan"
+          "place": "Zapopan",
+          "match": 65
         },
         {
           "home_idx": 2,
@@ -1419,7 +1484,8 @@
           "local_time": "20:00",
           "local_timezone": "America/Mexico_City",
           "venue": "Estadio Azteca",
-          "place": "Mexico City"
+          "place": "Mexico City",
+          "match": 66
         }
       ],
       "L": [
@@ -1430,7 +1496,8 @@
           "local_time": "15:00",
           "local_timezone": "America/Chicago",
           "venue": "AT&T Stadium",
-          "place": "Arlington"
+          "place": "Arlington",
+          "match": 67
         },
         {
           "home_idx": 0,
@@ -1439,7 +1506,8 @@
           "local_time": "16:00",
           "local_timezone": "America/New_York",
           "venue": "Gillette Stadium",
-          "place": "Foxborough"
+          "place": "Foxborough",
+          "match": 68
         },
         {
           "home_idx": 0,
@@ -1448,7 +1516,8 @@
           "local_time": "17:00",
           "local_timezone": "America/New_York",
           "venue": "MetLife Stadium",
-          "place": "East Rutherford"
+          "place": "East Rutherford",
+          "match": 69
         },
         {
           "home_idx": 1,
@@ -1457,7 +1526,8 @@
           "local_time": "17:00",
           "local_timezone": "America/New_York",
           "venue": "Lincoln Financial Field",
-          "place": "Philadelphia"
+          "place": "Philadelphia",
+          "match": 70
         },
         {
           "home_idx": 1,
@@ -1466,7 +1536,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Toronto",
           "venue": "BMO Field",
-          "place": "Toronto"
+          "place": "Toronto",
+          "match": 71
         },
         {
           "home_idx": 2,
@@ -1475,7 +1546,8 @@
           "local_time": "19:00",
           "local_timezone": "America/Toronto",
           "venue": "BMO Field",
-          "place": "Toronto"
+          "place": "Toronto",
+          "match": 72
         }
       ]
     },

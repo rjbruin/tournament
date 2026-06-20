@@ -23,7 +23,7 @@
     <section id="section-{{ s.id }}" class="fixtures-section mb-5">
       <h3 class="fixtures-section-title mb-3">{{ s.label }}</h3>
       {% for m in s.fixtures %}
-      {{ fx.large_fixture(m, header=m.header, header_url=m.header_url) }}
+      {{ fx.large_fixture(m, header=m.header, match_url=m.match_url) }}
       {% endfor %}
     </section>
     {% endfor %}

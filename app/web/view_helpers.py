@@ -65,6 +65,7 @@ def normalize_group_match(match: dict) -> dict:
         "home_team": match["home"],
         "away_team": match["away"],
         "played": match.get("played", False),
+        "match": match.get("match"),
         "date": match.get("date"),
         "local_time": match.get("local_time"),
         "local_timezone": match.get("local_timezone"),

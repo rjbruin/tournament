@@ -117,6 +117,30 @@ def _advance_prob_before(engine, actuals, group_name, pairs, n=30_000):
         return {}
 
 
+def _advance_prob_after(engine, actuals, group_name, raw_fixtures, cutoff_sort_key, n=30_000):
+    """Run a mini simulation with only group results up to and including cutoff_sort_key,
+    returning group_advance_prob for all teams (used on the match page for completed matches)."""
+    import copy
+    after = copy.deepcopy(actuals)
+    later_pairs = {
+        frozenset([m.get("home"), m.get("away")])
+        for m in raw_fixtures
+        if _utc_sort_key(m) > cutoff_sort_key
+    }
+    after.setdefault("group_results", {})[group_name] = [
+        r for r in after["group_results"].get(group_name, [])
+        if frozenset([r.get("home"), r.get("away")]) not in later_pairs
+    ]
+    after["live_matches"] = [
+        lm for lm in after.get("live_matches", [])
+        if frozenset([lm.get("home"), lm.get("away")]) not in later_pairs
+    ]
+    try:
+        return engine.run(n, actuals=after).get("group_advance_prob", {})
+    except Exception:
+        return {}
+
+
 def _knocked_out_teams(results) -> set:
     """Return team names eliminated in any completed knockout match."""
     knocked_out = set()
@@ -776,7 +800,7 @@ def fixtures():
                 matchday = idx // 2 + 1
                 nm = normalize_group_match(m)
                 nm["header"] = f"Group {g['name']}"
-                nm["header_url"] = url_for("web.groups") + f"#group-{g['name']}"
+                nm["match_url"] = url_for("web.match_detail", match_no=m["match"]) if m.get("match") else None
                 nm["sort_key"] = _utc_sort_key(m)
                 buckets[f"md{matchday}"].append(nm)
 
@@ -793,7 +817,7 @@ def fixtures():
             match = bm[m["match"]]
             nm = normalize_bracket_match(match, ko_scores=ko_scores)
             nm["header"] = nm["round"]
-            nm["header_url"] = url_for("web.bracket") + f"#round-{nm['round'].replace(' ', '-')}"
+            nm["match_url"] = url_for("web.match_detail", match_no=nm["match"])
             nm["sort_key"] = _utc_sort_key(match)
             sid = round_to_section.get(nm["round"])
             if sid:
@@ -814,6 +838,148 @@ def fixtures():
         sections=sections,
         results=results,
         scenario_id=scenario_id,
+        knocked_out_teams=_knocked_out_teams(results),
+    )
+
+
+@web_bp.get("/match/<int:match_no>")
+def match_detail(match_no: int):
+    """Dedicated page for a single fixture — identical content to the
+    Live Match / Up Next / Latest Result card on the home page."""
+    engine = app_module.get_engine()
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
+    actuals = data_store.load_actuals()
+    ko_scores = actuals.get("knockout_scores", {})
+    groups = _groups_for_results(engine, results)
+    teams_by_name = {t["name"]: t for t in engine.data["teams"]}
+
+    # --- Find the requested fixture ---
+    fixture = None
+    fixture_group = None
+
+    # Group-stage fixtures
+    if results:
+        for g in groups:
+            for m in results.get("fixtures", {}).get(g["name"], []):
+                if m.get("match") == match_no:
+                    fixture = normalize_group_match(m)
+                    fixture["_group"] = g["name"]
+                    fixture["_sort_key"] = _utc_sort_key(m)
+                    fixture_group = g
+                    break
+            if fixture:
+                break
+
+    # Knockout fixtures
+    if fixture is None and results and "bracket_matches" in results:
+        bm = results["bracket_matches"]
+        if match_no in bm:
+            fixture = normalize_bracket_match(bm[match_no], ko_scores=ko_scores)
+            fixture["_group"] = None
+            fixture["_sort_key"] = _utc_sort_key(bm[match_no])
+
+    if fixture is None:
+        from flask import abort
+        abort(404)
+
+    # --- Group table ---
+    group_table = None
+    group_table_before = None
+    group_table_label = None
+    before_adv = None
+    after_adv = None
+    if fixture_group:
+        raw_fixtures = (results or {}).get("fixtures", {}).get(fixture_group["name"], [])
+        this_sort_key = fixture.get("_sort_key") or _utc_sort_key(
+            next((m for m in raw_fixtures
+                  if m.get("home") == fixture.get("home_team") and m.get("away") == fixture.get("away_team")), {}))
+        pair = [(fixture.get("home_team"), fixture.get("away_team"))]
+
+        gname = fixture_group["name"]
+        if fixture.get("in_progress"):
+            # Live: standings with current live score + before-match standings
+            before_adv = _advance_prob_before(engine, actuals, gname, pair)
+            after_adv = results.get("group_advance_prob", {})  # live state IS the "after"
+            after_results = {"group_advance_prob": after_adv}
+            group_table = compute_group_table(fixture_group, raw_fixtures, teams_by_name, after_results)
+            group_table_label = f"Group {gname} standings — with live score"
+            group_table_before = _group_table_before(
+                fixture_group, raw_fixtures, [fixture], teams_by_name,
+                {"group_advance_prob": before_adv})
+        elif fixture.get("played"):
+            # Completed: standings + advance probs after this match only
+            before_adv = _advance_prob_before(engine, actuals, gname, pair)
+            after_adv = _advance_prob_after(engine, actuals, gname, raw_fixtures, this_sort_key)
+            after_fixtures = [m for m in raw_fixtures if _utc_sort_key(m) <= this_sort_key]
+            after_results = {"group_advance_prob": after_adv}
+            group_table = compute_group_table(fixture_group, after_fixtures, teams_by_name, after_results)
+            group_table_label = f"Group {gname} standings — after this match"
+        else:
+            # Upcoming: standings as they stand before this match
+            before_adv = None
+            after_adv = _advance_prob_after(engine, actuals, gname, raw_fixtures, this_sort_key)
+            before_fixtures = [m for m in raw_fixtures if _utc_sort_key(m) < this_sort_key]
+            before_results = {"group_advance_prob": after_adv}
+            group_table = compute_group_table(fixture_group, before_fixtures, teams_by_name, before_results)
+            group_table_label = f"Group {gname} standings — before this match"
+
+    # --- What's at stake ---
+    qualification_stakes = []
+    qualification_full = []
+    if fixture_group and not (fixture.get("played") and not fixture.get("in_progress")):
+        # Build all_normalized for _qualification_notes (needs context of full group schedule)
+        all_normalized = []
+        for g in groups:
+            raw = (results or {}).get("fixtures", {}).get(g["name"], [])
+            for m in raw:
+                nm = normalize_group_match(m)
+                nm["_group"] = g["name"]
+                nm["_sort_key"] = _utc_sort_key(m)
+                all_normalized.append(nm)
+        try:
+            s, f = _qualification_notes(engine, scenario_id, fixture, all_normalized)
+            qualification_stakes = s
+            qualification_full = f
+        except Exception:
+            pass
+
+    is_live = fixture.get("in_progress", False)
+    can_explore = current_user.is_authenticated and (not fixture.get("played") or is_live)
+
+    # Build a human-readable label: "Match 1 — Group A Matchday 1" or "Match 78 — Round of 32"
+    if fixture_group:
+        gname = fixture_group["name"]
+        raw_group = (results or {}).get("fixtures", {}).get(gname, [])
+        ordered_nos = sorted(
+            (m.get("match") for m in raw_group if m.get("match")),
+            key=lambda x: x
+        )
+        md_map = {no: (i // 2) + 1 for i, no in enumerate(ordered_nos)}
+        md = md_map.get(match_no, "")
+        match_label = f"Match {match_no} — Group {gname} Matchday {md}"
+    else:
+        rnd = fixture.get("round", "")
+        match_label = f"Match {match_no} — {rnd}" if rnd else f"Match {match_no}"
+
+    return render_template(
+        "match.html",
+        match_no=match_no,
+        match_label=match_label,
+        fixture=fixture,
+        fixture_group=fixture_group,
+        results=results,
+        after_adv=after_adv if fixture_group else None,
+        scenario_id=scenario_id,
+        group_table=group_table,
+        group_table_label=group_table_label,
+        group_table_before=group_table_before,
+        before_adv=before_adv,
+        qualification_stakes=qualification_stakes,
+        qualification_full=qualification_full,
+        is_live=is_live,
+        can_explore=can_explore,
+        live_version=app_module.get_live_status()["version"],
         knocked_out_teams=_knocked_out_teams(results),
     )
 

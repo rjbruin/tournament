@@ -556,6 +556,8 @@ class SimulationEngine:
                 match["local_timezone"] = sm["local_timezone"]
                 match["venue"] = sm["venue"]
                 match["place"] = sm["place"]
+                if "match" in sm:
+                    match["match"] = sm["match"]
 
         for mno_str, sm in schedule.get("knockout", {}).items():
             m = results["bracket_matches"].get(int(mno_str))

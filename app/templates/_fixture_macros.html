@@ -257,7 +257,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 
 
 {# ---------- Large fixture card: dark hero layout ---------- #}
-{% macro large_fixture(match, header=None, header_url=None, show_advance=False, advance_prob=None, before_adv=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='') %}
+{% macro large_fixture(match, header=None, header_url=None, match_url=None, show_advance=False, advance_prob=None, before_adv=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='') %}
 {%- set _home_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.home_team %}
 {%- set _away_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.away_team %}
 {%- if match.home_team and show_advance and advance_prob is not none %}
@@ -279,9 +279,10 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 <div class="card fixture-card mb-3">
   {% if header %}
   <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-    {% if header_url %}<a href="{{ header_url }}">{{ header }}</a>{% else %}{{ header }}{% endif %}
+    {{ header }}
   </div>
   {% endif %}
+  {% if match_url %}<a href="{{ match_url }}" class="text-decoration-none d-block">{% endif %}
   <div class="fixture-card-body">
     <div class="fixture-hero">
 
@@ -362,14 +363,16 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
     <div class="text-center" style="padding:.75rem;">
       <button type="submit" {% if form_id %}form="{{ form_id }}"{% endif %} class="btn btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);">{{ submit_label or "Show hypothetical scenario" }}</button>
     </div>
-    {% elif match.date or explore or live %}
+    {% elif match.date or explore or live or match_url %}
     <div class="fixture-meta">
       {% if match.date %}{{ match|local_time }}{% if match.venue %} &middot; {{ match.venue }}{% if match.place %}, {{ match.place }}{% endif %}{% endif %}{% endif %}
-      {% if explore %}{% if match.date %} &middot; {% endif %}<span style="color:rgba(255,255,255,.6);text-decoration:underline;cursor:pointer;" id="explore-toggle-btn{{ idx }}">🔍 Explore</span>{% endif %}
-      {% if live %}{% if match.date or explore %} &middot; {% endif %}<span style="color:rgba(255,255,255,.6);text-decoration:underline;cursor:pointer;" id="live-score-toggle-btn{{ idx }}">📡 Edit live score</span>{% endif %}
+      {% if match_url %} &middot; <span style="color:rgba(255,255,255,.5);font-style:italic;">Click for details</span>{% endif %}
+      {% if explore %}{% if match.date or match_url %} &middot; {% endif %}<span style="color:rgba(255,255,255,.6);text-decoration:underline;cursor:pointer;" id="explore-toggle-btn{{ idx }}">🔍 Explore</span>{% endif %}
+      {% if live %}{% if match.date or explore or match_url %} &middot; {% endif %}<span style="color:rgba(255,255,255,.6);text-decoration:underline;cursor:pointer;" id="live-score-toggle-btn{{ idx }}">📡 Edit live score</span>{% endif %}
     </div>
     {% endif %}
   </div>
+  {% if match_url %}</a>{% endif %}
 </div>
 {% endmacro %}
 

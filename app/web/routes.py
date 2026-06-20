@@ -589,6 +589,7 @@ def team(name: str):
         for m in results["fixtures"].get(team_group["name"], []):
             if m.get("home") == name or m.get("away") == name:
                 fixtures_for_team.append(normalize_group_match(m))
+        fixtures_for_team.sort(key=_utc_sort_key)
 
     bracket_for_team = []
     ko_scores = data_store.load_actuals().get("knockout_scores", {})
@@ -655,6 +656,14 @@ def team(name: str):
             if cp:
                 sid = data_store.match_scenario_id(cp["index"])
         odds_history.append({"label": f"After {rname}", **(_odds_for_scenario(sid) or _empty_odds)})
+
+    # Always append the current live odds as the final "Now" point so the
+    # chart ends at the actual present state rather than the last checkpoint.
+    current_odds = {
+        "group_advance_prob": (results or {}).get("group_advance_prob", {}).get(name),
+        "winner_prob": (results or {}).get("winner_prob", {}).get(name),
+    }
+    odds_history.append({"label": "Now", **current_odds})
 
     knocked_out = _knocked_out_teams(results)
     return render_template(

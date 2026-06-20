@@ -10,9 +10,23 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.4.7"
+APP_VERSION = "1.4.8"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.4.8",
+        "date": "2026-06-20",
+        "fixes": [
+            "Team page fixtures now display in chronological order. Previously "
+            "they were shown in a fixed internal pairing order, which could "
+            "put later matches before earlier ones (e.g. Haiti's fixtures).",
+            "The odds-across-tournament chart now always ends with a 'Now' "
+            "data point reflecting the current simulation results. Previously "
+            "the chart stopped at the last played checkpoint, which could show "
+            "a misleadingly high probability when the most recent matches had "
+            "not yet been captured as a checkpoint scenario.",
+        ],
+    },
     {
         "version": "1.4.7",
         "date": "2026-06-20",

@@ -936,6 +936,26 @@ def _all_draw_group(name="DR"):
     return g, _fx(g, scores)
 
 
+# Score templates (pair -> scoreline) for building complete groups with a
+# known third-place key. Team indices 0..3.
+_HIGH_THIRD_SCORES = {  # A,B,C each beat D and draw each other → 5/5/5/0
+    (0, 1): (0, 0), (0, 2): (0, 0), (0, 3): (1, 0),
+    (1, 2): (0, 0), (1, 3): (1, 0), (2, 3): (1, 0),
+}  # each of the three 5-pt teams has key (5, +1, 1)
+_STD_SCORES = {  # 9/6/3/0 hierarchy, all 1-0 wins → third has key (3, -1, 1)
+    (0, 1): (1, 0), (0, 2): (1, 0), (0, 3): (1, 0),
+    (1, 2): (1, 0), (1, 3): (1, 0), (2, 3): (1, 0),
+}
+
+
+def _named_group(name, scores):
+    """Complete group with unique per-letter team names (avoids name clashes
+    when several special groups appear in the same 12-group fixture)."""
+    teams = [f"{name}{n}" for n in range(1, 5)]
+    g = {"name": name, "teams": teams}
+    return g, _fx(g, scores)
+
+
 def _make_12_groups(special_groups=None):
     """12 groups named A-L, all with empty fixtures by default.
     ``special_groups`` is an optional dict {name: (group_dict, fixtures_list)}
@@ -1135,15 +1155,16 @@ class TestClinchThirdAdvancement:
         result = clinch_third_advancement(groups, fbg)
         assert len(result) == 0
 
-    def test_complete_group_6pt_third_clinches(self):
-        # Cycle group has 3 teams tied at 6pts as potential thirds; all others
-        # unplayed (max_pts=6).  Since 6 > 6 is False, can_beat=0 → clinch.
+    def test_6pt_third_not_safe_against_unplayed_groups(self):
+        # Cycle group: 3 teams tied at 6pts as potential thirds. All 11 other
+        # groups are unplayed (third max_pts=6). A points tie can be lost on
+        # GD/GF while those groups are live, so each of the 11 could pip our
+        # third → can_beat=11 → NO clinch. (Under the old, unsound strict ``>``
+        # this wrongly clinched because 6 > 6 is False.)
         g_cy, fx_cy = _cycle_group("A")
         groups, fbg = _make_12_groups({"A": (g_cy, fx_cy)})
         result = clinch_third_advancement(groups, fbg)
-        # A1=A, B1=B, C1=C (all 6pts, any can be 3rd)
-        assert "A" in result and "B" in result and "C" in result
-        assert "D" not in result
+        assert "A" not in result and "B" not in result and "C" not in result
 
     def test_complete_group_3pt_third_does_not_clinch(self):
         # Standard group (A=9,B=6,C=3,D=0). All others unplayed (max_pts=6).
@@ -1154,14 +1175,26 @@ class TestClinchThirdAdvancement:
         assert "C" not in result   # C (3pts) cannot clinch vs unplayed groups
 
     def test_exactly_7_groups_can_beat_clinches(self):
-        # Group A complete: T3 has 6pts (cycle). 7 other groups unplayed (max=6).
-        # For those 7: 6 > 6 is False → they don't beat T. Remaining 4 groups also
-        # unplayed with max=6. Total can_beat=0 ≤ 7 → T clinches.
-        # (This is equivalent to the all-unplayed test but confirming the bound.)
-        g_cy, fx_cy = _cycle_group("A")
-        groups, fbg = _make_12_groups({"A": (g_cy, fx_cy)})
+        # T's group A complete: its third has 5pts, key (5,+1,1).
+        # 7 groups unplayed (max=6 ≥ 5 → each can beat T): can_beat += 7.
+        # 4 groups complete with a standard third (3pts, (3,-1,1) < T) → cannot
+        # beat T. Total can_beat = 7 ≤ 7 → T just clinches at the boundary.
+        special = {"A": _named_group("A", _HIGH_THIRD_SCORES)}
+        for letter in "BCDE":  # four low complete groups
+            special[letter] = _named_group(letter, _STD_SCORES)
+        groups, fbg = _make_12_groups(special)   # F..L (7) remain unplayed
         result = clinch_third_advancement(groups, fbg)
-        assert "A" in result   # can_beat=0, clinches
+        assert "A1" in result   # can_beat=7, clinches
+
+    def test_eight_groups_can_beat_does_not_clinch(self):
+        # One fewer low complete group than the boundary: 8 unplayed (beat) + 3
+        # standard-complete (cannot beat) → can_beat = 8 > 7 → no clinch.
+        special = {"A": _named_group("A", _HIGH_THIRD_SCORES)}
+        for letter in "BCD":  # only three low complete groups
+            special[letter] = _named_group(letter, _STD_SCORES)
+        groups, fbg = _make_12_groups(special)   # E..L (8) remain unplayed
+        result = clinch_third_advancement(groups, fbg)
+        assert "A1" not in result   # can_beat=8, misses
 
     def test_8_groups_with_max_above_threshold_no_clinch(self):
         # Group A complete with C having 3pts. 8 unplayed groups all have max_pts=6>3.
@@ -1171,79 +1204,32 @@ class TestClinchThirdAdvancement:
         result = clinch_third_advancement(groups, fbg)
         assert len(result) == 0  # C=3pts can't clinch against 11 unplayed
 
-    def test_complete_groups_gd_refinement_beats(self):
-        # Group A complete; T3 has (6pts, -2 GD, 2 GF).
-        # Group B complete; its third has (6pts, 0 GD, 3 GF) → strictly better.
-        # B's third beats T3 → can_beat includes B.
-        g_a = _g("A")
-        # A(0) wins, B(1), C(2) cycle at 6pts, D(3) loses all.
-        # Standard cycle: each of A,B,C has gd=+1-1=0? Let's compute precisely.
-        # A beats B 1-0, loses to C 0-1, beats D 1-0: gf=2, ga=1, gd=+1
-        # C beats A 1-0, B beats C 1-0, C beats D 1-0: C gf=2, ga=1, gd=+1
-        # B beats C 1-0, loses to A 0-1, beats D 1-0: B gf=2, ga=1, gd=+1
-        # All three tied on (6pts, +1gd, 2gf). third_key = (6, 1, 2).
-        _, fx_a = _cycle_group("A")
-
-        # Group B: engineer so third has better key (6pts, +2gd, 3gf).
-        # Need one of B1-B4 to have 6pts, gd=+2, gf=3.
-        # E.g. B1 beats B2 2-0, B3 beats B1 1-0, B1 beats B4 2-0:
-        # B1: gf=4, ga=1, gd=+3, pts=6 (beat B2,B4 lost to B3)
-        # Build a group where 3rd has (6, +2, 3).
-        # Simplest: make a cycle where each beats the next 2-0.
-        g_b = {"name": "B", "teams": ["B1", "B2", "B3", "B4"]}
-        # B1 beats B2 2-0, B3 beats B1 2-0, B2 beats B3 2-0 (cycle), all beat B4 2-0.
-        scores_b = {
-            (0, 1): (2, 0),  # B1 beats B2
-            (0, 2): (0, 2),  # B3 beats B1
-            (0, 3): (2, 0),  # B1 beats B4
-            (1, 2): (2, 0),  # B2 beats B3
-            (1, 3): (2, 0),  # B2 beats B4
-            (2, 3): (2, 0),  # B3 beats B4
-        }
-        fx_b = _fx(g_b, scores_b)
-        # B1: gf=4, ga=2, gd=+2, pts=6 (beat B2 & B4, lost B3)
-        # B2: gf=4, ga=2, gd=+2, pts=6 (beat B3 & B4, lost B1)
-        # B3: gf=4, ga=2, gd=+2, pts=6 (beat B1 & B4, lost B2)
-        # B4: 0pts
-        # third_key for B: (6, +2, 4) — better than A's (6, +1, 2)
-
-        groups, fbg = _make_12_groups({"A": (_g("A"), fx_a), "B": (g_b, fx_b)})
+    def test_equal_full_key_counts_as_threat(self):
+        # Both-complete comparison: a comparison group whose third has the SAME
+        # (pts, gd, gf) key as T is resolved by fair-play / drawing of lots —
+        # indeterminate — so it adversarially counts against T (non-strict >=).
+        # T's group A third = (5,+1,1). Four complete groups have the identical
+        # third key (they too can beat T), and 7 groups are unplayed (also beat).
+        # can_beat = 4 + 7 = 11 → no clinch. (Old strict > gave 7 → wrong clinch.)
+        special = {"A": _named_group("A", _HIGH_THIRD_SCORES)}
+        for letter in "BCDE":
+            special[letter] = _named_group(letter, _HIGH_THIRD_SCORES)
+        groups, fbg = _make_12_groups(special)   # F..L (7) unplayed
         result = clinch_third_advancement(groups, fbg)
-        # A's potential thirds have key (6,+1,2); B's third has (6,+2,4) > (6,+1,2).
-        # So B beats A → can_beat for A's teams includes B.
-        # But total can_beat for A's teams = 1 (only B, since others are unplayed and
-        # 6 > 6 is False for points comparison) → can_beat=1 ≤ 7 → A's teams still clinch!
-        for team in ["A", "B", "C"]:
-            assert team in result, f"Expected {team} to clinch (can_beat=1)"
+        assert "A1" not in result
 
-    def test_complete_groups_gd_refinement_does_not_beat(self):
-        # Group A's third has (6pts, +2gd, 4gf). Group B's third has (6pts, +1gd, 2gf).
-        # B's third is WORSE than A's third → B does not beat A → can_beat unchanged.
-        g_a = {"name": "A", "teams": ["A1","A2","A3","A4"]}
-        scores_a = {
-            (0, 1): (2, 0), (0, 2): (0, 2), (0, 3): (2, 0),
-            (1, 2): (2, 0), (1, 3): (2, 0), (2, 3): (2, 0),
-        }
-        fx_a = _fx(g_a, scores_a)  # third has (6, +2, 4)
-
-        g_b = {"name": "B", "teams": ["B1","B2","B3","B4"]}
-        # Use standard cycle with 1-0 results: third has (6, +1, 2)
-        _, fx_b_src = _cycle_group("B")
-        # Re-map to B's team names
-        g_b2, fx_b = _cycle_group("B")
-        # Actually _cycle_group already uses "A","B","C","D" team names.
-        # We need B1-B4. Let's just use the raw scores.
-        g_b2 = {"name": "B", "teams": ["B1","B2","B3","B4"]}
-        scores_b2 = {
-            (0,1): (1,0), (0,2): (0,1), (0,3): (1,0),
-            (1,2): (1,0), (1,3): (1,0), (2,3): (1,0),
-        }
-        fx_b2 = _fx(g_b2, scores_b2)  # third has (6, +1, 2) — worse than A's
-
-        groups, fbg = _make_12_groups({"A": (g_a, fx_a), "B": (g_b2, fx_b2)})
+    def test_strictly_worse_third_does_not_threaten(self):
+        # Both-complete comparison: a comparison third strictly below T on the
+        # full key cannot beat T. T's group A third = (5,+1,1); all 11 other
+        # groups are complete with a standard third (3,-1,1) < T → can_beat = 0
+        # → T's three 5-pt teams all clinch.
+        special = {"A": _named_group("A", _HIGH_THIRD_SCORES)}
+        for letter in "BCDEFGHIJKL":
+            special[letter] = _named_group(letter, _STD_SCORES)
+        groups, fbg = _make_12_groups(special)   # no unplayed groups
         result = clinch_third_advancement(groups, fbg)
-        # B's third (6,+1,2) < A's third (6,+2,4) → B does not beat A → A's teams clinch.
-        assert "A1" in result
+        assert "A1" in result and "A2" in result and "A3" in result
+        assert "A4" not in result   # A4 finished last, cannot be third
 
     def test_team_guaranteed_top2_not_included(self):
         # In a complete standard group, A and B are guaranteed top-2.
@@ -1267,20 +1253,22 @@ class TestClinchThirdAdvancement:
 class TestClinchByTeamWithThirdAdv:
 
     def test_clinched_third_adv_status_assigned(self):
-        # Build a fake results dict with fixtures for a 12-group tournament.
-        # Group A has a cycle (6pt thirds); all others empty → thirds clinch.
-        g_a, fx_a = _cycle_group("A")
-        groups, fbg = _make_12_groups({"A": (g_a, fx_a)})
+        # Group A's three 5-pt teams can each be third; all 11 other groups are
+        # complete with a strictly worse third (3,-1,1) → can_beat=0 → A1,A2,A3
+        # clinch as best-third. (Unplayed comparison groups would NOT clinch
+        # here — see test_strictly_worse_third_does_not_threaten.)
+        special = {"A": _named_group("A", _HIGH_THIRD_SCORES)}
+        for letter in "BCDEFGHIJKL":
+            special[letter] = _named_group(letter, _STD_SCORES)
+        groups, fbg = _make_12_groups(special)
 
-        # Build minimal results dict as clinch_by_team expects.
         results = {"fixtures": fbg}
         status = clinch_by_team(results, groups)
 
-        # A, B, C in group A can be 3rd and clinch as best-third.
-        assert status.get("A") == CLINCHED_THIRD_ADV
-        assert status.get("B") == CLINCHED_THIRD_ADV
-        assert status.get("C") == CLINCHED_THIRD_ADV
-        assert status.get("D") == ELIMINATED   # D is stuck 4th in its group
+        assert status.get("A1") == CLINCHED_THIRD_ADV
+        assert status.get("A2") == CLINCHED_THIRD_ADV
+        assert status.get("A3") == CLINCHED_THIRD_ADV
+        assert status.get("A4") == ELIMINATED   # A4 is stuck 4th in its group
 
     def test_top2_clinch_not_overwritten_by_third_adv(self):
         # Even if A could theoretically be 3rd (due to a tie scenario), if A is

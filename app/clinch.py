@@ -401,9 +401,12 @@ def clinch_third_advancement(groups: list, fixtures_by_group: dict) -> frozenset
       * Every other group produces its maximum possible third-place points.
       * At most 7 other thirds can beat T's worst-case points (so T ≤ 8th).
 
-    Ties on points are conservative (indeterminate), so strict ``>`` is used
-    throughout; equal points does NOT count as a guaranteed win for the other
-    group's third. This is consistent with the rest of the module.
+    Ties are resolved adversarially against T: a comparison third that can
+    EQUAL T (on points while either group is live, or on the full (pts, gd, gf)
+    key when both are complete) is counted as able to beat T, because the
+    remaining tiebreakers (GD/GF while live; fair-play / drawing of lots when
+    complete) could fall either way. Hence non-strict ``>=`` throughout — using
+    strict ``>`` would under-count threats and over-claim clinches.
 
     When both G and a comparison group Y are fully complete (no remaining or
     in-progress matches), the full lexicographic (pts, gd, gf) key is used
@@ -443,12 +446,19 @@ def clinch_third_advancement(groups: list, fixtures_by_group: dict) -> frozenset
 
                 if g_range["complete"] and y_range["complete"]:
                     # Both groups finished: full lexicographic comparison.
+                    # A tie on (pts, gd, gf) is resolved by fair-play points /
+                    # drawing of lots — indeterminate — so a non-strict ``>=``
+                    # adversarially counts an equal third as able to beat T.
                     T_key = T_full_key[team_name]
-                    if y_range["third_key"] > T_key:
+                    if y_range["third_key"] >= T_key:
                         can_beat += 1
                 else:
-                    # At least one group still live: points-only, strict >.
-                    if y_range["max_pts"] > t3_min:
+                    # At least one group still live: points-only. GD/GF are not
+                    # final, so a points tie can be broken either way — count an
+                    # equal-points third as a possible threat (non-strict ``>=``).
+                    # Using strict ``>`` here would UNDER-count threats and let a
+                    # team clinch when an equal-points group could still pip it.
+                    if y_range["max_pts"] >= t3_min:
                         can_beat += 1
 
             # 12 groups, 8 advance → need ≤ 7 groups able to beat T.

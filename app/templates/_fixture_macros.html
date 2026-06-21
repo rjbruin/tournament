@@ -153,6 +153,45 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 {%- endif %}
 {%- endmacro %}
 
+{# Diagnostic: per-group min/max points the third-place finisher can still
+   reach, straight from the clinch logic (app/clinch.group_third_place_range).
+   Shown below the 3rd-place standings so the cross-group best-third reasoning
+   is inspectable. ``third_ranges`` is {group_name: {min_pts, max_pts, complete}}. #}
+{% macro thirds_range_table(third_ranges, groups) -%}
+{%- if third_ranges %}
+<div class="card shadow-sm mt-3 mb-4" id="thirds-range-table">
+  <div class="card-header fw-bold">3rd-place points range
+    <small class="text-muted fw-normal">(per group, from clinch logic)</small>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Group</th>
+          <th class="text-end">Min P</th>
+          <th class="text-end">Max P</th>
+          <th class="text-end">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in groups %}
+        {%- set r = third_ranges.get(group.name) %}
+        {%- if r %}
+        <tr>
+          <td class="fw-semibold">{{ group.name }}</td>
+          <td class="text-end">{{ r.min_pts }}</td>
+          <td class="text-end">{{ r.max_pts }}</td>
+          <td class="text-end text-muted small">{% if r.complete %}final{% elif r.min_pts == r.max_pts %}fixed{% else %}open{% endif %}</td>
+        </tr>
+        {%- endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{%- endif %}
+{%- endmacro %}
+
 {# Tournament-winner odds, prefixed with a cup icon. #}
 {% macro winner_odds(prob) -%}
 <span class="winner-odds"><span class="odds-icon" title="Chance to win the tournament">🏆</span> {{ prob|pct }}</span>

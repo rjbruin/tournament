@@ -304,24 +304,55 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     if g_obj is not None:
         before_fixtures = [dict(e, played=True)
                            for e in before["group_results"].get(gname, [])]
+
+        # Current (cached) theoretical clinch status — needed to detect
+        # CLINCHED_THIRD_ADV, which clinch_after_match cannot compute because it
+        # only does within-group reasoning. Once a team has clinched (any path),
+        # that status is monotone: no later match can remove it, so the current
+        # state is a valid proxy for "before this match."
+        _cur_results = _results_for_scenario(scenario_id)
+        _cur_clinch = _clinch.clinch_by_team(_cur_results, engine.groups) if _cur_results else {}
+
         for stake in stakes:
             team = stake["team"]
             opponent = away if team == home else home
+            valid_outcomes = [o for o in ("win", "draw", "loss")
+                              if stake["odds"].get(o) is not None]
+
+            # Short-circuit: if the team is already certain (including
+            # CLINCHED_THIRD_ADV) or already fully eliminated, all outcomes
+            # share that status — no per-outcome analysis needed.
+            if _clinch.advances_for_sure(_cur_clinch.get(team)):
+                stake["clinch_outcomes"] = valid_outcomes
+                stake["elim_outcomes"] = []
+                headline, status = qualification._stake_headline(set(valid_outcomes), set())
+                stake["headline"] = headline
+                stake["status"] = status
+                continue
+            if _cur_clinch.get(team) == _clinch.ELIMINATED:
+                stake["clinch_outcomes"] = []
+                stake["elim_outcomes"] = valid_outcomes
+                headline, status = qualification._stake_headline(set(), set(valid_outcomes))
+                stake["headline"] = headline
+                stake["status"] = status
+                continue
+
+            # Per-outcome analysis: ✓ when this result mathematically secures
+            # top-two (best-third is not decidable per-outcome), ✗ when this
+            # result drops the team to 4th regardless of other results.
             clinch_outcomes = []
-            for outcome in ("win", "draw", "loss"):
-                if stake["odds"].get(outcome) is None:
-                    continue
+            elim_outcomes = []
+            for outcome in valid_outcomes:
                 after = _clinch.clinch_after_match(g_obj, before_fixtures, team, opponent, outcome)
-                if _clinch.advances_for_sure(after.get(team)):
+                after_status = after.get(team)
+                if _clinch.advances_for_sure(after_status):
                     clinch_outcomes.append(outcome)
+                elif after_status == _clinch.ELIMINATED:
+                    elim_outcomes.append(outcome)
             stake["clinch_outcomes"] = clinch_outcomes
-            # Re-derive the headline so "guaranteed advancement" claims rest on
-            # the exact clinch, not on a sampled 100%. Elimination wording stays
-            # statistical (a team can miss out via the cross-group third race,
-            # which isn't theoretically decidable from this group alone).
-            elim_set = {o for o in ("win", "draw", "loss")
-                        if stake["odds"].get(o) is not None and stake["odds"][o] <= 0}
-            headline, status = qualification._stake_headline(set(clinch_outcomes), elim_set)
+            stake["elim_outcomes"] = elim_outcomes
+            headline, status = qualification._stake_headline(
+                set(clinch_outcomes), set(elim_outcomes))
             stake["headline"] = headline
             stake["status"] = status
 

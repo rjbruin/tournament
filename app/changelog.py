@@ -10,9 +10,19 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.7.0"
+APP_VERSION = "1.7.1"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.7.1",
+        "date": "2026-06-21",
+        "features": [],
+        "fixes": [
+            "What's at Stake chips now show ✓ for all outcomes when a team has already clinched as best third-place (previously showed statistical odds instead of ✓ because the per-outcome analysis only checked within-group clinch logic).",
+            "What's at Stake chips now show ✗ when an outcome mathematically eliminates the team from the group (finishing 4th regardless of other results), consistent with the advance badge in the standings table.",
+            "Advance badges no longer show ✗ for statistical 0% odds; ✗ is reserved for mathematically confirmed elimination, while near-zero statistical odds show <0.1% instead.",
+        ],
+    },
     {
         "version": "1.7.0",
         "date": "2026-06-21",

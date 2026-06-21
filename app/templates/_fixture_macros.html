@@ -86,13 +86,9 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 <span class="advance-badge" title="Cannot advance">
   <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-danger text-dark">✗</span>{{ _delta_html }}
 </span>
-{%- elif adv is not none and adv >= 0.9995 -%}
-<span class="advance-badge" title="Statistically near-certain, not yet mathematically secured">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>{{ _delta_html }}
-</span>
 {%- elif adv is not none -%}
-<span class="advance-badge" title="Chance to advance from the group">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger {% if adv <= 0 %}text-dark{% else %}text-white{% endif %}{% endif %}">{% if adv <= 0 %}✗{% else %}{{ adv|pct(0) }}{% endif %}</span>{{ _delta_html }}
+<span class="advance-badge" title="{% if adv >= 0.9995 %}Statistically near-certain, not yet mathematically secured{% else %}Chance to advance from the group{% endif %}">
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv >= 0.9995 %}bg-success text-white{% elif adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger text-white{% endif %}">{{ adv|pct(0) }}</span>{{ _delta_html }}
 </span>
 {%- endif %}
 {%- endmacro %}

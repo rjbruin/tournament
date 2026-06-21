@@ -143,7 +143,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
           <td class="text-end">{{ row.ga }}</td>
           <td class="text-end">{{ row.gd }}</td>
           <td class="text-end fw-bold">{{ row.pts }}</td>
-          {% if results %}<td class="text-end">{{ advance_badge(row.advance_prob) }}</td>{% endif %}
+          {% if results %}{%- set _tc = (team_clinch or {}).get(row.name) %}<td class="text-end">{{ advance_badge(row.advance_prob, clinched=_tc in ('clinched_first', 'clinched_top2', 'clinched_third_adv'), eliminated=_tc == 'eliminated') }}</td>{% endif %}
         </tr>
         {% endfor %}
       </tbody>

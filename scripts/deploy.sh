@@ -101,7 +101,7 @@ python3 -m venv "${RELEASE_DIR}/.venv"
 # Persist mutable data (snapshots, settings, actuals) across releases by
 # storing it in a shared directory and symlinking it into each release.
 echo "==> Linking persistent data directory"
-for f in settings.json actuals.json users.json invites.json email_tokens.json; do
+for f in settings.json actuals.json users.json invites.json email_tokens.json pageviews.jsonl; do
   src="${SHARED_DIR}/data/${f}"
   dst="${RELEASE_DIR}/data/${f}"
   if [[ -f "$dst" && ! -f "$src" ]]; then

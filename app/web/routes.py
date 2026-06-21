@@ -296,13 +296,45 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
         return [], []
     stakes = info["teams"]
 
+    # Overlay *theoretical* (sampling-free) clinch info so the stakes show a ✓
+    # only when an outcome mathematically guarantees a top-two finish. The
+    # statistical odds remain for the conditional/uncertain cases.
+    from app import clinch as _clinch
+    g_obj = next((g for g in engine.groups if g["name"] == gname), None)
+    if g_obj is not None:
+        before_fixtures = [dict(e, played=True)
+                           for e in before["group_results"].get(gname, [])]
+        for stake in stakes:
+            team = stake["team"]
+            opponent = away if team == home else home
+            clinch_outcomes = []
+            for outcome in ("win", "draw", "loss"):
+                if stake["odds"].get(outcome) is None:
+                    continue
+                after = _clinch.clinch_after_match(g_obj, before_fixtures, team, opponent, outcome)
+                if _clinch.advances_for_sure(after.get(team)):
+                    clinch_outcomes.append(outcome)
+            stake["clinch_outcomes"] = clinch_outcomes
+            # Re-derive the headline so "guaranteed advancement" claims rest on
+            # the exact clinch, not on a sampled 100%. Elimination wording stays
+            # statistical (a team can miss out via the cross-group third race,
+            # which isn't theoretically decidable from this group alone).
+            elim_set = {o for o in ("win", "draw", "loss")
+                        if stake["odds"].get(o) is not None and stake["odds"][o] <= 0}
+            headline, status = qualification._stake_headline(set(clinch_outcomes), elim_set)
+            stake["headline"] = headline
+            stake["status"] = status
+
     # The detailed decision tree is only legible on the final matchday (at most
     # the two last group games remain), so reserve it for then.
     full_scenarios = []
     if matchday >= 3:
         for team in (home, away):
             expl = qualification.explain_qualification_cached(engine, before, gname, team, "advances")
-            if expl and (expl.get("lines") or expl.get("summary")):
+            # Only surface genuinely conditional routes. "Guaranteed"/"impossible"
+            # summaries here are sampled and could contradict the exact badges and
+            # headlines, which already communicate certainty.
+            if expl and expl.get("status") == "conditional" and (expl.get("lines") or expl.get("summary")):
                 full_scenarios.append(expl)
 
     return stakes, full_scenarios
@@ -889,6 +921,7 @@ def match_detail(match_no: int):
     group_table_label = None
     before_adv = None
     after_adv = None
+    match_clinch = {}
     if fixture_group:
         raw_fixtures = (results or {}).get("fixtures", {}).get(fixture_group["name"], [])
         this_sort_key = fixture.get("_sort_key") or _utc_sort_key(
@@ -907,6 +940,13 @@ def match_detail(match_no: int):
             group_table_before = _group_table_before(
                 fixture_group, raw_fixtures, [fixture], teams_by_name,
                 {"group_advance_prob": before_adv})
+            # Clinch is based on truly-finished matches (an in-progress score
+            # isn't final), so reason from the state before this match.
+            from app import clinch as _clinch_mod
+            _pre = [m for m in raw_fixtures
+                    if m.get("played") and not m.get("in_progress")
+                    and _utc_sort_key(m) < this_sort_key]
+            match_clinch = _clinch_mod.clinch_for_group(fixture_group, _pre)
         elif fixture.get("played"):
             # Completed: standings + advance probs after this match only
             before_adv = _advance_prob_before(engine, actuals, gname, pair)
@@ -915,6 +955,7 @@ def match_detail(match_no: int):
             after_results = {"group_advance_prob": after_adv}
             group_table = compute_group_table(fixture_group, after_fixtures, teams_by_name, after_results)
             group_table_label = f"Group {gname} standings — after this match"
+            match_clinch = {r["name"]: r["clinch_status"] for r in group_table}
         else:
             # Upcoming: standings as they stand before this match
             before_adv = None
@@ -923,6 +964,7 @@ def match_detail(match_no: int):
             before_results = {"group_advance_prob": after_adv}
             group_table = compute_group_table(fixture_group, before_fixtures, teams_by_name, before_results)
             group_table_label = f"Group {gname} standings — before this match"
+            match_clinch = {r["name"]: r["clinch_status"] for r in group_table}
 
     # --- What's at stake ---
     qualification_stakes = []
@@ -970,6 +1012,7 @@ def match_detail(match_no: int):
         fixture_group=fixture_group,
         results=results,
         after_adv=after_adv if fixture_group else None,
+        match_clinch=match_clinch,
         scenario_id=scenario_id,
         group_table=group_table,
         group_table_label=group_table_label,

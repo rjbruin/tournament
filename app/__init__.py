@@ -278,15 +278,16 @@ def create_app():
 
     @app.template_filter("pct")
     def pct_filter(value, decimals=1):
-        """Format a probability (0-1) as a percentage, using a checkmark
-        for certainties (exactly 100%) and a red cross for impossibilities
-        (exactly 0%)."""
+        """Format a probability (0-1) as a percentage. Sampled values of exactly
+        100% / 0% are statistical, not mathematical, certainties, so they render
+        as ">99.9%" / "<0.1%" rather than a ✓/✗. Genuine mathematical clinch /
+        elimination is communicated only through the clinch-aware badges."""
         if value is None:
             return "—"
-        if value >= 1:
-            return "✅"
-        if value <= 0:
-            return "❌"
+        if value >= 0.9995:
+            return ">99.9%"
+        if value <= 0.0005:
+            return "<0.1%"
         return f"{value * 100:.{decimals}f}%"
 
     @app.template_filter("timestamp_to_date")
@@ -345,7 +346,21 @@ def create_app():
         except Exception:
             team_form = {}
         team_elos = {t["name"]: t["elo"] for t in _engine.data["teams"]} if _engine else {}
-        return {"team_form": team_form, "active_scenario": scenario, "team_elos": team_elos}
+
+        # Theoretical (sampling-free) qualification status per team for the
+        # scenario being viewed, so badges everywhere can show a true "Q ✓"
+        # only when advancement is mathematically guaranteed.
+        team_clinch = {}
+        try:
+            from app import clinch as _clinch
+            _results = get_or_run_results(username, scenario_id)
+            if _results:
+                team_clinch = _clinch.clinch_by_team(_results, _engine.groups)
+        except Exception:
+            team_clinch = {}
+
+        return {"team_form": team_form, "active_scenario": scenario,
+                "team_elos": team_elos, "team_clinch": team_clinch}
 
     return app
 

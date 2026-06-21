@@ -59,7 +59,7 @@
               <td class="text-end fw-bold">{{ row.pts }}</td>
               <td class="text-end text-muted">{{ row.elo }}</td>
               {% if results %}
-              <td class="text-end">{{ fx.advance_badge(row.advance_prob) }}</td>
+              <td class="text-end">{{ fx.advance_badge(row.advance_prob, clinched=row.clinched, eliminated=row.eliminated) }}</td>
               {% endif %}
             </tr>
             {% endfor %}

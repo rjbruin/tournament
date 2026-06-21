@@ -122,6 +122,37 @@ goals_B ~ Poisson(&lambda;_B)</pre>
       </div>
     </div>
 
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-bold">7. Guaranteed vs. near-certain qualification</div>
+      <div class="card-body">
+        <p>
+          A simulated 100% is not the same as a mathematical certainty — a
+          scenario that simply never came up in the samples still shows as
+          100%. So the app draws a deliberate distinction:
+        </p>
+        <ul class="mb-2">
+          <li>
+            <span class="badge bg-success">Q&nbsp;✓</span> means a team has
+            <strong>mathematically clinched</strong> a top-two place: there is
+            no combination of remaining group results — under the official
+            FIFA 2026 tiebreakers (points, then head-to-head, then goal
+            difference and goals scored) — in which they miss out. This is
+            computed exactly, not sampled.
+          </li>
+          <li>
+            <span class="badge bg-success">Q&nbsp;&gt;99.9%</span> means a team
+            is near-certain in the simulations but could still, in principle,
+            be caught.
+          </li>
+        </ul>
+        <p class="mb-0 text-muted">
+          Reaching the knockouts as one of the eight best third-placed teams
+          depends on the other groups, so it can never be shown as a
+          mathematical ✓ — only as a probability.
+        </p>
+      </div>
+    </div>
+
     <div class="alert alert-info mb-0">
       Already-played matches (entered on the Simulations / Settings pages as
       "actuals") are locked to their real result in every simulated

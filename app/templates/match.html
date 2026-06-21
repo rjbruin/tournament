@@ -28,6 +28,7 @@
     {{ fx.large_fixture(fixture, show_advance=true,
         advance_prob=after_adv,
         before_adv=before_adv,
+        clinch=match_clinch,
         explore=can_explore, live=can_explore, idx=0) }}
 
     {% if can_explore %}
@@ -152,7 +153,7 @@
             {% if s.odds[key] is not none %}
             <span class="qual-odds-chip{% if _ns.team_outcome == key %} qual-odds-chip--active{% endif %}">
               <span class="qual-odds-label">{{ label }}</span>
-              {%- if s.odds[key] >= 1.0 %} ✅{%- elif s.odds[key] >= 0.9995 %} &gt;99.9%{%- else %} {{ s.odds[key]|pct(1) }}{%- endif %}
+              {%- if key in (s.clinch_outcomes or []) %} ✓{%- elif s.odds[key] >= 0.9995 %} &gt;99.9%{%- else %} {{ s.odds[key]|pct(1) }}{%- endif %}
             </span>
             {% endif %}
             {% endfor %}

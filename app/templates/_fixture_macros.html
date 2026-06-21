@@ -45,13 +45,11 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
   {%- endif %}
 {%- endmacro %}
 
-{# Win-tournament odds badge: same shape as advance_badge but with a 🏆 icon. #}
+{# Win-tournament odds badge: same shape as advance_badge but with a 🏆 icon.
+   Tournament victory can never be guaranteed from a group alone, so this is
+   always statistical: ">99.9%" at the top end, never a ✓ checkmark. #}
 {% macro win_badge(prob) -%}
-{%- if prob is not none and prob >= 1.0 -%}
-<span class="advance-badge" title="Tournament winner">
-  <span class="advance-badge__icon">🏆</span><span class="advance-badge__val bg-success text-white">✅</span>
-</span>
-{%- elif prob is not none and prob >= 0.9995 -%}
+{%- if prob is not none and prob >= 0.9995 -%}
 <span class="advance-badge">
   <span class="advance-badge__icon">🏆</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>
 </span>
@@ -63,20 +61,31 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 {%- endmacro %}
 
 {# Advancement odds badge: icon on neutral left, value on coloured right,
-   optional delta segment on far right. delta is a float (e.g. 0.06 = +6pp). #}
-{% macro advance_badge(adv, delta=none) -%}
+   optional delta segment on far right. delta is a float (e.g. 0.06 = +6pp).
+
+   A ✓ checkmark is shown ONLY when ``clinched`` is true — i.e. advancement is
+   mathematically guaranteed (theoretical top-two clinch, see app/clinch.py).
+   A team that is statistically certain but not yet mathematically safe shows
+   ">99.9%". ``eliminated`` (guaranteed last) shows a ✗; otherwise the colour-
+   coded percentage is used (0% statistical also shows ✗). #}
+{% macro advance_badge(adv, delta=none, clinched=false, eliminated=false) -%}
 {%- set _show_delta = delta is not none and (delta >= 0.005 or delta <= -0.005) -%}
-{%- if adv is not none and adv >= 1.0 -%}
-<span class="advance-badge" title="Qualification secured">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">✅</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
+{%- set _delta_html %}{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}{%- endset %}
+{%- if clinched -%}
+<span class="advance-badge" title="Qualification mathematically secured">
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">✓</span>{{ _delta_html }}
+</span>
+{%- elif eliminated -%}
+<span class="advance-badge" title="Cannot advance">
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-danger text-dark">✗</span>{{ _delta_html }}
 </span>
 {%- elif adv is not none and adv >= 0.9995 -%}
-<span class="advance-badge">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
+<span class="advance-badge" title="Statistically near-certain, not yet mathematically secured">
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val bg-success text-white">&gt;99.9%</span>{{ _delta_html }}
 </span>
 {%- elif adv is not none -%}
 <span class="advance-badge" title="Chance to advance from the group">
-  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger {% if adv <= 0 %}text-dark{% else %}text-white{% endif %}{% endif %}">{% if adv <= 0 %}✗{% else %}{{ adv|pct(0) }}{% endif %}</span>{%- if _show_delta %}<span class="advance-badge__delta {% if delta > 0 %}advance-badge__delta--up{% else %}advance-badge__delta--down{% endif %}">{% if delta > 0 %}+{% endif %}{{ (delta * 100)|round(0)|int }}%</span>{%- endif %}
+  <span class="advance-badge__icon">{{ ADVANCE_ICON }}</span><span class="advance-badge__val {% if adv > 0.6 %}bg-success text-white{% elif adv > 0.35 %}bg-warning text-dark{% else %}bg-danger {% if adv <= 0 %}text-dark{% else %}text-white{% endif %}{% endif %}">{% if adv <= 0 %}✗{% else %}{{ adv|pct(0) }}{% endif %}</span>{{ _delta_html }}
 </span>
 {%- endif %}
 {%- endmacro %}
@@ -257,9 +266,16 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 
 
 {# ---------- Large fixture card: dark hero layout ---------- #}
-{% macro large_fixture(match, header=None, header_url=None, match_url=None, show_advance=False, advance_prob=None, before_adv=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='') %}
+{% macro large_fixture(match, header=None, header_url=None, match_url=None, show_advance=False, advance_prob=None, before_adv=None, clinch=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='') %}
 {%- set _home_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.home_team %}
 {%- set _away_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.away_team %}
+{%- set _cl = clinch if clinch is not none else (team_clinch | default({})) %}
+{%- set _home_status = _cl.get(match.home_team) if match.home_team else none %}
+{%- set _away_status = _cl.get(match.away_team) if match.away_team else none %}
+{%- set _home_clinched = _home_status in ('clinched_first', 'clinched_top2') %}
+{%- set _away_clinched = _away_status in ('clinched_first', 'clinched_top2') %}
+{%- set _home_elim = _home_status == 'eliminated' %}
+{%- set _away_elim = _away_status == 'eliminated' %}
 {%- if match.home_team and show_advance and advance_prob is not none %}
   {%- set _home_adv = advance_prob.get(match.home_team) %}
   {%- set _home_prev = before_adv[match.home_team] if before_adv and match.home_team in before_adv else none %}
@@ -293,7 +309,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         <div class="fixture-badge-row">
           {{ star_badge(team=match.home_team) }}
           {{ form_badge(match.home_team) }}
-          {% if _home_adv is not none %}{{ advance_badge(_home_adv, delta=_home_delta) }}{% endif %}
+          {% if _home_adv is not none %}{{ advance_badge(_home_adv, delta=_home_delta, clinched=_home_clinched, eliminated=_home_elim) }}{% endif %}
         </div>
         {% if editable %}
         <input type="number" min="0" class="form-control form-control-sm text-center mt-2" style="width:4rem;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
@@ -338,7 +354,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         {% if match.away_team %}
         <div class="fixture-team-name{% if _away_ko %} knocked-out{% endif %}">{{ match.away_team }}</div>
         <div class="fixture-badge-row away">
-          {% if _away_adv is not none %}{{ advance_badge(_away_adv, delta=_away_delta) }}{% endif %}
+          {% if _away_adv is not none %}{{ advance_badge(_away_adv, delta=_away_delta, clinched=_away_clinched, eliminated=_away_elim) }}{% endif %}
           {{ form_badge(match.away_team) }}
           {{ star_badge(team=match.away_team) }}
         </div>
@@ -402,7 +418,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         <td class="text-end">{{ row.gd }}</td>
         <td class="text-end fw-bold">{{ row.pts }}</td>
         {% if results %}
-        <td class="text-end">{{ advance_badge(row.advance_prob) }}</td>
+        <td class="text-end">{{ advance_badge(row.advance_prob, clinched=row.clinched, eliminated=row.eliminated) }}</td>
         {% endif %}
       </tr>
       {% endfor %}

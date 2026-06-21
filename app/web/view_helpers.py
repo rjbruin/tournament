@@ -164,7 +164,6 @@ def compute_group_table(group: dict, fixtures: list, teams_by_name: dict, result
             stats[a]["pts"] += 1
 
     advance = (results or {}).get("group_advance_prob", {})
-    finish = (results or {}).get("group_finish", {}).get(group["name"], {})
     rows = []
     for tname in group["teams"]:
         s = stats[tname]
@@ -175,22 +174,28 @@ def compute_group_table(group: dict, fixtures: list, teams_by_name: dict, result
 
     rows.sort(key=lambda r: (r["pts"], r["gd"], r["gf"], r["advance_prob"]), reverse=True)
 
+    # Theoretical (sampling-free) clinch / elimination status for this group,
+    # computed from the played results actually in ``fixtures`` (so it reflects
+    # whatever point-in-time state the caller built the table for).
+    from app import clinch as _clinch
+    status_by_team = _clinch.clinch_for_group(group, fixtures)
+
     # Annotate each row with its current standings rank and a qualification
-    # state, used to colour the table. A probability at/above SECURED is treated
-    # as mathematically clinched.
-    SECURED = 0.9995
+    # state, used to colour the table and drive the badges. The "secured"
+    # states are *theoretical* (mathematically guaranteed); the statistical
+    # ">99.9%" case is handled by the advance badge, not here.
     for i, r in enumerate(rows):
         r["rank"] = i + 1
-        f = finish.get(r["name"], {})
-        first_p = f.get("first_prob", 0)
-        top2_p = first_p + f.get("second_prob", 0)
-        adv_p = r["advance_prob"]
-        if first_p >= SECURED:
+        status = status_by_team.get(r["name"], "open")
+        r["clinch_status"] = status
+        r["clinched"] = status in ("clinched_first", "clinched_top2")
+        r["eliminated"] = status == "eliminated"
+        if status == "clinched_first":
             r["qual"] = "secured_first"
-        elif top2_p >= SECURED:
+        elif status == "clinched_top2":
             r["qual"] = "secured_second"
-        elif adv_p >= SECURED:
-            r["qual"] = "secured_qualified"
+        elif status == "eliminated":
+            r["qual"] = "eliminated"
         elif r["rank"] == 1:
             r["qual"] = "place_first"
         elif r["rank"] == 2:

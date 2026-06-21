@@ -10,9 +10,22 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.5.2"
+APP_VERSION = "1.6.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.6.0",
+        "date": "2026-06-21",
+        "features": [
+            "Theoretical qualification: Q ✓ now means a team has mathematically clinched a top-two place — no combination of remaining results can knock them out, computed exactly under the official FIFA 2026 tiebreakers (points → head-to-head → goal difference → goals scored).",
+            "Q >99.9% continues to mean near-certain in the simulations but not yet mathematically guaranteed.",
+            "Q ✗ marks a team that is guaranteed to finish last in their group, no matter what.",
+            "The distinction is applied consistently everywhere: group standings, Groups overview, Teams list, individual team pages, match pages, and What's at Stake outcome chips.",
+            "What's at Stake outcome chips show ✓ only when a specific result exactly clinches top-two; statistical odds are used otherwise.",
+            "Explained on the 'How the Simulation Works' page.",
+        ],
+        "fixes": [],
+    },
     {
         "version": "1.5.2",
         "date": "2026-06-20",

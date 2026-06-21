@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% import "_fixture_macros.html" as fx with context %}
+{% block title %}Diagnostics — WC 2026{% endblock %}
+{% block content %}
+
+<h2 class="mb-1">Diagnostics</h2>
+<p class="text-muted small mb-4">Admin-only internal views of the clinch / qualification engine.</p>
+
+{% if third_ranges %}
+{{ fx.thirds_range_table(third_ranges, groups) }}
+{% else %}
+<div class="alert alert-info">No third-place range data available yet — group matches haven't started for the current scenario.</div>
+{% endif %}
+
+{% endblock %}

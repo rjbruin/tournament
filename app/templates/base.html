@@ -100,6 +100,12 @@
       &middot;
       <a href="{{ url_for('web.changelog') }}" class="text-muted">Changelog</a>
       &middot;
+      {% if current_user.is_authenticated and current_user.is_admin %}
+      <a href="{{ url_for('web.admin_usage') }}" class="text-muted">Usage</a>
+      &middot;
+      <a href="{{ url_for('web.admin_diagnostics') }}" class="text-muted">Diagnostics</a>
+      &middot;
+      {% endif %}
       &copy; {{ tournament.year if tournament is defined else 2026 }} WC Simulator &mdash; Monte Carlo projections for entertainment purposes only.
     </div>
   </footer>

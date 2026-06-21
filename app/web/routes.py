@@ -581,25 +581,12 @@ def groups():
         normalized.sort(key=_utc_sort_key)
         group_fixtures[g["name"]] = normalized
 
-    # Per-group min/max points achievable by the third-place finisher, from the
-    # same clinch logic that drives the "Best 3rd ✓" markers — surfaced as a
-    # diagnostic table so the cross-group best-third reasoning is inspectable.
-    third_ranges = {}
-    if not pre_draw and results:
-        from app import clinch as _clinch
-        fixtures_by_group = results.get("fixtures", {})
-        for g in groups:
-            fixtures = fixtures_by_group.get(g["name"])
-            if fixtures:
-                third_ranges[g["name"]] = _clinch.group_third_place_range(g, fixtures)
-
     return render_template(
         "groups.html",
         groups=groups,
         teams_by_name=teams_by_name,
         group_tables=group_tables,
         group_fixtures=group_fixtures,
-        third_ranges=third_ranges,
         results=results,
         scenario_id=scenario_id,
     )
@@ -1251,6 +1238,37 @@ def onboarding_save():
     )
     flash("Welcome! Your settings have been saved — you can change these any time on the Settings page.", "success")
     return redirect(url_for("web.index"))
+
+
+@web_bp.get("/admin/diagnostics")
+@login_required
+def admin_diagnostics():
+    if not current_user.is_admin:
+        return redirect(url_for("web.index"))
+    engine = app_module.get_engine()
+    scenario_id = _scenario_id()
+    results = _results_for_scenario(scenario_id)
+    groups = _groups_for_results(engine, results)
+
+    # Per-group min/max points achievable by the third-place finisher, from the
+    # same clinch logic that drives the "Best 3rd ✓" markers — surfaced so the
+    # cross-group best-third reasoning is inspectable.
+    third_ranges = {}
+    if not _is_pre_draw(scenario_id) and results:
+        from app import clinch as _clinch
+        fixtures_by_group = results.get("fixtures", {})
+        for g in groups:
+            fixtures = fixtures_by_group.get(g["name"])
+            if fixtures:
+                third_ranges[g["name"]] = _clinch.group_third_place_range(g, fixtures)
+
+    return render_template(
+        "diagnostics.html",
+        groups=groups,
+        third_ranges=third_ranges,
+        results=results,
+        scenario_id=scenario_id,
+    )
 
 
 @web_bp.get("/admin/usage")

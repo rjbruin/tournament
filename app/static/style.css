@@ -396,6 +396,33 @@ h1, h2 { color: var(--wc-green); }
 .odds-icon { font-weight: 700; font-style: normal; }
 .winner-odds .odds-icon { margin-right: .15rem; }
 
+/* Joined quality + form badge */
+.team-badge {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 1rem;
+  overflow: hidden;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.team-badge__quality,
+.team-badge__form {
+  padding: .28em .5em;
+  display: flex;
+  align-items: center;
+}
+/* Quality tiers */
+.team-badge__quality--grey   { background: #6c757d; color: #fff; }
+.team-badge__quality--bronze { background: #a0744c; color: #fff; }
+.team-badge__quality--gold   { background: #c9a227; color: #1a1a1a; }
+/* Form states */
+.team-badge__form--up      { background: #198754; color: #fff; }
+.team-badge__form--down    { background: #dc3545; color: #fff; }
+.team-badge__form--neutral { background: #6c757d; color: #fff; }
+
 /* Split advance-odds badge: icon on neutral left, percentage on colored right */
 .advance-badge {
   display: inline-flex;
@@ -566,7 +593,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 }
 .fixture-badge-row.away { justify-content: flex-end; }
 /* Badges pop against any flag colour */
-.fixture-badge-row .badge, .fixture-badge-row .advance-badge {
+.fixture-badge-row .badge, .fixture-badge-row .advance-badge, .fixture-badge-row .team-badge {
   box-shadow: 0 0 0 1.5px rgba(0,0,0,.45), 0 1px 4px rgba(0,0,0,.5);
 }
 .fixture-center-col {

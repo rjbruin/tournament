@@ -437,12 +437,14 @@
           const ga = (mi.goals_by_team && mi.goals_by_team[away] != null) ? mi.goals_by_team[away] : 0;
           const prevH = knownScores[home] || 0;
           const prevA = knownScores[away] || 0;
-          if (gh > prevH) {
-            showNotif('goal', goalHtml(homeFlag, home, gh, ga, mi.minute));
+          if (gh > prevH || ga > prevA) {
+            const scorer = gh > prevH ? home : away;
+            const scorerFlag = gh > prevH ? homeFlag : awayFlag;
+            showNotif('goal', goalHtml(scorerFlag, scorer, gh, ga, mi.minute));
             knownScores[home] = gh; knownScores[away] = ga;
-          } else if (ga > prevA) {
-            showNotif('goal', goalHtml(awayFlag, away, gh, ga, mi.minute));
-            knownScores[home] = gh; knownScores[away] = ga;
+            const scoreSpans = document.querySelectorAll('#featured-fixture .fixture-score')[{{ loop.index0 }}]
+              ?.querySelectorAll('span:not([class])');
+            if (scoreSpans && scoreSpans.length >= 2) { scoreSpans[0].textContent = gh; scoreSpans[1].textContent = ga; }
           }
         }
       }

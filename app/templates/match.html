@@ -54,8 +54,8 @@
           method: 'POST', headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
             group: {{ fixture._group|tojson }},
-            home: {{ fixture.home_team|tojson }},
-            away: {{ fixture.away_team|tojson }},
+            home: {{ fixture.home_team|default(none)|tojson }},
+            away: {{ fixture.away_team|default(none)|tojson }},
             home_goals: parseInt(fd.get('home_goals') || '0', 10),
             away_goals: parseInt(fd.get('away_goals') || '0', 10),
             base: {{ scenario_id|tojson }},
@@ -91,8 +91,8 @@
     });
     (function () {
       const fxGroup = {{ fixture._group|tojson }};
-      const fxHome  = {{ fixture.home_team|tojson }};
-      const fxAway  = {{ fixture.away_team|tojson }};
+      const fxHome  = {{ fixture.home_team|default(none)|tojson }};
+      const fxAway  = {{ fixture.away_team|default(none)|tojson }};
       async function saveLiveScore(finished) {
         const form = document.getElementById('live-score-form-0');
         const fd = new FormData(form);
@@ -203,8 +203,8 @@
   const badges = document.querySelectorAll('#featured-fixture .live-badge');
   const notifBar = document.getElementById('live-notification-bar');
   const knownScores = {
-    {{ fixture.home_team|tojson }}: {{ (fixture.home_goals or 0) }},
-    {{ fixture.away_team|tojson }}: {{ (fixture.away_goals or 0) }},
+    {{ fixture.home_team|default(none)|tojson }}: {{ (fixture.home_goals or 0) }},
+    {{ fixture.away_team|default(none)|tojson }}: {{ (fixture.away_goals or 0) }},
   };
   let knownFinished = new Set();
 
@@ -232,10 +232,10 @@
       if (!lr.ok) return;
       const data = await lr.json();
 
-      const home = {{ fixture.home_team|tojson }};
-      const away = {{ fixture.away_team|tojson }};
-      const homeFlag = {{ (fixture.home_team|flag)|tojson }};
-      const awayFlag = {{ (fixture.away_team|flag)|tojson }};
+      const home = {{ fixture.home_team|default(none)|tojson }};
+      const away = {{ fixture.away_team|default(none)|tojson }};
+      const homeFlag = {{ (fixture.home_team|default('')|flag)|tojson }};
+      const awayFlag = {{ (fixture.away_team|default('')|flag)|tojson }};
       const mi = (data.live || []).find(x =>
         (x.home === home && x.away === away) || (x.home === away && x.away === home));
       const pairKey = home + '|' + away;
@@ -255,12 +255,13 @@
         const gh = (mi.goals_by_team && mi.goals_by_team[home] != null) ? mi.goals_by_team[home] : 0;
         const ga = (mi.goals_by_team && mi.goals_by_team[away] != null) ? mi.goals_by_team[away] : 0;
         const prevH = knownScores[home] || 0, prevA = knownScores[away] || 0;
-        if (gh > prevH) {
-          showNotif('goal', `<div class="live-notif-left"><span class="live-notif-word">Goal!</span><span style="font-size:1.4rem;">${homeFlag}</span><span class="live-notif-detail">${home}${mi.minute != null ? ' · ' + mi.minute + "'" : ''}</span></div><span class="live-notif-score">${gh} – ${ga}</span>`);
+        if (gh > prevH || ga > prevA) {
+          const scorer = gh > prevH ? home : away;
+          const scorerFlag = gh > prevH ? homeFlag : awayFlag;
+          showNotif('goal', `<div class="live-notif-left"><span class="live-notif-word">Goal!</span><span style="font-size:1.4rem;">${scorerFlag}</span><span class="live-notif-detail">${scorer}${mi.minute != null ? ' · ' + mi.minute + "'" : ''}</span></div><span class="live-notif-score">${gh} – ${ga}</span>`);
           knownScores[home] = gh; knownScores[away] = ga;
-        } else if (ga > prevA) {
-          showNotif('goal', `<div class="live-notif-left"><span class="live-notif-word">Goal!</span><span style="font-size:1.4rem;">${awayFlag}</span><span class="live-notif-detail">${away}${mi.minute != null ? ' · ' + mi.minute + "'" : ''}</span></div><span class="live-notif-score">${gh} – ${ga}</span>`);
-          knownScores[home] = gh; knownScores[away] = ga;
+          const scoreSpans = document.querySelectorAll('#featured-fixture .fixture-score > span:not([class])');
+          if (scoreSpans.length >= 2) { scoreSpans[0].textContent = gh; scoreSpans[1].textContent = ga; }
         }
       }
 

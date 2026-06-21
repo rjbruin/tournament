@@ -13,7 +13,7 @@
       <h4 class="mb-1">{{ favorite.name|flag }} {{ favorite.name }}</h4>
     </a>
     <div class="text-muted">
-      {{ fx.star_badge(favorite.elo) }} {{ fx.form_badge(favorite.name) }} &middot; FIFA rank #{{ favorite.fifa_rank }} &middot; {{ favorite.confederation }}
+      {{ fx.team_badge(elo=favorite.elo, team=favorite.name) }} &middot; FIFA rank #{{ favorite.fifa_rank }} &middot; {{ favorite.confederation }}
     </div>
   </div>
 </div>
@@ -48,7 +48,7 @@
               {{ t.name|flag }} {{ t.name }}
             </a>
           </td>
-          <td class="text-end">{{ fx.star_badge(t.elo) }} {{ fx.form_badge(t.name) }}</td>
+          <td class="text-end">{{ fx.team_badge(elo=t.elo, team=t.name) }}</td>
           <td class="text-end">#{{ t.fifa_rank }}</td>
           <td>
             {%- set _elim = (elimination_info or {}).get(t.name) %}

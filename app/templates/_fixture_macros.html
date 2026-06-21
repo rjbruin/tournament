@@ -1,32 +1,36 @@
 {# Unified fixture display components #}
 
-{# ---------- Form badge: Elo modifier vs. expected results ---------- #}
-{% macro form_badge(team) %}
-  {%- set f = (team_form or {}).get(team) %}
-  {%- if f is not none %}
-    {%- if f >= 15 %}{%- set _icon = '↑↑' %}{%- set _cls = 'bg-success' %}
-    {%- elif f >= 5 %}{%- set _icon = '↑' %}{%- set _cls = 'bg-success' %}
-    {%- elif f <= -15 %}{%- set _icon = '↓↓' %}{%- set _cls = 'bg-danger' %}
-    {%- elif f <= -5 %}{%- set _icon = '↓' %}{%- set _cls = 'bg-danger' %}
-    {%- else %}{%- set _icon = '→' %}{%- set _cls = 'bg-secondary' %}
-    {%- endif %}
-  <span class="badge rounded-pill {{ _cls }} text-white form-badge"
-        title="Form: {{ '%+.1f'|format(f) }} Elo vs. expected results"
-        style="cursor:default;">{{ _icon }}</span>
-  {%- endif %}
-{% endmacro %}
-
-{# Star-rating badge derived from base Elo (1.0–5.0 scale, hover shows raw Elo).
-   Call with explicit elo, or omit to look up from the global team_elos dict. #}
-{% macro star_badge(elo=none, team=none) %}
+{# ---------- Combined team quality + form badge (joined pill) ---------- #}
+{# quality tier: grey ≤2.0 ★, bronze ≤3.5 ★, gold >3.5 ★ #}
+{% macro team_badge(team=none, elo=none) %}
   {%- set _elo = elo if elo is not none else ((team_elos or {}).get(team)) %}
+  {%- set _f   = (team_form or {}).get(team) if team else none %}
+  {%- if _elo is not none or _f is not none %}
+<span class="team-badge">
   {%- if _elo is not none %}
     {%- set _stars = [5.0, [1.0, (1 + 4 * (_elo - 1600) / 490)] | max] | min | round(1) %}
-<span class="badge rounded-pill bg-secondary text-white star-badge"
-      title="Base Elo: {{ _elo }}"
-      style="font-size:0.65em; vertical-align:middle; cursor:default;">{{ _stars }}&thinsp;★</span>
+    {%- if _stars <= 2.0 %}{%- set _qcls = 'team-badge__quality--grey' %}
+    {%- elif _stars <= 3.5 %}{%- set _qcls = 'team-badge__quality--bronze' %}
+    {%- else %}{%- set _qcls = 'team-badge__quality--gold' %}
+    {%- endif %}
+  <span class="team-badge__quality {{ _qcls }}" title="Base Elo: {{ _elo }}">{{ _stars }}&thinsp;★</span>
+  {%- endif %}
+  {%- if _f is not none %}
+    {%- if _f >= 15 %}{%- set _icon = '↑↑' %}{%- set _fcls = 'team-badge__form--up' %}
+    {%- elif _f >= 5 %}{%- set _icon = '↑' %}{%- set _fcls = 'team-badge__form--up' %}
+    {%- elif _f <= -15 %}{%- set _icon = '↓↓' %}{%- set _fcls = 'team-badge__form--down' %}
+    {%- elif _f <= -5 %}{%- set _icon = '↓' %}{%- set _fcls = 'team-badge__form--down' %}
+    {%- else %}{%- set _icon = '→' %}{%- set _fcls = 'team-badge__form--neutral' %}
+    {%- endif %}
+  <span class="team-badge__form {{ _fcls }}" title="Form: {{ '%+.1f'|format(_f) }} Elo vs. expected results">{{ _icon }}</span>
+  {%- endif %}
+</span>
   {%- endif %}
 {%- endmacro %}
+
+{# Legacy aliases kept for any direct callers outside _fixture_macros #}
+{% macro form_badge(team) %}{{ team_badge(team=team) }}{% endmacro %}
+{% macro star_badge(elo=none, team=none) %}{{ team_badge(elo=elo, team=team) }}{% endmacro %}
 
 
 {# ---------- Qualification styling for standings rows ---------- #}
@@ -307,8 +311,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         {% if match.home_team %}
         <div class="fixture-team-name{% if _home_ko %} knocked-out{% endif %}">{{ match.home_team }}</div>
         <div class="fixture-badge-row">
-          {{ star_badge(team=match.home_team) }}
-          {{ form_badge(match.home_team) }}
+          {{ team_badge(team=match.home_team) }}
           {% if _home_adv is not none %}{{ advance_badge(_home_adv, delta=_home_delta, clinched=_home_clinched, eliminated=_home_elim) }}{% endif %}
         </div>
         {% if editable %}
@@ -354,9 +357,8 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         {% if match.away_team %}
         <div class="fixture-team-name{% if _away_ko %} knocked-out{% endif %}">{{ match.away_team }}</div>
         <div class="fixture-badge-row away">
+          {{ team_badge(team=match.away_team) }}
           {% if _away_adv is not none %}{{ advance_badge(_away_adv, delta=_away_delta, clinched=_away_clinched, eliminated=_away_elim) }}{% endif %}
-          {{ form_badge(match.away_team) }}
-          {{ star_badge(team=match.away_team) }}
         </div>
         {% if editable %}
         <input type="number" min="0" class="form-control form-control-sm text-center mt-2" style="width:4rem;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
@@ -411,7 +413,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
     <tbody>
       {% for row in rows %}
       <tr class="{{ qual_row_class(row) }}">
-        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {{ star_badge(team=row.name) }}{% if show_form %} {{ form_badge(row.name) }}{% endif %}{{ qual_marker(row) }}</td>
+        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {{ team_badge(team=row.name) }}{{ qual_marker(row) }}</td>
         <td class="text-end">{{ row.gp }}</td>
         <td class="text-end">{{ row.gf }}</td>
         <td class="text-end">{{ row.ga }}</td>
@@ -467,7 +469,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
         <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
-        <span class="bracket-team-badges">{{ star_badge(team=match.home_team) }} {{ form_badge(match.home_team) }}{% if match.home_team and match.away_team and match.home_prob is defined %} <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}</span>
+        <span class="bracket-team-badges">{{ team_badge(team=match.home_team) }}{% if match.home_team and match.away_team and match.home_prob is defined %} <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}</span>
       </div>
       {% else %}
       {% for cand, p in (match.home_candidates or {}).items() %}
@@ -487,7 +489,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
       <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
         <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
-        <span class="bracket-team-badges">{{ star_badge(team=match.away_team) }} {{ form_badge(match.away_team) }}{% if match.home_team and match.away_team and match.away_prob is defined %} <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}</span>
+        <span class="bracket-team-badges">{{ team_badge(team=match.away_team) }}{% if match.home_team and match.away_team and match.away_prob is defined %} <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}</span>
       </div>
       {% else %}
       {% for cand, p in (match.away_candidates or {}).items() %}

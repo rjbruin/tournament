@@ -10,9 +10,23 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.6.1"
+APP_VERSION = "1.6.2"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.6.2",
+        "date": "2026-06-21",
+        "features": [
+            "Team quality and form are now shown as a single joined badge — grey (≤2★), bronze (≤3.5★), or gold (>3.5★) for quality, with form arrow alongside.",
+            "Quality badge now shown everywhere form was shown: team info card, likely opponents list, fixture rows, and standings.",
+            "Mobile chart fix: tournament odds graph now has a proper fixed height on small screens.",
+        ],
+        "fixes": [
+            "Match pages for upcoming knockout matches (TBD opponents) no longer crash with a JSON serialization error.",
+            "Match pages are now accessible without logging in.",
+            "Live score display now updates immediately in the fixture card when a goal is detected, without waiting for the full page reload.",
+        ],
+    },
     {
         "version": "1.6.1",
         "date": "2026-06-21",

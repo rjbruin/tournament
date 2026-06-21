@@ -22,12 +22,10 @@
       <div class="card-body">
         {%- set _form_val = (team_form or {}).get(team.name) %}
         <dl class="row mb-0">
-          <dt class="col-6">Team rating</dt>
-          <dd class="col-6 text-end">{{ fx.star_badge(team.elo) }}</dd>
+          <dt class="col-6">Quality</dt>
+          <dd class="col-6 text-end">{{ fx.team_badge(elo=team.elo, team=team.name) }}</dd>
           <dt class="col-6">Elo rating</dt>
           <dd class="col-6 text-end">{{ team.elo }}</dd>
-          <dt class="col-6">Team form</dt>
-          <dd class="col-6 text-end">{{ fx.form_badge(team.name) }}</dd>
           <dt class="col-6">Elo form</dt>
           <dd class="col-6 text-end">
             {%- if _form_val is not none %}{{ '%+.0f'|format(_form_val) }}{%- else %}—{%- endif %}
@@ -119,7 +117,9 @@
 <div class="card shadow-sm mt-4">
   <div class="card-header fw-bold">Odds across the tournament</div>
   <div class="card-body">
-    <canvas id="odds-chart" height="80"></canvas>
+    <div style="position:relative;height:260px">
+      <canvas id="odds-chart"></canvas>
+    </div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -148,6 +148,7 @@ new Chart(document.getElementById('odds-chart'), {
     ]
   },
   options: {
+    maintainAspectRatio: false,
     scales: { y: { ticks: { callback: v => v + '%' } } },
     plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y === null ? 'n/a' : ctx.parsed.y.toFixed(2) + '%') } } }
   }
@@ -168,7 +169,7 @@ new Chart(document.getElementById('odds-chart'), {
         <ul class="list-unstyled mb-0">
           {% for o in opponents %}
           <li class="d-flex justify-content-between">
-            <span>{{ o.team|flag }} {{ o.team }} {{ fx.form_badge(o.team) }}</span>
+            <span>{{ o.team|flag }} {{ o.team }} {{ fx.team_badge(team=o.team) }}</span>
             <span class="text-muted">{{ o.probability|pct }}</span>
           </li>
           {% endfor %}

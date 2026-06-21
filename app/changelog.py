@@ -10,9 +10,17 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.7.3"
+APP_VERSION = "1.7.4"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.7.4",
+        "date": "2026-06-21",
+        "features": [],
+        "fixes": [
+            "Page-view statistics are now preserved across version upgrades (pageviews.jsonl was not included in the persistent shared-data symlinks, so it was reset to empty on every deploy).",
+        ],
+    },
     {
         "version": "1.7.3",
         "date": "2026-06-21",

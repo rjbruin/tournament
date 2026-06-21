@@ -10,9 +10,19 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.6.2"
+APP_VERSION = "1.7.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.7.0",
+        "date": "2026-06-21",
+        "features": [
+            "Theoretical best-third qualification: a team now shows Q ✓ when it is mathematically guaranteed to advance as one of the 8 best third-place finishers across all 12 groups, not just when it clinches a top-two spot.",
+            "Third-place clinch uses points-only reasoning while any group is still live (GD and GF are unbounded in unfinished groups), and upgrades to full (pts, GD, GF) comparison once both sides of the comparison are complete.",
+            "Clinched best-third rows appear with a distinct green tint and a 'Best 3rd ✓' marker in group standings, consistent with the existing top-two secured styling.",
+        ],
+        "fixes": [],
+    },
     {
         "version": "1.6.2",
         "date": "2026-06-21",

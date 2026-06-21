@@ -314,9 +314,10 @@ h1, h2 { color: var(--wc-green); }
 .qual-place-first, .qual-place-second { --bs-table-bg: rgba(0,132,61,.05); }
 .qual-place-third  { --bs-table-bg: rgba(255,193,7,.08); }
 /* Stronger tint once a place is mathematically secured. */
-.qual-secured-first     { --bs-table-bg: rgba(0,132,61,.17); }
-.qual-secured-second    { --bs-table-bg: rgba(0,132,61,.12); }
-.qual-secured-qualified { --bs-table-bg: rgba(0,132,61,.09); }
+.qual-secured-first      { --bs-table-bg: rgba(0,132,61,.17); }
+.qual-secured-second     { --bs-table-bg: rgba(0,132,61,.12); }
+.qual-secured-third-adv  { --bs-table-bg: rgba(0,132,61,.08); }
+.qual-secured-qualified  { --bs-table-bg: rgba(0,132,61,.09); }
 
 /* Coloured accent bar on the team cell. */
 .qual-row td:first-child { border-left: 3px solid transparent; }
@@ -325,6 +326,7 @@ h1, h2 { color: var(--wc-green); }
 .qual-place-third td:first-child  { border-left-color: rgba(255,193,7,.8); }
 .qual-secured-first td:first-child,
 .qual-secured-second td:first-child { border-left-color: var(--wc-green); }
+.qual-secured-third-adv td:first-child { border-left-color: rgba(0,132,61,.6); }
 .qual-secured-qualified td:first-child { border-left-color: #1b9e77; }
 
 .qual-marker {

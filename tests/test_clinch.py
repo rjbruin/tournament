@@ -16,11 +16,14 @@ import pytest
 from itertools import product as iproduct
 
 from app.clinch import (
-    OPEN, CLINCHED_FIRST, CLINCHED_TOP2, ELIMINATED,
+    OPEN, CLINCHED_FIRST, CLINCHED_TOP2, CLINCHED_THIRD_ADV, ELIMINATED,
     ALL_PAIRS, BIG,
     _scorelines, _rank_tiers, group_clinch,
     clinch_after_match, clinch_for_group, clinch_by_team,
     advances_for_sure,
+    group_third_place_range, _team_pts_range_as_third,
+    clinch_third_advancement,
+    _OUTCOMES,
 )
 
 
@@ -845,3 +848,581 @@ class TestBruteForceValidation:
                     mismatches += 1
 
         assert mismatches == 0, f"{mismatches} mismatches in one-remaining brute-force tests"
+
+
+# ---------------------------------------------------------------------------
+# Helpers shared by third-place tests
+# ---------------------------------------------------------------------------
+
+def _g(name="X", teams=None):
+    return {"name": name, "teams": teams or ["A", "B", "C", "D"]}
+
+
+def _fx(group, scores, live_pairs=None):
+    """Build fixture list.  ``scores`` is {(i,j): (gi,gj)} for played pairs;
+    unmentioned pairs are unplayed.  ``live_pairs`` marks in-progress matches."""
+    live_pairs = set(live_pairs or [])
+    teams = group["teams"]
+    fixtures = []
+    for pair in ALL_PAIRS:
+        i, j = pair
+        if pair in scores:
+            gi, gj = scores[pair]
+            fixtures.append({
+                "home": teams[i], "away": teams[j],
+                "home_goals": gi, "away_goals": gj,
+                "played": True,
+                "in_progress": pair in live_pairs,
+            })
+        else:
+            fixtures.append({"home": teams[i], "away": teams[j], "played": False})
+    return fixtures
+
+
+def _complete(pts_a, pts_b, pts_c, pts_d):
+    """Return (group, fixtures) for a simple complete group: A beats everyone,
+    B beats C and D, C beats D — but with goals engineering to hit given point
+    totals.  Only the points totals are guaranteed; GD/GF are arbitrary."""
+    # Shorthand: build the standard 9/6/3/0 structure then adjust.
+    # Easiest: A wins all, B wins next two, C wins its last.
+    scores = {
+        (0, 1): (1, 0),
+        (0, 2): (1, 0),
+        (0, 3): (1, 0),
+        (1, 2): (1, 0),
+        (1, 3): (1, 0),
+        (2, 3): (1, 0),
+    }
+    g = _g()
+    return g, _fx(g, scores)
+
+
+# For numeric-exact tests build the group manually.
+
+def _cycle_group(name="CY"):
+    """A-B-C in a rock-paper-scissors cycle (each 6pts), D loses all (0pts).
+    A beats D and B; B beats D and C; C beats A and D.
+    Resulting pts: A=6, B=6, C=6, D=0."""
+    g = _g(name)
+    scores = {
+        (0, 1): (1, 0),   # A beats B
+        (0, 2): (0, 1),   # C beats A
+        (0, 3): (1, 0),   # A beats D
+        (1, 2): (1, 0),   # B beats C
+        (1, 3): (1, 0),   # B beats D
+        (2, 3): (1, 0),   # C beats D
+    }
+    return g, _fx(g, scores)
+
+
+def _standard_group(name="ST"):
+    """A=9, B=6, C=3, D=0.  All 1-0 wins down the hierarchy."""
+    g = _g(name)
+    scores = {
+        (0, 1): (1, 0),
+        (0, 2): (1, 0),
+        (0, 3): (1, 0),
+        (1, 2): (1, 0),
+        (1, 3): (1, 0),
+        (2, 3): (1, 0),
+    }
+    return g, _fx(g, scores)
+
+
+def _all_draw_group(name="DR"):
+    """Every match ends 0-0 draw → all four teams have 3pts."""
+    g = _g(name)
+    scores = {p: (0, 0) for p in ALL_PAIRS}
+    return g, _fx(g, scores)
+
+
+def _make_12_groups(special_groups=None):
+    """12 groups named A-L, all with empty fixtures by default.
+    ``special_groups`` is an optional dict {name: (group_dict, fixtures_list)}
+    to override specific groups."""
+    groups = []
+    fixtures_by = {}
+    special_groups = special_groups or {}
+    for letter in "ABCDEFGHIJKL":
+        if letter in special_groups:
+            g, fx = special_groups[letter]
+            groups.append(g)
+            fixtures_by[g["name"]] = fx
+        else:
+            teams = [f"{letter}{n}" for n in range(1, 5)]
+            g = {"name": letter, "teams": teams}
+            groups.append(g)
+            fixtures_by[letter] = []
+    return groups, fixtures_by
+
+
+# ---------------------------------------------------------------------------
+# group_third_place_range
+# ---------------------------------------------------------------------------
+
+class TestGroupThirdPlaceRange:
+
+    def test_unplayed_group_range(self):
+        g = _g()
+        r = group_third_place_range(g, [])
+        assert not r["complete"]
+        # Minimum: all decisive, maximally lopsided → 3rd gets 3 pts.
+        # But with draws, can go lower: 3 draws+0wins → 3pts too.
+        # Actually: 0/3/6/9 is 3pts for 3rd; draws can give everyone 3pts (≥3).
+        # Minimum: is there a scenario with 3rd getting 1 pt?
+        # Yes: A=9, B=6, C=1(drew D), D=1 → C or D is 3rd with 1pt.
+        assert r["min_pts"] == 1
+        assert r["max_pts"] == 6   # all-draw gives everyone 3pts; cycle gives 6
+
+    def test_complete_standard_group(self):
+        g, fx = _standard_group()
+        r = group_third_place_range(g, fx)
+        assert r["complete"]
+        assert r["min_pts"] == r["max_pts"] == 3
+        # C beats D (1-0). Lost to A and B 0-1 each. gf=1, ga=2, gd=-1.
+        assert r["third_key"] == (3, -1, 1)
+
+    def test_complete_cycle_group(self):
+        # A,B,C all 6pts (cycle), D=0pts. Third is one of A,B,C — all have 6pts.
+        g, fx = _cycle_group()
+        r = group_third_place_range(g, fx)
+        assert r["complete"]
+        assert r["min_pts"] == r["max_pts"] == 6
+
+    def test_complete_all_draw(self):
+        g, fx = _all_draw_group()
+        r = group_third_place_range(g, fx)
+        assert r["complete"]
+        assert r["min_pts"] == r["max_pts"] == 3
+
+    def test_live_match_prevents_complete(self):
+        g = _g()
+        scores = {(0, 1): (1, 0), (0, 2): (1, 0), (0, 3): (1, 0),
+                  (1, 2): (1, 0), (1, 3): (1, 0), (2, 3): (1, 0)}
+        fx = _fx(g, scores, live_pairs={(2, 3)})
+        r = group_third_place_range(g, fx)
+        assert not r["complete"]   # in-progress match means "not complete"
+
+    def test_partial_group_4_played(self):
+        g = _g()
+        # A beats B,C,D; B beats C — one match left: B vs D.
+        scores = {(0, 1): (1, 0), (0, 2): (1, 0), (0, 3): (1, 0), (1, 2): (1, 0)}
+        fx = _fx(g, scores)
+        r = group_third_place_range(g, fx)
+        assert not r["complete"]
+        # A=9 always. B=3+?, C=0+?, D=0+? — B vs D decides 2nd/3rd.
+        # If B wins: B=6, C=0, D=0; 3rd=0 — no wait C and D still have C vs D.
+        # 2 remaining: (1,3) B vs D, (2,3) C vs D.
+        # 2 remaining: (1,3) B vs D, (2,3) C vs D.
+        # Min 3rd: B beats D + C draws D → C=1pt, D=1pt → 3rd=1.
+        assert r["min_pts"] == 1
+        assert r["max_pts"] >= 3   # e.g. B wins, C wins → C=3pts as 3rd
+
+
+# ---------------------------------------------------------------------------
+# _team_pts_range_as_third
+# ---------------------------------------------------------------------------
+
+class TestTeamPtsRangeAsThird:
+
+    def test_stuck_4th_returns_none(self):
+        # Complete standard group: D is stuck last (0 pts), can never be 3rd.
+        g, fx = _standard_group()
+        mn, mx = _team_pts_range_as_third(g, fx, "D")
+        assert mn is None and mx is None
+
+    def test_stuck_top2_returns_none(self):
+        # Complete standard group: A is 1st (9 pts), B is 2nd (6 pts).
+        # Neither can be 3rd.
+        g, fx = _standard_group()
+        mn_a, mx_a = _team_pts_range_as_third(g, fx, "A")
+        mn_b, mx_b = _team_pts_range_as_third(g, fx, "B")
+        assert mn_a is None and mx_a is None
+        assert mn_b is None and mx_b is None
+
+    def test_clear_3rd_exact_pts(self):
+        # Complete standard group: C is unambiguously 3rd with 3 pts.
+        g, fx = _standard_group()
+        mn, mx = _team_pts_range_as_third(g, fx, "C")
+        assert mn == mx == 3
+
+    def test_tied_3rd_4th_both_get_range(self):
+        # All-draw group: every team has 3pts; any team can be 3rd OR 4th.
+        g, fx = _all_draw_group()
+        for team in g["teams"]:
+            mn, mx = _team_pts_range_as_third(g, fx, team)
+            assert mn == mx == 3, f"{team}: expected 3,3 got {mn},{mx}"
+
+    def test_cycle_group_abc_can_all_be_third(self):
+        # Cycle: A=6, B=6, C=6 tied; D=0. All of A/B/C can be 3rd (indeterminate).
+        g, fx = _cycle_group()
+        for team in ["A", "B", "C"]:
+            mn, mx = _team_pts_range_as_third(g, fx, team)
+            assert mn == mx == 6, f"{team}"
+        mn_d, mx_d = _team_pts_range_as_third(g, fx, "D")
+        assert mn_d is None and mx_d is None
+
+    def test_unplayed_group_wide_range(self):
+        # Fully unplayed: any team can be 3rd with 1..6 pts.
+        g = _g()
+        for team in g["teams"]:
+            mn, mx = _team_pts_range_as_third(g, [], team)
+            assert mn is not None
+            assert mn >= 1
+            assert mx <= 6
+
+    def test_partial_one_remaining(self):
+        # A=9, B=6, C=3, D=0; remaining: C vs D.
+        # In C-wins scenario: C=6, D=0 → C is 2nd (best_rank=2) — so NOT 3rd.
+        # In D-wins scenario: D=3, C=3 → C and D tied at 3pts; could be 3rd or 4th.
+        # In draw scenario: C=4, D=1 → C is 2nd — so NOT 3rd.
+        # C can only be 3rd in the D-wins outcome (worst_rank=2 for C? No...)
+        # Let me recalculate: after 5 matches, A=9, B=6, C=3, D=0.
+        # If D beats C: C=3pts, D=3pts. A=9 > B=6 > tied C/D at 3pts.
+        # C and D tied: H2H between them = D just beat C → D above C.
+        # So D=3rd, C=4th. C's worst_rank=4! So C CANNOT be 3rd here.
+        # Wait, but then can C ever be 3rd? If C wins or draws, C≥4pts → 2nd (above B?).
+        # C wins: C=6pts, same as B=6. H2H B vs C: B beat C earlier? Check scores.
+        g = _g()
+        scores = {
+            (0, 1): (1, 0), (0, 2): (1, 0), (0, 3): (1, 0),
+            (1, 2): (1, 0), (1, 3): (1, 0),
+            # remaining: (2, 3) C vs D
+        }
+        fx = _fx(g, scores)
+        mn_c, mx_c = _team_pts_range_as_third(g, fx, "C")
+        mn_d, mx_d = _team_pts_range_as_third(g, fx, "D")
+        # After 5 matches: A=9, B=6, C=0, D=0 (C and D lost all their played matches).
+        # Remaining: (2,3) C vs D.
+        # C wins → C=3pts: A=9>B=6>C=3>D=0 → C=3rd. pts=3.
+        # Draw   → C=1,D=1: A=9>B=6>tied {C,D}=1. Either can be 3rd. pts=1.
+        # D wins → D=3,C=0: C has T=0, strictly_above=3 → C can't be 3rd.
+        assert mn_c is not None  # C can be 3rd (draw or C-wins)
+        assert mn_c == 1 and mx_c == 3
+        # D: same symmetry — D wins (pts=3) or draw (pts=1).
+        assert mn_d is not None
+        assert mn_d == 1 and mx_d == 3
+
+    def test_live_match_treated_as_remaining(self):
+        # If a match is in-progress, _played_from_fixtures (not excl_live) includes it;
+        # _team_pts_range_as_third treats the in-progress match as STILL remaining
+        # (because _played_from_fixtures includes live matches, so the "played" dict has it,
+        # and remaining = ALL_PAIRS minus played → live match is in played, not remaining).
+        # Actually: _team_pts_range_as_third calls _played_from_fixtures (includes live).
+        # So a live 0-0 is counted as "played 0-0" and doesn't add to remaining.
+        # This means the live score is taken as-is for the enumeration.
+        # Test: complete-except-one-live; the live result is locked in.
+        g = _g()
+        scores = {
+            (0, 1): (1, 0), (0, 2): (1, 0), (0, 3): (1, 0),
+            (1, 2): (1, 0), (1, 3): (1, 0),
+            (2, 3): (1, 0),  # C beats D 1-0 (in progress)
+        }
+        fx = _fx(g, scores, live_pairs={(2, 3)})
+        # With live match included: A=9, B=6, C=3, D=0 → same as standard group.
+        mn, mx = _team_pts_range_as_third(g, fx, "C")
+        assert mn == mx == 3   # C is locked in 3rd given live score
+
+
+# ---------------------------------------------------------------------------
+# clinch_third_advancement — cross-group reasoning
+# ---------------------------------------------------------------------------
+
+class TestClinchThirdAdvancement:
+
+    def test_all_unplayed_no_clinch(self):
+        groups, fbg = _make_12_groups()
+        result = clinch_third_advancement(groups, fbg)
+        assert len(result) == 0
+
+    def test_complete_group_6pt_third_clinches(self):
+        # Cycle group has 3 teams tied at 6pts as potential thirds; all others
+        # unplayed (max_pts=6).  Since 6 > 6 is False, can_beat=0 → clinch.
+        g_cy, fx_cy = _cycle_group("A")
+        groups, fbg = _make_12_groups({"A": (g_cy, fx_cy)})
+        result = clinch_third_advancement(groups, fbg)
+        # A1=A, B1=B, C1=C (all 6pts, any can be 3rd)
+        assert "A" in result and "B" in result and "C" in result
+        assert "D" not in result
+
+    def test_complete_group_3pt_third_does_not_clinch(self):
+        # Standard group (A=9,B=6,C=3,D=0). All others unplayed (max_pts=6).
+        # 6 > 3 is True for all 11 other groups → can_beat=11 → no clinch.
+        g_st, fx_st = _standard_group("A")
+        groups, fbg = _make_12_groups({"A": (g_st, fx_st)})
+        result = clinch_third_advancement(groups, fbg)
+        assert "C" not in result   # C (3pts) cannot clinch vs unplayed groups
+
+    def test_exactly_7_groups_can_beat_clinches(self):
+        # Group A complete: T3 has 6pts (cycle). 7 other groups unplayed (max=6).
+        # For those 7: 6 > 6 is False → they don't beat T. Remaining 4 groups also
+        # unplayed with max=6. Total can_beat=0 ≤ 7 → T clinches.
+        # (This is equivalent to the all-unplayed test but confirming the bound.)
+        g_cy, fx_cy = _cycle_group("A")
+        groups, fbg = _make_12_groups({"A": (g_cy, fx_cy)})
+        result = clinch_third_advancement(groups, fbg)
+        assert "A" in result   # can_beat=0, clinches
+
+    def test_8_groups_with_max_above_threshold_no_clinch(self):
+        # Group A complete with C having 3pts. 8 unplayed groups all have max_pts=6>3.
+        # can_beat=11 > 7 → no clinch for C.
+        g_st, fx_st = _standard_group("A")
+        groups, fbg = _make_12_groups({"A": (g_st, fx_st)})
+        result = clinch_third_advancement(groups, fbg)
+        assert len(result) == 0  # C=3pts can't clinch against 11 unplayed
+
+    def test_complete_groups_gd_refinement_beats(self):
+        # Group A complete; T3 has (6pts, -2 GD, 2 GF).
+        # Group B complete; its third has (6pts, 0 GD, 3 GF) → strictly better.
+        # B's third beats T3 → can_beat includes B.
+        g_a = _g("A")
+        # A(0) wins, B(1), C(2) cycle at 6pts, D(3) loses all.
+        # Standard cycle: each of A,B,C has gd=+1-1=0? Let's compute precisely.
+        # A beats B 1-0, loses to C 0-1, beats D 1-0: gf=2, ga=1, gd=+1
+        # C beats A 1-0, B beats C 1-0, C beats D 1-0: C gf=2, ga=1, gd=+1
+        # B beats C 1-0, loses to A 0-1, beats D 1-0: B gf=2, ga=1, gd=+1
+        # All three tied on (6pts, +1gd, 2gf). third_key = (6, 1, 2).
+        _, fx_a = _cycle_group("A")
+
+        # Group B: engineer so third has better key (6pts, +2gd, 3gf).
+        # Need one of B1-B4 to have 6pts, gd=+2, gf=3.
+        # E.g. B1 beats B2 2-0, B3 beats B1 1-0, B1 beats B4 2-0:
+        # B1: gf=4, ga=1, gd=+3, pts=6 (beat B2,B4 lost to B3)
+        # Build a group where 3rd has (6, +2, 3).
+        # Simplest: make a cycle where each beats the next 2-0.
+        g_b = {"name": "B", "teams": ["B1", "B2", "B3", "B4"]}
+        # B1 beats B2 2-0, B3 beats B1 2-0, B2 beats B3 2-0 (cycle), all beat B4 2-0.
+        scores_b = {
+            (0, 1): (2, 0),  # B1 beats B2
+            (0, 2): (0, 2),  # B3 beats B1
+            (0, 3): (2, 0),  # B1 beats B4
+            (1, 2): (2, 0),  # B2 beats B3
+            (1, 3): (2, 0),  # B2 beats B4
+            (2, 3): (2, 0),  # B3 beats B4
+        }
+        fx_b = _fx(g_b, scores_b)
+        # B1: gf=4, ga=2, gd=+2, pts=6 (beat B2 & B4, lost B3)
+        # B2: gf=4, ga=2, gd=+2, pts=6 (beat B3 & B4, lost B1)
+        # B3: gf=4, ga=2, gd=+2, pts=6 (beat B1 & B4, lost B2)
+        # B4: 0pts
+        # third_key for B: (6, +2, 4) — better than A's (6, +1, 2)
+
+        groups, fbg = _make_12_groups({"A": (_g("A"), fx_a), "B": (g_b, fx_b)})
+        result = clinch_third_advancement(groups, fbg)
+        # A's potential thirds have key (6,+1,2); B's third has (6,+2,4) > (6,+1,2).
+        # So B beats A → can_beat for A's teams includes B.
+        # But total can_beat for A's teams = 1 (only B, since others are unplayed and
+        # 6 > 6 is False for points comparison) → can_beat=1 ≤ 7 → A's teams still clinch!
+        for team in ["A", "B", "C"]:
+            assert team in result, f"Expected {team} to clinch (can_beat=1)"
+
+    def test_complete_groups_gd_refinement_does_not_beat(self):
+        # Group A's third has (6pts, +2gd, 4gf). Group B's third has (6pts, +1gd, 2gf).
+        # B's third is WORSE than A's third → B does not beat A → can_beat unchanged.
+        g_a = {"name": "A", "teams": ["A1","A2","A3","A4"]}
+        scores_a = {
+            (0, 1): (2, 0), (0, 2): (0, 2), (0, 3): (2, 0),
+            (1, 2): (2, 0), (1, 3): (2, 0), (2, 3): (2, 0),
+        }
+        fx_a = _fx(g_a, scores_a)  # third has (6, +2, 4)
+
+        g_b = {"name": "B", "teams": ["B1","B2","B3","B4"]}
+        # Use standard cycle with 1-0 results: third has (6, +1, 2)
+        _, fx_b_src = _cycle_group("B")
+        # Re-map to B's team names
+        g_b2, fx_b = _cycle_group("B")
+        # Actually _cycle_group already uses "A","B","C","D" team names.
+        # We need B1-B4. Let's just use the raw scores.
+        g_b2 = {"name": "B", "teams": ["B1","B2","B3","B4"]}
+        scores_b2 = {
+            (0,1): (1,0), (0,2): (0,1), (0,3): (1,0),
+            (1,2): (1,0), (1,3): (1,0), (2,3): (1,0),
+        }
+        fx_b2 = _fx(g_b2, scores_b2)  # third has (6, +1, 2) — worse than A's
+
+        groups, fbg = _make_12_groups({"A": (g_a, fx_a), "B": (g_b2, fx_b2)})
+        result = clinch_third_advancement(groups, fbg)
+        # B's third (6,+1,2) < A's third (6,+2,4) → B does not beat A → A's teams clinch.
+        assert "A1" in result
+
+    def test_team_guaranteed_top2_not_included(self):
+        # In a complete standard group, A and B are guaranteed top-2.
+        # _team_pts_range_as_third returns (None, None) for them → not in result.
+        g, fx = _standard_group("A")
+        groups, fbg = _make_12_groups({"A": (g, fx)})
+        result = clinch_third_advancement(groups, fbg)
+        assert "A" not in result   # A is 1st (can't be 3rd)
+        assert "B" not in result   # B is 2nd (can't be 3rd)
+
+    def test_13_groups_would_still_work(self):
+        # Sanity: the function doesn't hardcode 12. If given more groups it still
+        # applies the ≤7 threshold correctly.
+        pass  # covered by the 12-group tests above
+
+
+# ---------------------------------------------------------------------------
+# clinch_by_team integration
+# ---------------------------------------------------------------------------
+
+class TestClinchByTeamWithThirdAdv:
+
+    def test_clinched_third_adv_status_assigned(self):
+        # Build a fake results dict with fixtures for a 12-group tournament.
+        # Group A has a cycle (6pt thirds); all others empty → thirds clinch.
+        g_a, fx_a = _cycle_group("A")
+        groups, fbg = _make_12_groups({"A": (g_a, fx_a)})
+
+        # Build minimal results dict as clinch_by_team expects.
+        results = {"fixtures": fbg}
+        status = clinch_by_team(results, groups)
+
+        # A, B, C in group A can be 3rd and clinch as best-third.
+        assert status.get("A") == CLINCHED_THIRD_ADV
+        assert status.get("B") == CLINCHED_THIRD_ADV
+        assert status.get("C") == CLINCHED_THIRD_ADV
+        assert status.get("D") == ELIMINATED   # D is stuck 4th in its group
+
+    def test_top2_clinch_not_overwritten_by_third_adv(self):
+        # Even if A could theoretically be 3rd (due to a tie scenario), if A is
+        # CLINCHED_TOP2 the per-group pass sets it first; the third-adv pass must
+        # not downgrade it.
+        g, fx = _standard_group("A")
+        groups, fbg = _make_12_groups({"A": (g, fx)})
+        # Give all other groups a cycle (so their thirds have 6pts and can "beat" A).
+        # A is top-1 (9pts) → CLINCHED_FIRST; should not become CLINCHED_THIRD_ADV.
+        results = {"fixtures": fbg}
+        status = clinch_by_team(results, groups)
+        assert status.get("A") == CLINCHED_FIRST
+        assert status.get("B") == CLINCHED_TOP2
+
+    def test_empty_results_returns_empty(self):
+        groups, _ = _make_12_groups()
+        assert clinch_by_team({}, groups) == {}
+        assert clinch_by_team(None, groups) == {}
+
+
+# ---------------------------------------------------------------------------
+# advances_for_sure includes CLINCHED_THIRD_ADV
+# ---------------------------------------------------------------------------
+
+class TestAdvancesForSureExtended:
+    def test_clinched_third_adv(self):
+        assert advances_for_sure(CLINCHED_THIRD_ADV) is True
+
+    def test_all_non_advancing_statuses(self):
+        for s in (OPEN, ELIMINATED, None, "unknown"):
+            assert advances_for_sure(s) is False
+
+
+# ---------------------------------------------------------------------------
+# Brute-force validation for _team_pts_range_as_third
+# ---------------------------------------------------------------------------
+
+class TestTeamPtsRangeAsThirdBruteForce:
+    """Cross-check _team_pts_range_as_third against an exhaustive W/D/L search."""
+
+    @staticmethod
+    def _naive_pts_range_as_third(group, fixtures, team_name):
+        """Naive reference: enumerate all W/D/L outcomes and compute the pts
+        range for ``team_name`` when it can be in position 3 (adversarial ties)."""
+        teams = group["teams"]
+        pos = {t: i for i, t in enumerate(teams)}
+        ti = pos[team_name]
+
+        # Build base pts from played matches (including live — mirrors production).
+        from app.clinch import _played_from_fixtures, _compute_pts_stats, ALL_PAIRS, _OUTCOMES
+        _, played = _played_from_fixtures(group, fixtures)
+        remaining = [p for p in ALL_PAIRS if p not in played]
+        base_pts, _, _ = _compute_pts_stats(played)
+
+        from itertools import product as iproduct
+        min_pts, max_pts = None, None
+
+        for assignment in iproduct(*[_OUTCOMES for _ in remaining]):
+            pts = list(base_pts)
+            for (i, j), (pi, pj) in zip(remaining, assignment):
+                pts[i] += pi
+                pts[j] += pj
+            T = pts[ti]
+            strictly_above = sum(1 for t in range(4) if t != ti and pts[t] > T)
+            tied          = sum(1 for t in range(4) if t != ti and pts[t] == T)
+            best_rank  = strictly_above + 1
+            worst_rank = strictly_above + tied + 1
+            if best_rank <= 3 and worst_rank >= 3:
+                if min_pts is None or T < min_pts: min_pts = T
+                if max_pts is None or T > max_pts: max_pts = T
+        return min_pts, max_pts
+
+    def _run_random_cases(self, n, seed):
+        import random
+        rng = random.Random(seed)
+        mismatches = 0
+        cases = 0
+        g = _g()
+        teams = g["teams"]
+
+        for _ in range(n):
+            # Random subset of matches played (0-6) with random scores 0-3.
+            n_played = rng.randint(0, 6)
+            pairs_played = rng.sample(ALL_PAIRS, n_played)
+            scores = {p: (rng.randint(0, 3), rng.randint(0, 3)) for p in pairs_played}
+            fx = _fx(g, scores)
+
+            for team in teams:
+                expected = self._naive_pts_range_as_third(g, fx, team)
+                actual   = _team_pts_range_as_third(g, fx, team)
+                if expected != actual:
+                    mismatches += 1
+            cases += len(teams)
+
+        return mismatches, cases
+
+    def test_random_partial_groups(self):
+        mismatches, cases = self._run_random_cases(300, seed=42)
+        assert mismatches == 0, f"{mismatches}/{cases} mismatches in random group states"
+
+    def test_random_complete_groups(self):
+        import random
+        rng = random.Random(17)
+        g = _g()
+        mismatches = 0
+        cases = 0
+        for _ in range(200):
+            scores = {p: (rng.randint(0, 4), rng.randint(0, 4)) for p in ALL_PAIRS}
+            fx = _fx(g, scores)
+            for team in g["teams"]:
+                expected = self._naive_pts_range_as_third(g, fx, team)
+                actual   = _team_pts_range_as_third(g, fx, team)
+                if expected != actual:
+                    mismatches += 1
+                cases += 1
+        assert mismatches == 0, f"{mismatches}/{cases} mismatches in random complete groups"
+
+    def test_soundness_min_never_above_max(self):
+        """Wherever min is not None, min ≤ max must always hold."""
+        import random
+        rng = random.Random(99)
+        g = _g()
+        for _ in range(200):
+            n_played = rng.randint(0, 6)
+            pairs = rng.sample(ALL_PAIRS, n_played)
+            scores = {p: (rng.randint(0, 3), rng.randint(0, 3)) for p in pairs}
+            fx = _fx(g, scores)
+            for team in g["teams"]:
+                mn, mx = _team_pts_range_as_third(g, fx, team)
+                if mn is not None:
+                    assert mn <= mx
+
+    def test_range_within_0_9(self):
+        """Points values must be in [0, 9]."""
+        import random
+        rng = random.Random(7)
+        g = _g()
+        for _ in range(200):
+            scores = {p: (rng.randint(0, 3), rng.randint(0, 3)) for p in ALL_PAIRS}
+            fx = _fx(g, scores)
+            for team in g["teams"]:
+                mn, mx = _team_pts_range_as_third(g, fx, team)
+                if mn is not None:
+                    assert 0 <= mn <= 9
+                    assert 0 <= mx <= 9

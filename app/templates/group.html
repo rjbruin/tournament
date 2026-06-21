@@ -29,7 +29,7 @@
           <dd class="col-6 text-end">
             <strong>
             {%- set _cs = (team_clinch or {}).get(tname) -%}
-            {%- if _cs in ('clinched_first', 'clinched_top2') %}Qualified ✓
+            {%- if _cs in ('clinched_first', 'clinched_top2', 'clinched_third_adv') %}Qualified ✓
             {%- elif _cs == 'eliminated' %}Out ✗
             {%- else %}{{ results.group_advance_prob.get(tname,0)|pct }}{%- endif -%}
             </strong>

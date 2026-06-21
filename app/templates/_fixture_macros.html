@@ -38,14 +38,17 @@
 {% set ADVANCE_ICON = 'Q' %}
 
 {% macro qual_row_class(row) -%}
-qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
+{%- set _tc = (team_clinch or {}).get(row.name) -%}
+qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 {%- endmacro %}
 
 {# A small "secured" marker shown next to a team that has clinched a specific place. #}
-{# The Q ✓ marker is intentionally omitted — the advance badge covers that case. #}
+{# The Q ✓ marker is intentionally omitted for top-2 — the advance badge covers that. #}
 {% macro qual_marker(row) -%}
+  {%- set _tc = (team_clinch or {}).get(row.name) %}
   {%- if row.qual == 'secured_first' %}<span class="qual-marker qual-marker-secured" title="Secured top of the group">1st&nbsp;✓</span>
   {%- elif row.qual == 'secured_second' %}<span class="qual-marker qual-marker-secured" title="Secured a top-two finish">Top&nbsp;2&nbsp;✓</span>
+  {%- elif _tc == 'clinched_third_adv' %}<span class="qual-marker qual-marker-secured" title="Mathematically certain to advance as one of the 8 best third-place teams">Best&nbsp;3rd&nbsp;✓</span>
   {%- endif %}
 {%- endmacro %}
 
@@ -276,8 +279,8 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
 {%- set _cl = clinch if clinch is not none else (team_clinch | default({})) %}
 {%- set _home_status = _cl.get(match.home_team) if match.home_team else none %}
 {%- set _away_status = _cl.get(match.away_team) if match.away_team else none %}
-{%- set _home_clinched = _home_status in ('clinched_first', 'clinched_top2') %}
-{%- set _away_clinched = _away_status in ('clinched_first', 'clinched_top2') %}
+{%- set _home_clinched = _home_status in ('clinched_first', 'clinched_top2', 'clinched_third_adv') %}
+{%- set _away_clinched = _away_status in ('clinched_first', 'clinched_top2', 'clinched_third_adv') %}
 {%- set _home_elim = _home_status == 'eliminated' %}
 {%- set _away_elim = _away_status == 'eliminated' %}
 {%- if match.home_team and show_advance and advance_prob is not none %}
@@ -420,7 +423,7 @@ qual-row{% if row.qual %} qual-{{ row.qual|replace('_', '-') }}{% endif %}
         <td class="text-end">{{ row.gd }}</td>
         <td class="text-end fw-bold">{{ row.pts }}</td>
         {% if results %}
-        <td class="text-end">{{ advance_badge(row.advance_prob, clinched=row.clinched, eliminated=row.eliminated) }}</td>
+        <td class="text-end">{{ advance_badge(row.advance_prob, clinched=(row.clinched or (team_clinch or {}).get(row.name) == 'clinched_third_adv'), eliminated=row.eliminated) }}</td>
         {% endif %}
       </tr>
       {% endfor %}

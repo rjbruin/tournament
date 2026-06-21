@@ -57,7 +57,7 @@
               <span class="text-muted small">{{ _elim.stage }}{% if _elim.opponent %} <span class="text-muted">(vs. {{ _elim.opponent|flag }} {{ _elim.opponent }})</span>{% endif %}</span>
             {%- else %}
               {%- set _cs = (team_clinch or {}).get(t.name) %}
-              {{ fx.advance_badge(t.group_advance_prob, clinched=_cs in ('clinched_first', 'clinched_top2'), eliminated=_cs == 'eliminated') }} {{ fx.win_badge(t.winner_prob) }}
+              {{ fx.advance_badge(t.group_advance_prob, clinched=_cs in ('clinched_first', 'clinched_top2', 'clinched_third_adv'), eliminated=_cs == 'eliminated') }} {{ fx.win_badge(t.winner_prob) }}
             {%- endif %}
           </td>
         </tr>

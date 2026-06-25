@@ -639,13 +639,24 @@ def teams():
     actuals = data_store.load_actuals()
 
     # Build per-team elimination info.
-    # stage: "group stage" | knockout round name ("Round of 32", "Semifinal", etc.)
+    # stage: "group stage 4th" | "group stage 3rd" | knockout round name
     elimination_info: dict[str, dict] = {}
+
+    # Compute group standings to distinguish 4th-place from worst-third knockouts.
+    teams_by_name = {t["name"]: t for t in engine.data["teams"]}
+    group_position: dict[str, int] = {}  # team -> 1..4 within their group
+    for g in engine.groups:
+        raw_fx = [] if _is_pre_draw(scenario_id) else (results or {}).get("fixtures", {}).get(g["name"], [])
+        rows = compute_group_table(g, raw_fx, teams_by_name, results)
+        for i, row in enumerate(rows, start=1):
+            group_position[row["name"]] = i
 
     for t in teams_list:
         adv = t.get("group_advance_prob")
         if adv is not None and adv <= 0 and t["name"] not in knocked_out:
-            elimination_info[t["name"]] = {"stage": "group stage", "opponent": None}
+            pos = group_position.get(t["name"], 4)
+            stage = "group stage 3rd" if pos == 3 else "group stage 4th"
+            elimination_info[t["name"]] = {"stage": stage, "opponent": None}
 
     tournament_winner = None
     if results and "bracket_matches" in results:
@@ -666,17 +677,19 @@ def teams():
     # All teams from the same eliminated round share the same rank number.
     # Active (still competing) teams get None.
     _ROUND_RANK = {
-        "Final": 2,          # loser; winner gets 1 separately
-        "Semifinal": 3,      # 3rd/4th — no separate 3rd-place match tracked
+        "Final": 2,            # loser; winner gets 1 separately
+        "Semifinal": 3,        # 3rd/4th — no separate 3rd-place match tracked
         "Quarterfinal": 5,
         "Round of 16": 9,
         "Round of 32": 17,
-        "group stage": 33,
+        "group stage 3rd": 33, # worst 4 third-place finishers
+        "group stage 4th": 37, # 12 fourth-place finishers
     }
     # Sort key: how recently a team was knocked out (lower = more recently = shown first).
     _ROUND_SORT = {
         "Final": 0, "Semifinal": 1, "Quarterfinal": 2,
-        "Round of 16": 3, "Round of 32": 4, "group stage": 5,
+        "Round of 16": 3, "Round of 32": 4,
+        "group stage 3rd": 5, "group stage 4th": 6,
     }
 
     for t in teams_list:

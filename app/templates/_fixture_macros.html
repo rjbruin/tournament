@@ -154,7 +154,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
         {%- set pos.v = pos.v + 1 %}
         <tr class="{{ 'thirds-cutoff ' if pos.v == 9 else '' }}text-muted">
           <td>—</td>
-          <td colspan="{{ 7 if not results else 8 }}" class="fst-italic">— awaiting results</td>
+          <td colspan="{{ 7 if not results else 8 }}" class="fst-italic">awaiting results</td>
         </tr>
         {%- endfor %}
         {%- for row in sorted_thirds %}

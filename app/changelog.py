@@ -10,9 +10,20 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.7.5"
+APP_VERSION = "1.8.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.8.0",
+        "date": "2026-06-25",
+        "features": [
+            "What's at Stake: each team's entry now shows a plain-English sentence describing what each match outcome means — e.g. 'Win or draw to qualify in second place' or 'Win to place third and wait for other groups, lose to be knocked out.'",
+            "Bracket: venues now show the city name instead of the stadium name for a cleaner look.",
+        ],
+        "fixes": [
+            "Removed the 'Full scenarios' detail block from What's at Stake — the outcome text and odds chips cover the same ground more clearly.",
+        ],
+    },
     {
         "version": "1.7.5",
         "date": "2026-06-25",

@@ -256,23 +256,6 @@
         </span>
       </div>
       {% endfor %}
-      {% if qualification_full %}
-      <details class="qual-full mt-2">
-        <summary>Full scenarios</summary>
-        <div class="mt-2">
-          {% for note in qualification_full %}
-          <div class="qual-full-item small mb-2">
-            <strong>{{ note.team|flag }} {{ note.team }}</strong> — {{ note.summary }}
-            {% if note.lines %}
-            <ul class="qual-stake-lines mb-0 mt-1">
-              {% for line in note.lines %}<li>{{ line }}</li>{% endfor %}
-            </ul>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-      </details>
-      {% endif %}
     </div>
     {% endif %}
 

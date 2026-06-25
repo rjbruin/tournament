@@ -714,7 +714,11 @@ def load_scenario(scenario_id: str | None, username: str | None = None) -> dict 
         }
     path = _scenario_path(scenario_id, username)
     if not os.path.exists(path):
-        return None
+        # Fall back to the global scenarios dir (e.g. manually created demo scenarios)
+        if username:
+            path = _scenario_path(scenario_id, None)
+        if not os.path.exists(path):
+            return None
     with open(path) as f:
         data = json.load(f)
     data.setdefault("actuals", _empty_actuals())

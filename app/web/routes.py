@@ -181,7 +181,7 @@ def _scenario_id() -> str:
     to the session's last-selected scenario, then "current". Anonymous
     visitors are always pinned to the public "current" scenario."""
     if not current_user.is_authenticated:
-        return "current"
+        return request.args.get("s") or "current"
     from flask import session
     s = request.args.get("s")
     if s:

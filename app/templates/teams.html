@@ -21,28 +21,26 @@
 
 <div class="card shadow-sm">
   <div class="card-body p-0">
-    <table class="table table-hover mb-0 align-middle">
+    <table class="table table-hover mb-0 align-middle" id="teams-table">
       <thead>
         <tr>
-          <th>#</th>
-          <th>Team</th>
+          <th class="teams-sort-col" data-sort="rank" title="Sort by tournament / rating rank" style="cursor:pointer;white-space:nowrap;"># <span class="teams-sort-icon">↕</span></th>
+          <th class="teams-sort-col" data-sort="name" title="Sort alphabetically" style="cursor:pointer;white-space:nowrap;">Team <span class="teams-sort-icon">↕</span></th>
           <th class="text-end">Rating</th>
-          <th class="text-end">FIFA rank</th>
+          <th class="text-end teams-sort-col" data-sort="fifa" title="Sort by FIFA rank" style="cursor:pointer;white-space:nowrap;">FIFA rank <span class="teams-sort-icon">↕</span></th>
           <th>Status</th>
         </tr>
       </thead>
       <tbody>
         {% for t in teams %}
         {% set _is_ko = knocked_out_teams and t.name in knocked_out_teams %}
-        <tr {% if favorite and t.name == favorite.name %}class="table-success"{% elif _is_ko %}class="text-muted"{% endif %}>
-          <td>
-            {{ loop.index }}
-            {% if t.rank_change > 0 %}
-            <span class="badge rounded-pill bg-success" style="font-size:0.65em;" title="Up {{ t.rank_change }} from base FIFA ranking">&#9650;{{ t.rank_change }}</span>
-            {% elif t.rank_change < 0 %}
-            <span class="badge rounded-pill bg-danger" style="font-size:0.65em;" title="Down {{ -t.rank_change }} from base FIFA ranking">&#9660;{{ -t.rank_change }}</span>
-            {% endif %}
-          </td>
+        <tr
+          {% if favorite and t.name == favorite.name %}class="table-success"{% elif _is_ko %}class="text-muted"{% endif %}
+          data-sort-rank="{{ loop.index }}"
+          data-sort-name="{{ t.name | lower }}"
+          data-sort-fifa="{{ t.fifa_rank }}"
+        >
+          <td class="text-muted">{% if t.tournament_rank is not none %}{{ t.tournament_rank }}{% endif %}</td>
           <td>
             <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none {% if _is_ko %}knocked-out text-muted{% else %}text-dark{% endif %}">
               {{ t.name|flag }} {{ t.name }}
@@ -66,5 +64,38 @@
     </table>
   </div>
 </div>
+
+<script>
+(function () {
+  const table = document.getElementById('teams-table');
+  const tbody = table.querySelector('tbody');
+  const headers = table.querySelectorAll('.teams-sort-col');
+  let activeSort = 'rank';
+
+  function sortRows(key) {
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort((a, b) => {
+      if (key === 'rank') return parseInt(a.dataset.sortRank) - parseInt(b.dataset.sortRank);
+      if (key === 'fifa') return parseInt(a.dataset.sortFifa) - parseInt(b.dataset.sortFifa);
+      if (key === 'name') return a.dataset.sortName.localeCompare(b.dataset.sortName);
+      return 0;
+    });
+    rows.forEach(r => tbody.appendChild(r));
+    activeSort = key;
+    headers.forEach(h => {
+      const icon = h.querySelector('.teams-sort-icon');
+      if (icon) icon.textContent = h.dataset.sort === key ? '↑' : '↕';
+    });
+  }
+
+  headers.forEach(h => {
+    h.addEventListener('click', () => sortRows(h.dataset.sort));
+  });
+
+  // Highlight the default active column
+  const defaultIcon = table.querySelector('[data-sort="rank"] .teams-sort-icon');
+  if (defaultIcon) defaultIcon.textContent = '↑';
+})();
+</script>
 
 {% endblock %}

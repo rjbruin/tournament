@@ -624,53 +624,82 @@ def teams():
     except Exception:
         team_form = {}
 
-    base_order = sorted(engine.data["teams"], key=lambda t: -t["elo"])
-    base_rank = {t["name"]: i + 1 for i, t in enumerate(base_order)}
-
-    teams_sorted = sorted(
-        engine.data["teams"],
-        key=lambda t: -(t["elo"] + team_form.get(t["name"], 0)),
-    )
+    teams_list = [dict(t) for t in engine.data["teams"]]  # copy to avoid mutating shared state
     results = _results_for_scenario(scenario_id)
-    for i, t in enumerate(teams_sorted, start=1):
+    for t in teams_list:
         t["current_elo"] = t["elo"] + team_form.get(t["name"], 0)
-        t["rank_change"] = base_rank[t["name"]] - i
         t["group_advance_prob"] = (results or {}).get("group_advance_prob", {}).get(t["name"])
         t["winner_prob"] = (results or {}).get("winner_prob", {}).get(t["name"])
 
     favorite_team = None
     if current_user.is_authenticated:
         favorite_team = current_user.settings.get("favorite_team") or None
-    favorite = next((t for t in teams_sorted if t["name"] == favorite_team), None)
 
     knocked_out = _knocked_out_teams(results)
+    actuals = data_store.load_actuals()
 
-    # Build per-team elimination info for display.
-    # Keys: "stage" (round name or "group stage"), "opponent" (team that beat them).
+    # Build per-team elimination info.
+    # stage: "group stage" | knockout round name ("Round of 32", "Semifinal", etc.)
     elimination_info: dict[str, dict] = {}
 
-    # Group-stage eliminations: advance_prob is exactly 0.
-    group_results_played = {}
-    actuals = data_store.load_actuals()
-    for gname, entries in actuals.get("group_results", {}).items():
-        group_results_played[gname] = entries
-    for t in teams_sorted:
+    for t in teams_list:
         adv = t.get("group_advance_prob")
         if adv is not None and adv <= 0 and t["name"] not in knocked_out:
             elimination_info[t["name"]] = {"stage": "group stage", "opponent": None}
 
-    # Knockout eliminations: find which bracket match they lost and who beat them.
+    tournament_winner = None
     if results and "bracket_matches" in results:
         for m in results["bracket_matches"].values():
             winner = m.get("actual_winner")
             if not winner:
                 continue
+            if m.get("round") == "Final":
+                tournament_winner = winner
             round_name = m.get("round", "")
             for side in ("home", "away"):
                 slot = m.get(side, {})
                 team = slot.get("team")
                 if slot.get("determined") and team and team != winner:
                     elimination_info[team] = {"stage": round_name, "opponent": winner}
+
+    # Tournament rank: only assigned once a team's final placement is determined.
+    # All teams from the same eliminated round share the same rank number.
+    # Active (still competing) teams get None.
+    _ROUND_RANK = {
+        "Final": 2,          # loser; winner gets 1 separately
+        "Semifinal": 3,      # 3rd/4th — no separate 3rd-place match tracked
+        "Quarterfinal": 5,
+        "Round of 16": 9,
+        "Round of 32": 17,
+        "group stage": 33,
+    }
+    # Sort key: how recently a team was knocked out (lower = more recently = shown first).
+    _ROUND_SORT = {
+        "Final": 0, "Semifinal": 1, "Quarterfinal": 2,
+        "Round of 16": 3, "Round of 32": 4, "group stage": 5,
+    }
+
+    for t in teams_list:
+        elim = elimination_info.get(t["name"])
+        if t["name"] == tournament_winner:
+            t["tournament_rank"] = 1
+        elif elim:
+            t["tournament_rank"] = _ROUND_RANK.get(elim["stage"])
+        else:
+            t["tournament_rank"] = None
+
+    def _sort_key(t):
+        elim = elimination_info.get(t["name"])
+        if t["name"] == tournament_winner:
+            return (0, 0, 0)
+        elif elim:
+            return (1, _ROUND_SORT.get(elim["stage"], 9), -t["current_elo"])
+        else:
+            return (0, 1, -t["current_elo"])
+
+    teams_sorted = sorted(teams_list, key=_sort_key)
+
+    favorite = next((t for t in teams_sorted if t["name"] == favorite_team), None)
 
     return render_template(
         "teams.html",

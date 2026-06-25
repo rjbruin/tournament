@@ -1,5 +1,12 @@
 {# Unified fixture display components #}
 
+{# ---------- Live-match indicator dot ---------- #}
+{# Renders a small pulsating red dot when the given team is currently playing
+   a live match. ``live_teams`` is injected by the context processor. #}
+{%- macro live_dot(team) -%}
+{%- if live_teams and team and team in live_teams %}<span class="live-dot" title="Live match in progress"></span>{%- endif %}
+{%- endmacro %}
+
 {# ---------- Combined team quality + form badge (joined pill) ---------- #}
 {# quality tier: grey ≤2.0 ★, bronze ≤3.5 ★, gold >3.5 ★ #}
 {% macro team_badge(team=none, elo=none) %}
@@ -93,9 +100,10 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 {%- endif %}
 {%- endmacro %}
 
-{# Live third-place ranking table for all 12 groups. group_tables is a dict
-   {group_name: [row, ...]}, sorted by current standing. Shows only during
-   matchday 3 (when any team has gp >= 2). #}
+{# Third-place ranking table. Shows only groups where the 3rd-place team has
+   finished all three group matches (gp == 3); incomplete groups appear as
+   placeholder rows below, so the table always has 12 rows when visible.
+   Visible from MD3 onwards (max_gp >= 2). #}
 {% macro thirds_table(group_tables, groups, results) -%}
 {%- set max_gp = namespace(v=0) %}
 {%- for group in groups %}
@@ -104,17 +112,23 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
   {%- endfor %}
 {%- endfor %}
 {%- if max_gp.v >= 2 %}
-{%- set thirds = [] %}
+{%- set complete_thirds = [] %}
+{%- set incomplete_groups = [] %}
 {%- for group in groups %}
   {%- set rows = group_tables[group.name] %}
   {%- if rows | length >= 3 %}
     {%- set r = rows[2] %}
-    {%- if thirds.append({"group": group.name, "name": r.name, "gp": r.gp, "gf": r.gf, "ga": r.ga, "gd": r.gd, "pts": r.pts, "advance_prob": r.advance_prob}) %}{% endif %}
+    {%- if r.gp >= 3 %}
+      {%- if complete_thirds.append({"group": group.name, "name": r.name, "gp": r.gp, "gf": r.gf, "ga": r.ga, "gd": r.gd, "pts": r.pts, "advance_prob": r.advance_prob}) %}{% endif %}
+    {%- else %}
+      {%- if incomplete_groups.append(group.name) %}{% endif %}
+    {%- endif %}
+  {%- else %}
+    {%- if incomplete_groups.append(group.name) %}{% endif %}
   {%- endif %}
 {%- endfor %}
-{%- set sorted_thirds = thirds | sort(attribute='pts', reverse=True) %}
-{# Secondary sort by GD then GF — Jinja can't multi-sort, so we pre-sort by GF, then GD, then pts #}
-{%- set sorted_thirds = thirds | sort(attribute='gf', reverse=True) | sort(attribute='gd', reverse=True) | sort(attribute='pts', reverse=True) %}
+{# Sort by pts desc, then GD desc, then GF desc #}
+{%- set sorted_thirds = complete_thirds | sort(attribute='gf', reverse=True) | sort(attribute='gd', reverse=True) | sort(attribute='pts', reverse=True) %}
 <div class="card shadow-sm mt-3 mb-4" id="thirds-table">
   <div class="card-header fw-bold">3rd-place standings <small class="text-muted fw-normal">(top 8 advance)</small></div>
   <div class="card-body p-0">
@@ -133,19 +147,28 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
         </tr>
       </thead>
       <tbody>
-        {% for row in sorted_thirds %}
-        <tr{% if loop.index == 9 %} class="thirds-cutoff"{% endif %}>
-          <td>{{ loop.index }}</td>
-          <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark fw-semibold">{{ row.name|flag }} {{ row.name }}</a></td>
+        {%- set pos = namespace(v=0) %}
+        {%- for row in sorted_thirds %}
+        {%- set pos.v = pos.v + 1 %}
+        <tr class="{{ 'thirds-cutoff' if pos.v == 9 else '' }}">
+          <td>{{ pos.v }}</td>
+          <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark fw-semibold">{{ row.name|flag }} {{ row.name }}</a>{{ live_dot(row.name) }}</td>
           <td class="text-muted">{{ row.group }}</td>
           <td class="text-end">{{ row.gp }}</td>
           <td class="text-end">{{ row.gf }}</td>
           <td class="text-end">{{ row.ga }}</td>
           <td class="text-end">{{ row.gd }}</td>
           <td class="text-end fw-bold">{{ row.pts }}</td>
-          {% if results %}{%- set _tc = (team_clinch or {}).get(row.name) %}<td class="text-end">{{ advance_badge(row.advance_prob, clinched=_tc in ('clinched_first', 'clinched_top2', 'clinched_third_adv'), eliminated=_tc == 'eliminated') }}</td>{% endif %}
+          {%- if results %}{%- set _tc = (team_clinch or {}).get(row.name) %}<td class="text-end">{{ advance_badge(row.advance_prob, clinched=_tc in ('clinched_first', 'clinched_top2', 'clinched_third_adv'), eliminated=_tc == 'eliminated') }}</td>{%- endif %}
         </tr>
-        {% endfor %}
+        {%- endfor %}
+        {%- for grp_name in incomplete_groups %}
+        {%- set pos.v = pos.v + 1 %}
+        <tr class="{{ 'thirds-cutoff ' if pos.v == 9 else '' }}text-muted">
+          <td>—</td>
+          <td colspan="{{ 7 if not results else 8 }}" class="fst-italic">Group {{ grp_name }} — awaiting results</td>
+        </tr>
+        {%- endfor %}
       </tbody>
     </table>
   </div>
@@ -451,7 +474,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
     <tbody>
       {% for row in rows %}
       <tr class="{{ qual_row_class(row) }}">
-        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a> {{ team_badge(team=row.name) }}{{ qual_marker(row) }}</td>
+        <td><a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">{{ row.name|flag }} {{ row.name }}</a>{{ live_dot(row.name) }} {{ team_badge(team=row.name) }}{{ qual_marker(row) }}</td>
         <td class="text-end">{{ row.gp }}</td>
         <td class="text-end">{{ row.gf }}</td>
         <td class="text-end">{{ row.ga }}</td>
@@ -506,13 +529,13 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
       {% if match.home_team %}
       <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
+        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}{{ live_dot(match.home_team) }}</span>
         <span class="bracket-team-badges">{{ team_badge(team=match.home_team) }}{% if match.home_team and match.away_team and match.home_prob is defined %} <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}</span>
       </div>
       {% else %}
       {% for cand, p in (match.home_candidates or {}).items() %}
       <div class="bracket-cand-row">
-        <span class="bracket-cand-name"><span>{{ cand|flag }}</span> {{ cand }}</span>
+        <span class="bracket-cand-name"><span>{{ cand|flag }}</span> {{ cand }}{{ live_dot(cand) }}</span>
         <span class="bracket-cand-odds">{{ p|pct(0) }}</span>
       </div>
       {% endfor %}
@@ -526,13 +549,13 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
       {% if match.away_team %}
       <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
+        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}{{ live_dot(match.away_team) }}</span>
         <span class="bracket-team-badges">{{ team_badge(team=match.away_team) }}{% if match.home_team and match.away_team and match.away_prob is defined %} <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}</span>
       </div>
       {% else %}
       {% for cand, p in (match.away_candidates or {}).items() %}
       <div class="bracket-cand-row">
-        <span class="bracket-cand-name"><span>{{ cand|flag }}</span> {{ cand }}</span>
+        <span class="bracket-cand-name"><span>{{ cand|flag }}</span> {{ cand }}{{ live_dot(cand) }}</span>
         <span class="bracket-cand-odds">{{ p|pct(0) }}</span>
       </div>
       {% endfor %}

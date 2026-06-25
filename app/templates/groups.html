@@ -50,7 +50,7 @@
               <td>
                 <a href="{{ url_for('web.team', name=row.name) }}" class="text-decoration-none text-dark">
                   {{ row.name|flag }} {{ row.name }}
-                </a> {{ fx.form_badge(row.name) }}{{ fx.qual_marker(row) }}
+                </a>{{ fx.live_dot(row.name) }} {{ fx.form_badge(row.name) }}{{ fx.qual_marker(row) }}
               </td>
               <td class="text-end">{{ row.gp }}</td>
               <td class="text-end">{{ row.gf }}</td>

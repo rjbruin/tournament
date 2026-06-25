@@ -696,6 +696,18 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   50% { opacity: .55; }
 }
 
+/* Inline live-match indicator dot — red circle, same pulse */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #dc3545;
+  border-radius: 50%;
+  margin-left: 3px;
+  vertical-align: middle;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
 /* Match events (goals + cards) timeline */
 .match-events {
   list-style: none;

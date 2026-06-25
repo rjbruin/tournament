@@ -46,7 +46,7 @@
           <td>
             <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none {% if _is_ko %}knocked-out text-muted{% else %}text-dark{% endif %}">
               {{ t.name|flag }} {{ t.name }}
-            </a>
+            </a>{{ fx.live_dot(t.name) }}
           </td>
           <td class="text-end">{{ fx.team_badge(elo=t.elo, team=t.name) }}</td>
           <td class="text-end">#{{ t.fifa_rank }}</td>

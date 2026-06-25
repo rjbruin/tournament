@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-  <h2 class="mb-0 fw-bold" style="font-size:2rem; letter-spacing:-0.01em;">{{ team.name|flag }} {{ team.name }}</h2>
+  <h2 class="mb-0 fw-bold" style="font-size:2rem; letter-spacing:-0.01em;">{{ team.name|flag }} {{ team.name }}{{ fx.live_dot(team.name) }}</h2>
   <form method="get" class="d-flex align-items-center gap-2" id="team-form">
     <label for="team-select" class="form-label mb-0 small text-muted">Select team</label>
     <select id="team-select" class="form-select form-select-sm" style="width:auto" onchange="window.location.href='/team/' + encodeURIComponent(this.value)">

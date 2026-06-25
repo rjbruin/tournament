@@ -365,8 +365,22 @@ def create_app():
         except Exception:
             team_clinch = {}
 
+        # Teams currently playing a live match — used to show the live-dot
+        # indicator next to team names on standings, bracket, and team pages.
+        live_teams: set = set()
+        try:
+            _actuals = data_store.load_actuals()
+            for _lm in _actuals.get("live_matches", []):
+                if _lm.get("home"):
+                    live_teams.add(_lm["home"])
+                if _lm.get("away"):
+                    live_teams.add(_lm["away"])
+        except Exception:
+            pass
+
         return {"team_form": team_form, "active_scenario": scenario,
-                "team_elos": team_elos, "team_clinch": team_clinch}
+                "team_elos": team_elos, "team_clinch": team_clinch,
+                "live_teams": live_teams}
 
     return app
 

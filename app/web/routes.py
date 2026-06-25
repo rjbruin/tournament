@@ -236,6 +236,54 @@ def _groups_for_results(engine, results):
     return engine.groups
 
 
+def _stake_text_explanation(clinch_outcomes, elim_outcomes, clinch_position):
+    """Generate a natural-language sentence describing decisive outcomes.
+
+    Only covers outcomes where clinching (qualifying or going out) is certain.
+    Returns an empty string when nothing decisive is known.
+    """
+    from app import clinch as _clinch
+    _POS_LABEL = {
+        _clinch.CLINCHED_FIRST: "in first place",
+        _clinch.CLINCHED_TOP2: "in second place",
+        _clinch.CLINCHED_THIRD_ADV: "as a top-8 third place",
+    }
+    _CONJ = {"win": "win", "draw": "draw", "loss": "lose"}
+    _ORDER = ["win", "draw", "loss"]
+
+    def _outcome_phrase(outcomes):
+        outcomes = [o for o in _ORDER if o in outcomes]
+        verbs = [_CONJ[o] for o in outcomes]
+        if len(verbs) == 1:
+            return verbs[0]
+        if len(verbs) == 2:
+            return f"{verbs[0]} or {verbs[1]}"
+        return "win, draw, or lose"
+
+    parts = []
+
+    # Group clinch outcomes by the resulting position
+    from collections import defaultdict
+    by_pos = defaultdict(list)
+    for o in clinch_outcomes:
+        pos = clinch_position.get(o, _clinch.CLINCHED_TOP2)
+        by_pos[pos].append(o)
+
+    for pos in [_clinch.CLINCHED_FIRST, _clinch.CLINCHED_TOP2, _clinch.CLINCHED_THIRD_ADV]:
+        if pos not in by_pos:
+            continue
+        label = _POS_LABEL[pos]
+        parts.append(f"{_outcome_phrase(by_pos[pos])} to qualify {label}")
+
+    if elim_outcomes:
+        parts.append(f"{_outcome_phrase(elim_outcomes)} to be knocked out")
+
+    if not parts:
+        return ""
+    sentence = ", ".join(parts)
+    return sentence[0].upper() + sentence[1:] + "."
+
+
 def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     """Build "what's at stake" info for the two teams in the featured group
     fixture, from the second group matchday onwards.
@@ -325,16 +373,20 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
             if _clinch.advances_for_sure(_cur_clinch.get(team)):
                 stake["clinch_outcomes"] = valid_outcomes
                 stake["elim_outcomes"] = []
+                stake["clinch_position"] = {o: _cur_clinch.get(team) for o in valid_outcomes}
                 headline, status = qualification._stake_headline(set(valid_outcomes), set())
                 stake["headline"] = headline
                 stake["status"] = status
+                stake["text_explanation"] = ""  # headline already covers certain/impossible
                 continue
             if _cur_clinch.get(team) == _clinch.ELIMINATED:
                 stake["clinch_outcomes"] = []
                 stake["elim_outcomes"] = valid_outcomes
+                stake["clinch_position"] = {}
                 headline, status = qualification._stake_headline(set(), set(valid_outcomes))
                 stake["headline"] = headline
                 stake["status"] = status
+                stake["text_explanation"] = ""
                 continue
 
             # Per-outcome analysis: ✓ when this result mathematically secures
@@ -342,19 +394,24 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
             # result drops the team to 4th regardless of other results.
             clinch_outcomes = []
             elim_outcomes = []
+            clinch_position = {}  # outcome -> clinch status string
             for outcome in valid_outcomes:
                 after = _clinch.clinch_after_match(g_obj, before_fixtures, team, opponent, outcome)
                 after_status = after.get(team)
                 if _clinch.advances_for_sure(after_status):
                     clinch_outcomes.append(outcome)
+                    clinch_position[outcome] = after_status
                 elif after_status == _clinch.ELIMINATED:
                     elim_outcomes.append(outcome)
             stake["clinch_outcomes"] = clinch_outcomes
             stake["elim_outcomes"] = elim_outcomes
+            stake["clinch_position"] = clinch_position
             headline, status = qualification._stake_headline(
                 set(clinch_outcomes), set(elim_outcomes))
             stake["headline"] = headline
             stake["status"] = status
+            stake["text_explanation"] = _stake_text_explanation(
+                clinch_outcomes, elim_outcomes, clinch_position)
 
     # The detailed decision tree is only legible on the final matchday (at most
     # the two last group games remain), so reserve it for then.

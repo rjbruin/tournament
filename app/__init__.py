@@ -281,13 +281,19 @@ def create_app():
         """Format a probability (0-1) as a percentage. Sampled values of exactly
         100% / 0% are statistical, not mathematical, certainties, so they render
         as ">99.9%" / "<0.1%" rather than a ✓/✗. Genuine mathematical clinch /
-        elimination is communicated only through the clinch-aware badges."""
+        elimination is communicated only through the clinch-aware badges.
+
+        Thresholds are decimal-aware so the formatted string never rounds to
+        "100%" or "0%" (which would imply false certainty)."""
         if value is None:
             return "—"
-        if value >= 0.9995:
-            return ">99.9%"
-        if value <= 0.0005:
-            return "<0.1%"
+        # The rounding boundary where the formatted string would show 100% / 0%.
+        # For decimals=0: 0.995 rounds to 100; for decimals=1: 0.9995 rounds to 100.0.
+        half_ulp = 0.5 * (10 ** -(decimals + 2))
+        if value >= 1.0 - half_ulp:
+            return ">99%" if decimals == 0 else ">99.9%"
+        if value <= half_ulp:
+            return "<1%" if decimals == 0 else "<0.1%"
         return f"{value * 100:.{decimals}f}%"
 
     @app.template_filter("timestamp_to_date")

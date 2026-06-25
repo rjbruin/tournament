@@ -11,6 +11,7 @@
 
 <div class="group-nav-sticky mb-4">
   <div class="group-nav" id="section-nav">
+    <button class="group-nav-btn group-nav-btn--wide" id="today-btn" style="display:none">Today</button>
     {% for s in sections %}
     <a class="group-nav-btn group-nav-btn--wide" href="#section-{{ s.id }}">{{ s.short }}</a>
     {% endfor %}
@@ -20,7 +21,7 @@
 <div class="row justify-content-center">
   <div class="col-12 col-lg-8">
     {% for s in sections %}
-    <section id="section-{{ s.id }}" class="fixtures-section mb-5">
+    <section id="section-{{ s.id }}" class="fixtures-section mb-5" data-first-ts="{{ s.fixtures[0].sort_key if s.fixtures else '' }}" data-last-ts="{{ s.fixtures[-1].sort_key if s.fixtures else '' }}">
       <h3 class="fixtures-section-title mb-3">{{ s.label }}</h3>
       {% for m in s.fixtures %}
       {{ fx.large_fixture(m, header=m.header, match_url=m.match_url) }}
@@ -32,7 +33,32 @@
 
 <script>
 (function () {
-  const btns = document.querySelectorAll('#section-nav .group-nav-btn');
+  // "Today" button: scroll to the section that contains today's fixtures,
+  // falling back to the first upcoming section if none match exactly.
+  (function () {
+    const todayBtn = document.getElementById('today-btn');
+    if (!todayBtn) return;
+    const sections = document.querySelectorAll('.fixtures-section[data-first-ts]');
+    const nowTs = Date.now() / 1000;
+    const todayStart = nowTs - (nowTs % 86400); // UTC midnight
+    let target = null;
+    // First section whose last match is today or later (i.e., still has upcoming fixtures).
+    for (const sec of sections) {
+      const lastTs = new Date((sec.dataset.lastTs || '').replace(' ', 'T')).getTime() / 1000;
+      if (!lastTs || isNaN(lastTs)) continue;
+      if (lastTs >= todayStart) { target = sec; break; }
+    }
+    if (!target) return; // no upcoming fixtures — hide button
+    todayBtn.style.display = '';
+    todayBtn.addEventListener('click', () => {
+      const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--navbar-height') || '56', 10);
+      const pillH = document.querySelector('.group-nav-sticky')?.offsetHeight || 0;
+      const top = target.getBoundingClientRect().top + window.scrollY - navH - pillH - 12;
+      window.scrollTo({ top, behavior: 'smooth' });
+    });
+  })();
+
+  const btns = document.querySelectorAll('#section-nav .group-nav-btn[href]');
   const sections = Array.from(btns).map(b => document.querySelector(b.getAttribute('href')));
   const navEl = document.querySelector('.group-nav-sticky');
 

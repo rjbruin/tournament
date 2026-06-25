@@ -10,9 +10,19 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.7.4"
+APP_VERSION = "1.7.5"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.7.5",
+        "date": "2026-06-25",
+        "features": [
+            "Fixtures page: new 'Today' button in the section nav jumps directly to the section containing today's (or next upcoming) matches.",
+        ],
+        "fixes": [
+            "Advance odds badges no longer show '100%' or '0%': the percentage filter now uses decimal-aware thresholds so values that would round to 100% show '>99%' and values that would round to 0% show '<1%'.",
+        ],
+    },
     {
         "version": "1.7.4",
         "date": "2026-06-21",

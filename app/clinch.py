@@ -258,6 +258,51 @@ def _played_from_fixtures(group: dict, fixtures: list):
     return pos, played
 
 
+def position_range_after_match(group: dict, fixtures: list, team: str, opponent: str,
+                               outcome: str) -> tuple[int, int]:
+    """Return (best_pos, worst_pos) for ``team`` after the match ends as ``outcome``.
+
+    Positions are 1-based (1 = group winner, 4 = bottom).  Used to detect
+    "stuck at third" — i.e. best_pos == worst_pos == 3 — which ``group_clinch``
+    collapses into OPEN and cannot express."""
+    pos, played = _played_from_fixtures(group, fixtures)
+    ti, oi = pos[team], pos[opponent]
+    sign = {"win": 1, "draw": 0, "loss": -1}[outcome]
+    if ti < oi:
+        pair, fsign = (ti, oi), sign
+    else:
+        pair, fsign = (oi, ti), -sign
+
+    forced = {pair: fsign}
+    remaining = [p for p in ALL_PAIRS if p not in played]
+    if len(remaining) > 2:
+        return (1, 4)
+
+    cap = 6
+    for gi, gj in played.values():
+        cap = max(cap, gi + gj)
+    cap += 2
+
+    sl_space = [_scorelines(cap, forced.get(p)) for p in remaining]
+    best_pos, worst_pos = 4, 1
+    for assignment in product(*sl_space):
+        scores = dict(played)
+        for rp, sl in zip(remaining, assignment):
+            scores[rp] = sl
+        before = 0
+        for tier in _rank_tiers(scores):
+            size = len(tier)
+            if ti in tier:
+                if before + 1 < best_pos:
+                    best_pos = before + 1
+                if before + size > worst_pos:
+                    worst_pos = before + size
+                break
+            before += size
+
+    return (best_pos, worst_pos)
+
+
 def clinch_after_match(group: dict, fixtures: list, team: str, opponent: str,
                        outcome: str) -> dict[str, str]:
     """Theoretical status of every team in ``group`` assuming the (still-to-play)

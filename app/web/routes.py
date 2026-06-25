@@ -236,20 +236,25 @@ def _groups_for_results(engine, results):
     return engine.groups
 
 
-def _stake_text_explanation(clinch_outcomes, elim_outcomes, clinch_position):
+def _stake_text_explanation(clinch_outcomes, elim_outcomes, clinch_position,
+                            third_outcomes=None):
     """Generate a natural-language sentence describing decisive outcomes.
 
-    Only covers outcomes where clinching (qualifying or going out) is certain.
+    Covers mathematically certain clinches/eliminations plus outcomes where a
+    team is stuck at third place (probabilistic best-third qualification).
     Returns an empty string when nothing decisive is known.
     """
     from app import clinch as _clinch
     _POS_LABEL = {
         _clinch.CLINCHED_FIRST: "in first place",
         _clinch.CLINCHED_TOP2: "in second place",
-        _clinch.CLINCHED_THIRD_ADV: "as a top-8 third place",
+        _clinch.CLINCHED_THIRD_ADV: "as one of the eight best third-placed teams",
     }
     _CONJ = {"win": "win", "draw": "draw", "loss": "lose"}
     _ORDER = ["win", "draw", "loss"]
+    # Threshold to call it "essentially guaranteed" or "essentially impossible"
+    _HIGH = 1 - 0.5e-2   # >99%
+    _LOW  = 0.5e-2        # <1%
 
     def _outcome_phrase(outcomes):
         outcomes = [o for o in _ORDER if o in outcomes]
@@ -274,6 +279,19 @@ def _stake_text_explanation(clinch_outcomes, elim_outcomes, clinch_position):
             continue
         label = _POS_LABEL[pos]
         parts.append(f"{_outcome_phrase(by_pos[pos])} to qualify {label}")
+
+    # Third-place outcomes: bucket by qualification likelihood
+    if third_outcomes:
+        high_third = [o for o, p in third_outcomes.items() if p >= _HIGH]
+        low_third  = [o for o, p in third_outcomes.items() if p <= _LOW]
+        mid_third  = [o for o in third_outcomes if o not in high_third and o not in low_third]
+
+        if high_third:
+            parts.append(f"{_outcome_phrase(high_third)} to qualify as one of the eight best third-placed teams")
+        if mid_third:
+            parts.append(f"{_outcome_phrase(mid_third)} to place third and wait for other groups")
+        if low_third:
+            parts.append(f"{_outcome_phrase(low_third)} to be knocked out as one of the four worst third-placed teams")
 
     if elim_outcomes:
         parts.append(f"{_outcome_phrase(elim_outcomes)} to be knocked out")
@@ -374,6 +392,7 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
                 stake["clinch_outcomes"] = valid_outcomes
                 stake["elim_outcomes"] = []
                 stake["clinch_position"] = {o: _cur_clinch.get(team) for o in valid_outcomes}
+                stake["third_outcomes"] = {}
                 headline, status = qualification._stake_headline(set(valid_outcomes), set())
                 stake["headline"] = headline
                 stake["status"] = status
@@ -383,6 +402,7 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
                 stake["clinch_outcomes"] = []
                 stake["elim_outcomes"] = valid_outcomes
                 stake["clinch_position"] = {}
+                stake["third_outcomes"] = {}
                 headline, status = qualification._stake_headline(set(), set(valid_outcomes))
                 stake["headline"] = headline
                 stake["status"] = status
@@ -395,6 +415,7 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
             clinch_outcomes = []
             elim_outcomes = []
             clinch_position = {}  # outcome -> clinch status string
+            third_outcomes = {}   # outcome -> advance odds (float) when stuck at 3rd
             for outcome in valid_outcomes:
                 after = _clinch.clinch_after_match(g_obj, before_fixtures, team, opponent, outcome)
                 after_status = after.get(team)
@@ -403,15 +424,22 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
                     clinch_position[outcome] = after_status
                 elif after_status == _clinch.ELIMINATED:
                     elim_outcomes.append(outcome)
+                else:
+                    # OPEN: check if team is stuck at third place
+                    best_pos, worst_pos = _clinch.position_range_after_match(
+                        g_obj, before_fixtures, team, opponent, outcome)
+                    if best_pos == 3 and worst_pos == 3:
+                        third_outcomes[outcome] = stake["odds"].get(outcome) or 0.0
             stake["clinch_outcomes"] = clinch_outcomes
             stake["elim_outcomes"] = elim_outcomes
             stake["clinch_position"] = clinch_position
+            stake["third_outcomes"] = third_outcomes
             headline, status = qualification._stake_headline(
                 set(clinch_outcomes), set(elim_outcomes))
             stake["headline"] = headline
             stake["status"] = status
             stake["text_explanation"] = _stake_text_explanation(
-                clinch_outcomes, elim_outcomes, clinch_position)
+                clinch_outcomes, elim_outcomes, clinch_position, third_outcomes)
 
     # The detailed decision tree is only legible on the final matchday (at most
     # the two last group games remain), so reserve it for then.

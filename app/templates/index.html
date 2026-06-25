@@ -242,8 +242,7 @@
           {%- else %}⚖️{% endif %}
         </span>
         <span class="qual-stake-text">
-          <strong>{{ s.team|flag }} {{ s.team }}</strong>{% if s.headline %} — {{ s.headline }}{% endif %}
-          {% if s.text_explanation %}<div class="small text-muted mt-1">{{ s.text_explanation }}</div>{% endif %}
+          <strong>{{ s.team|flag }} {{ s.team }}</strong>{% if s.text_explanation %} — {{ s.text_explanation }}{% elif s.headline %} — {{ s.headline }}{% endif %}
           {% if s.status not in ('certain', 'impossible') %}
           <div class="qual-odds mt-1">
             <span class="qual-odds-caption">Advance odds:</span>

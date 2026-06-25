@@ -148,6 +148,15 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
       </thead>
       <tbody>
         {%- set pos = namespace(v=0) %}
+        {# Placeholders fill the top rows; completed teams anchor at the bottom.
+           As groups finish, the best teams rise above the cutoff line. #}
+        {%- for grp_name in incomplete_groups %}
+        {%- set pos.v = pos.v + 1 %}
+        <tr class="{{ 'thirds-cutoff ' if pos.v == 9 else '' }}text-muted">
+          <td>—</td>
+          <td colspan="{{ 7 if not results else 8 }}" class="fst-italic">— awaiting results</td>
+        </tr>
+        {%- endfor %}
         {%- for row in sorted_thirds %}
         {%- set pos.v = pos.v + 1 %}
         <tr class="{{ 'thirds-cutoff' if pos.v == 9 else '' }}">
@@ -160,13 +169,6 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
           <td class="text-end">{{ row.gd }}</td>
           <td class="text-end fw-bold">{{ row.pts }}</td>
           {%- if results %}{%- set _tc = (team_clinch or {}).get(row.name) %}<td class="text-end">{{ advance_badge(row.advance_prob, clinched=_tc in ('clinched_first', 'clinched_top2', 'clinched_third_adv'), eliminated=_tc == 'eliminated') }}</td>{%- endif %}
-        </tr>
-        {%- endfor %}
-        {%- for grp_name in incomplete_groups %}
-        {%- set pos.v = pos.v + 1 %}
-        <tr class="{{ 'thirds-cutoff ' if pos.v == 9 else '' }}text-muted">
-          <td>—</td>
-          <td colspan="{{ 7 if not results else 8 }}" class="fst-italic">Group {{ grp_name }} — awaiting results</td>
         </tr>
         {%- endfor %}
       </tbody>

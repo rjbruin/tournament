@@ -10,9 +10,19 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.8.0"
+APP_VERSION = "1.8.1"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.8.1",
+        "date": "2026-06-26",
+        "features": [],
+        "fixes": [
+            "Team page: group placement odds (1st/2nd/3rd/4th) are now hidden once all three group-stage matches have been played — the result is already known at that point.",
+            "Team page: the odds graph no longer extends the 'advance from group' line into the knockout-round checkpoints, where it was always 100% and therefore misleading.",
+            "Team page: a knockout round is removed from 'Likely opponents' once both teams in that bracket match are confirmed — no need to show probabilities when the matchup is already set.",
+        ],
+    },
     {
         "version": "1.8.0",
         "date": "2026-06-25",

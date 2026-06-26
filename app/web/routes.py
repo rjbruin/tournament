@@ -898,10 +898,19 @@ def team(name: str):
             cp = next((c for c in checkpoints if c["kind"] == "knockout" and c["match_no"] == m["match"]), None)
             if cp:
                 sid = data_store.match_scenario_id(cp["index"])
-        odds_history.append({"label": f"After {rname}", **(_odds_for_scenario(sid) or _empty_odds)})
+        ko_odds = _odds_for_scenario(sid) or _empty_odds
+        # Stop tracking group advance prob after the group stage — it's always 1.0 here
+        odds_history.append({"label": f"After {rname}", "group_advance_prob": None, "winner_prob": ko_odds["winner_prob"]})
+
+    # Rounds where both teams in the bracket match are already known
+    known_ko_rounds = {
+        m["round"] for m in bracket_for_team
+        if m.get("home_team") and m.get("away_team")
+    }
 
 
     knocked_out = _knocked_out_teams(results)
+    group_stage_complete = bool(fixtures_for_team) and all(m.get("played") for m in fixtures_for_team)
     return render_template(
         "team.html",
         team=teams_by_name[name],
@@ -914,6 +923,8 @@ def team(name: str):
         odds_history=odds_history,
         knocked_out_teams=knocked_out,
         team_is_knocked_out=(name in knocked_out),
+        group_stage_complete=group_stage_complete,
+        known_ko_rounds=known_ko_rounds,
     )
 
 

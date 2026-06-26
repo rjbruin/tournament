@@ -53,7 +53,7 @@
       <div class="card-body">
         {% if results %}
         <dl class="row mb-0">
-          {% if team_group and results.group_finish and results.group_finish.get(team_group.name, {}).get(team.name) %}
+          {% if not group_stage_complete and team_group and results.group_finish and results.group_finish.get(team_group.name, {}).get(team.name) %}
           {% set finish = results.group_finish[team_group.name][team.name] %}
           <dt class="col-6">Finish 1st in group</dt>
           <dd class="col-6 text-end">{{ finish.first_prob|pct }}</dd>
@@ -161,7 +161,7 @@ new Chart(document.getElementById('odds-chart'), {
 <div class="row g-3 justify-content-center">
   {% for round_name in ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"] %}
   {% set opponents = results.opponent_probs[team.name].get(round_name) %}
-  {% if opponents %}
+  {% if opponents and round_name not in known_ko_rounds %}
   <div class="col-12 col-md-6 col-lg-4">
     <div class="card shadow-sm h-100">
       <div class="card-header fw-bold">{{ round_name }}</div>

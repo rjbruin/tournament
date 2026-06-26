@@ -10,34 +10,19 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.8.3"
+APP_VERSION = "1.9.0"
 
 CHANGELOG: list[dict] = [
     {
-        "version": "1.8.3",
+        "version": "1.9.0",
         "date": "2026-06-26",
         "features": [],
         "fixes": [
-            "Live match minute is now displayed (football-data.org API v4.1 now returns the current match minute on the Livescore plan; previously the field was absent).",
-            "Removed the unused full-scenario decision-tree computation from the What's at Stake logic.",
-        ],
-    },
-    {
-        "version": "1.8.2",
-        "date": "2026-06-26",
-        "features": [],
-        "fixes": [
-            "Team page loads significantly faster: historical chart checkpoints now simulate at 10 000 iterations instead of 250 000, and a background thread pre-warms all played checkpoints on startup so the first load is near-instant.",
-        ],
-    },
-    {
-        "version": "1.8.1",
-        "date": "2026-06-26",
-        "features": [],
-        "fixes": [
-            "Team page: group placement odds (1st/2nd/3rd/4th) are now hidden once all three group-stage matches have been played — the result is already known at that point.",
-            "Team page: the odds graph no longer extends the 'advance from group' line into the knockout-round checkpoints, where it was always 100% and therefore misleading.",
-            "Team page: a knockout round is removed from 'Likely opponents' once both teams in that bracket match are confirmed — no need to show probabilities when the matchup is already set.",
+            "Live match minute is now shown in real time (football-data.org API v4.1 added the minute field to the Livescore plan).",
+            "Team page: group placement odds (1st/2nd/3rd/4th) are hidden once all three group-stage matches have been played.",
+            "Team page: the odds graph no longer extends the 'advance from group' line into knockout-round checkpoints.",
+            "Team page: a knockout round is removed from 'Likely opponents' once both bracket teams are confirmed.",
+            "Team page loads much faster: chart checkpoints now run at 10 000 iterations, and a background thread pre-warms all played checkpoints on startup.",
         ],
     },
     {

@@ -306,15 +306,11 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     """Build "what's at stake" info for the two teams in the featured group
     fixture, from the second group matchday onwards.
 
-    Returns ``(stakes, full_scenarios)``:
-      - ``stakes``: one acute entry per team — ``{team, status, headline,
-        odds: {win, draw, loss}}`` — where the odds are the chance to advance
-        conditional on each result of this match (see qualification.match_stakes);
-      - ``full_scenarios``: the detailed, chronologically-ordered decision-tree
-        explanations, only on the final matchday (where they're short enough to
-        read); empty otherwise.
+    Returns a list of stakes — one entry per team:
+      ``{team, status, headline, odds: {win, draw, loss}}``
+    where the odds are the chance to advance conditional on each result.
 
-    Both are empty on the first matchday or for non-group fixtures."""
+    Empty on the first matchday or for non-group fixtures."""
     from app import qualification
 
     if not featured_fixture or not featured_fixture.get("_group"):
@@ -441,19 +437,7 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
             stake["text_explanation"] = _stake_text_explanation(
                 clinch_outcomes, elim_outcomes, clinch_position, third_outcomes)
 
-    # The detailed decision tree is only legible on the final matchday (at most
-    # the two last group games remain), so reserve it for then.
-    full_scenarios = []
-    if matchday >= 3:
-        for team in (home, away):
-            expl = qualification.explain_qualification_cached(engine, before, gname, team, "advances")
-            # Only surface genuinely conditional routes. "Guaranteed"/"impossible"
-            # summaries here are sampled and could contradict the exact badges and
-            # headlines, which already communicate certainty.
-            if expl and expl.get("status") == "conditional" and (expl.get("lines") or expl.get("summary")):
-                full_scenarios.append(expl)
-
-    return stakes, full_scenarios
+    return stakes
 
 
 @web_bp.get("/")
@@ -582,15 +566,13 @@ def index():
             previous_before_adv = _advance_prob_before(engine, actuals, pg["name"], prev_pairs)
 
     qualification_stakes = []
-    qualification_full = []
     if not _is_pre_draw(scenario_id):
         for fx_match in featured_fixtures:
             if fx_match.get("played") and not fx_match.get("in_progress"):
                 continue
             try:
-                s, f = _qualification_notes(engine, scenario_id, fx_match, all_normalized)
-                qualification_stakes.extend(s)
-                qualification_full.extend(f)
+                qualification_stakes.extend(
+                    _qualification_notes(engine, scenario_id, fx_match, all_normalized))
             except Exception:
                 pass
 
@@ -637,7 +619,6 @@ def index():
         featured_group_table=featured_group_table,
         featured_before_adv=featured_before_adv,
         qualification_stakes=qualification_stakes,
-        qualification_full=qualification_full,
         previous_fixtures=previous_fixtures,
         previous_fixture=previous_fixtures[0] if previous_fixtures else None,
         previous_group_table=previous_group_table,
@@ -1140,7 +1121,6 @@ def match_detail(match_no: int):
 
     # --- What's at stake ---
     qualification_stakes = []
-    qualification_full = []
     if fixture_group and not (fixture.get("played") and not fixture.get("in_progress")):
         # Build all_normalized for _qualification_notes (needs context of full group schedule)
         all_normalized = []
@@ -1152,9 +1132,7 @@ def match_detail(match_no: int):
                 nm["_sort_key"] = _utc_sort_key(m)
                 all_normalized.append(nm)
         try:
-            s, f = _qualification_notes(engine, scenario_id, fixture, all_normalized)
-            qualification_stakes = s
-            qualification_full = f
+            qualification_stakes = _qualification_notes(engine, scenario_id, fixture, all_normalized)
         except Exception:
             pass
 
@@ -1191,7 +1169,6 @@ def match_detail(match_no: int):
         group_table_before=group_table_before,
         before_adv=before_adv,
         qualification_stakes=qualification_stakes,
-        qualification_full=qualification_full,
         is_live=is_live,
         can_explore=can_explore,
         live_version=app_module.get_live_status()["version"],

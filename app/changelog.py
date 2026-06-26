@@ -10,9 +10,18 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.8.2"
+APP_VERSION = "1.8.3"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.8.3",
+        "date": "2026-06-26",
+        "features": [],
+        "fixes": [
+            "Live match minute is now displayed (football-data.org API v4.1 now returns the current match minute on the Livescore plan; previously the field was absent).",
+            "Removed the unused full-scenario decision-tree computation from the What's at Stake logic.",
+        ],
+    },
     {
         "version": "1.8.2",
         "date": "2026-06-26",

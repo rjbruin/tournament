@@ -98,7 +98,7 @@ def _fetch_matches(api_key: str) -> tuple[list | None, str | None]:
     try:
         resp = requests.get(
             FOOTBALL_DATA_URL,
-            headers={"X-Auth-Token": api_key},
+            headers={"X-Auth-Token": api_key, "X-Api-Version": "v4.1"},
             timeout=30,
         )
         resp.raise_for_status()

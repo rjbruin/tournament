@@ -333,7 +333,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 
 
 {# ---------- Large fixture card: dark hero layout ---------- #}
-{% macro large_fixture(match, header=None, header_url=None, match_url=None, show_advance=False, advance_prob=None, before_adv=None, clinch=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='') %}
+{% macro large_fixture(match, header=None, header_url=None, match_url=None, show_advance=False, advance_prob=None, before_adv=None, clinch=None, editable=False, explore=False, form_id=None, live=False, submit_label=None, idx='', win_prob=None) %}
 {%- set _home_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.home_team %}
 {%- set _away_ko = match.actual_winner is defined and match.actual_winner and match.actual_winner != match.away_team %}
 {%- set _cl = clinch if clinch is not none else (team_clinch | default({})) %}
@@ -343,7 +343,9 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 {%- set _away_clinched = _away_status in ('clinched_first', 'clinched_top2', 'clinched_third_adv') %}
 {%- set _home_elim = _home_status == 'eliminated' %}
 {%- set _away_elim = _away_status == 'eliminated' %}
-{%- if match.home_team and show_advance and advance_prob is not none %}
+{%- set _home_win = win_prob.get(match.home_team) if (win_prob and match.home_team) else none %}
+{%- set _away_win = win_prob.get(match.away_team) if (win_prob and match.away_team) else none %}
+{%- if match.home_team and show_advance and advance_prob is not none and win_prob is none %}
   {%- set _home_adv = advance_prob.get(match.home_team) %}
   {%- set _home_prev = before_adv[match.home_team] if before_adv and match.home_team in before_adv else none %}
   {%- set _home_delta = (_home_adv - _home_prev) if (_home_adv is not none and _home_prev is not none) else none %}
@@ -351,7 +353,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
   {%- set _home_adv = none %}
   {%- set _home_delta = none %}
 {%- endif %}
-{%- if match.away_team and show_advance and advance_prob is not none %}
+{%- if match.away_team and show_advance and advance_prob is not none and win_prob is none %}
   {%- set _away_adv = advance_prob.get(match.away_team) %}
   {%- set _away_prev = before_adv[match.away_team] if before_adv and match.away_team in before_adv else none %}
   {%- set _away_delta = (_away_adv - _away_prev) if (_away_adv is not none and _away_prev is not none) else none %}
@@ -375,7 +377,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
         <div class="fixture-team-name{% if _home_ko %} knocked-out{% endif %}">{{ match.home_team }}</div>
         <div class="fixture-badge-row">
           {{ team_badge(team=match.home_team) }}
-          {% if _home_adv is not none %}{{ advance_badge(_home_adv, delta=_home_delta, clinched=_home_clinched, eliminated=_home_elim) }}{% endif %}
+          {% if _home_win is not none %}{{ win_badge(_home_win) }}{% elif _home_adv is not none %}{{ advance_badge(_home_adv, delta=_home_delta, clinched=_home_clinched, eliminated=_home_elim) }}{% endif %}
         </div>
         {% if editable %}
         <input type="number" min="0" class="form-control form-control-sm text-center mt-2" style="width:4rem;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;" name="home_goals" value="{{ match.home_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>
@@ -421,7 +423,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
         <div class="fixture-team-name{% if _away_ko %} knocked-out{% endif %}">{{ match.away_team }}</div>
         <div class="fixture-badge-row away">
           {{ team_badge(team=match.away_team) }}
-          {% if _away_adv is not none %}{{ advance_badge(_away_adv, delta=_away_delta, clinched=_away_clinched, eliminated=_away_elim) }}{% endif %}
+          {% if _away_win is not none %}{{ win_badge(_away_win) }}{% elif _away_adv is not none %}{{ advance_badge(_away_adv, delta=_away_delta, clinched=_away_clinched, eliminated=_away_elim) }}{% endif %}
         </div>
         {% if editable %}
         <input type="number" min="0" class="form-control form-control-sm text-center mt-2" style="width:4rem;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;" name="away_goals" value="{{ match.away_goals if match.played else 0 }}" {% if form_id %}form="{{ form_id }}"{% endif %}>

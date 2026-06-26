@@ -107,7 +107,7 @@
 <div class="row justify-content-center">
   <div class="col-12 col-lg-8">
   {% for m in bracket_for_team %}
-    {{ fx.large_fixture(m, header=m.round) }}
+    {{ fx.large_fixture(m, header=m.round, win_prob=results.winner_prob if results else none) }}
   {% endfor %}
   </div>
 </div>

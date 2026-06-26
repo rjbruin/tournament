@@ -110,7 +110,8 @@
     {%- set fid = loop.index0 %}
     {%- set can_explore = current_user.is_authenticated and (not fx_match.played or fx_match.in_progress) %}
     {% if not loop.first %}<hr class="my-3">{% endif %}
-    {{ fx.large_fixture(fx_match, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=featured_before_adv, explore=can_explore, live=can_explore, idx=fid) }}
+    {%- set _is_ko_match = fx_match.round is defined and fx_match.round and not fx_match.get('_group') %}
+    {{ fx.large_fixture(fx_match, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=featured_before_adv, explore=can_explore, live=can_explore, idx=fid, win_prob=results.winner_prob if (_is_ko_match and results) else none) }}
 
     {% if can_explore %}
     <div id="explore-panel-{{ fid }}" class="d-none mt-3">
@@ -291,7 +292,33 @@
     {% if _ns.future_rounds and results and results.opponent_probs %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-3">Path to the Cup</div>
+    {#- Both teams in the same bracket half share an identical opponent distribution
+        from the next round onwards — show one shared column, no team label. -#}
+    {%- set _opp_a = results.opponent_probs.get(_path_teams[0]) if _path_teams|length > 0 else none %}
+    {%- set _opp_b = results.opponent_probs.get(_path_teams[1]) if _path_teams|length > 1 else none %}
+    {%- set _shared = (_opp_a and _opp_b and _path_teams|length == 2) %}
     <div class="row g-3">
+      {% if _shared %}
+      {# One shared column — omit team name since both paths are identical #}
+      <div class="col-12">
+        {% for r in _ns.future_rounds %}
+        {%- set _opps = _opp_a.get(r) %}
+        {% if _opps %}
+        <div class="mb-2">
+          <span class="text-muted small">{{ r }}:</span><br>
+          {% if _opps[0].probability >= 0.999 %}
+          <span class="small">{{ _opps[0].team|flag }} {{ _opps[0].team }}</span>
+          {% else %}
+          {%- set _shown = _opps[:4] if _opps|length > 2 else _opps %}
+          {% for o in _shown %}
+          <span class="small me-2">{{ o.team|flag }} {{ o.team }} <span class="text-muted">({{ o.probability|pct(0) }})</span></span>
+          {% endfor %}
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
       {% for path_team in _path_teams %}
       {%- set _team_opp = results.opponent_probs.get(path_team) %}
       {% if _team_opp %}
@@ -316,6 +343,7 @@
       </div>
       {% endif %}
       {% endfor %}
+      {% endif %}
     </div>
     {% endif %}
     {% endif %}

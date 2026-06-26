@@ -753,11 +753,12 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .bracket-slot { padding: .2rem 0; }
 .bracket-team-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   padding: .3rem .5rem;
   border-radius: .4rem;
   transition: background .12s;
-  gap: .35rem;
+  gap: .1rem;
 }
 .bracket-team-row:hover { background: rgba(10,59,42,.06); }
 .bracket-team-flag { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
@@ -772,21 +773,23 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   text-overflow: ellipsis;
 }
 .bracket-team-name.is-winner { color: var(--wc-green-bright); }
-.bracket-team-badges {
+.bracket-team-main {
   display: flex;
   align-items: center;
-  gap: .4rem;
-  flex-shrink: 0;
+  gap: .35rem;
+}
+.bracket-team-sub {
+  padding-left: 1.9rem;
 }
 .bracket-team-odds {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: var(--wc-green-bright);
   flex-shrink: 0;
 }
 .bracket-team-score {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: #888;
   flex-shrink: 0;
 }

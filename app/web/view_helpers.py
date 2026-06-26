@@ -128,8 +128,12 @@ def normalize_bracket_match(m: dict, ko_scores: dict = None) -> dict:
             if s:
                 out["home_goals"] = s.get("home_goals")
                 out["away_goals"] = s.get("away_goals")
-                out["home_penalties"] = s.get("home_penalties")
-                out["away_penalties"] = s.get("away_penalties")
+                hp = s.get("home_penalties")
+                ap = s.get("away_penalties")
+                # Only expose penalties when both sides have a real value.
+                if isinstance(hp, int) and isinstance(ap, int):
+                    out["home_penalties"] = hp
+                    out["away_penalties"] = ap
     return out
 
 

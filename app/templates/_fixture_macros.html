@@ -536,10 +536,9 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
     <div class="bracket-slot">
       {% if match.home_team %}
       <div class="bracket-team-row {% if _home_won %}winner{% endif %}">
-        <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
-        <span class="bracket-team-name {% if _home_won %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
-        <span class="bracket-team-badges">
-          {{ team_badge(team=match.home_team) }}
+        <div class="bracket-team-main">
+          <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
+          <span class="bracket-team-name {% if _home_won %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
           {%- if _is_live and _has_score %}
             <span class="bracket-team-score bracket-team-score--live">{{ match.home_goals }}{% if match.home_penalties is defined and match.home_penalties is not none %} ({{ match.home_penalties }}){% endif %}</span>
           {%- elif _has_score %}
@@ -547,7 +546,8 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
           {%- elif match.home_prob is defined %}
             <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>
           {%- endif %}
-        </span>
+        </div>
+        <div class="bracket-team-sub">{{ team_badge(team=match.home_team) }}</div>
       </div>
       {% else %}
       {% for cand, p in (match.home_candidates or {}).items() %}
@@ -565,10 +565,9 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
     <div class="bracket-slot">
       {% if match.away_team %}
       <div class="bracket-team-row {% if _away_won %}winner{% endif %}">
-        <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
-        <span class="bracket-team-name {% if _away_won %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
-        <span class="bracket-team-badges">
-          {{ team_badge(team=match.away_team) }}
+        <div class="bracket-team-main">
+          <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
+          <span class="bracket-team-name {% if _away_won %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
           {%- if _is_live and _has_score %}
             <span class="bracket-team-score bracket-team-score--live">{{ match.away_goals }}{% if match.away_penalties is defined and match.away_penalties is not none %} ({{ match.away_penalties }}){% endif %}</span>
           {%- elif _has_score %}
@@ -576,7 +575,8 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
           {%- elif match.away_prob is defined %}
             <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>
           {%- endif %}
-        </span>
+        </div>
+        <div class="bracket-team-sub">{{ team_badge(team=match.away_team) }}</div>
       </div>
       {% else %}
       {% for cand, p in (match.away_candidates or {}).items() %}

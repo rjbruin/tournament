@@ -760,7 +760,6 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   gap: .35rem;
 }
 .bracket-team-row:hover { background: rgba(10,59,42,.06); }
-.bracket-team-row.winner { background: rgba(0,132,61,.12); }
 .bracket-team-flag { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
 .bracket-team-name {
   font-weight: 600;
@@ -773,6 +772,12 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   text-overflow: ellipsis;
 }
 .bracket-team-name.is-winner { color: var(--wc-green-bright); }
+.bracket-team-badges {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  flex-shrink: 0;
+}
 .bracket-team-odds {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1rem;
@@ -781,40 +786,26 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 }
 .bracket-team-score {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #888;
   flex-shrink: 0;
-  min-width: 1.2rem;
-  text-align: right;
 }
 .bracket-team-score--winning {
   color: var(--wc-green-bright);
-  font-weight: 700;
+}
+.bracket-team-score--live {
+  color: #dc3545;
+}
+@keyframes live-outline-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(220,53,69,.25); border-color: rgba(220,53,69,.35); }
+  50%       { box-shadow: 0 0 0 3px rgba(220,53,69,.15); border-color: rgba(220,53,69,.6); }
 }
 .knockout-card--live {
-  border-color: rgba(220, 53, 69, 0.4);
-  box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2);
+  animation: live-outline-pulse 2s ease-in-out infinite;
 }
-.bracket-live-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: .15rem .5rem;
-  gap: .5rem;
-}
-.bracket-live-divider::before,
-.bracket-live-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(220, 53, 69, 0.3);
-}
-.bracket-live-score {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: .05em;
-  color: #dc3545;
-  flex-shrink: 0;
+.bracket-team-row.winner {
+  background: rgba(0,132,61,.1);
+  border-radius: .4rem;
 }
 .bracket-cand-row {
   display: flex;

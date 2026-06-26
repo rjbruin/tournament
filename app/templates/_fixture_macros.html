@@ -526,19 +526,27 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 {# ---------- Knockout fixture: teams stacked vertically, no header ---------- #}
 {% macro knockout_fixture(match) %}
 {%- set _is_live = match.in_progress is defined and match.in_progress %}
+{%- set _has_score = (match.home_goals is defined and match.home_goals is not none) and (match.away_goals is defined and match.away_goals is not none) %}
+{%- set _home_won = match.actual_winner is defined and match.actual_winner == match.home_team %}
+{%- set _away_won = match.actual_winner is defined and match.actual_winner == match.away_team %}
 <div class="card fixture-card knockout-card mb-3{% if _is_live %} knockout-card--live{% endif %}">
   <div class="card-body p-2">
 
     {# Home slot #}
     <div class="bracket-slot">
       {% if match.home_team %}
-      <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
+      <div class="bracket-team-row {% if _home_won %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
+        <span class="bracket-team-name {% if _home_won %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
         <span class="bracket-team-badges">
           {{ team_badge(team=match.home_team) }}
-          {%- if _is_live %}<span class="bracket-team-odds">{{ match.home_goals if match.home_goals is not none else 0 }}</span>
-          {%- elif match.home_team and match.away_team and match.home_prob is defined %}<span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{%- endif %}
+          {%- if _is_live and _has_score %}
+            <span class="bracket-team-score bracket-team-score--live">{{ match.home_goals }}{% if match.home_penalties is defined and match.home_penalties is not none %} ({{ match.home_penalties }}){% endif %}</span>
+          {%- elif _has_score %}
+            <span class="bracket-team-score{% if _home_won %} bracket-team-score--winning{% endif %}">{{ match.home_goals }}{% if match.home_penalties is defined and match.home_penalties is not none %} ({{ match.home_penalties }}){% endif %}</span>
+          {%- elif match.home_prob is defined %}
+            <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>
+          {%- endif %}
         </span>
       </div>
       {% else %}
@@ -556,13 +564,18 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
     {# Away slot #}
     <div class="bracket-slot">
       {% if match.away_team %}
-      <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
+      <div class="bracket-team-row {% if _away_won %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
+        <span class="bracket-team-name {% if _away_won %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
         <span class="bracket-team-badges">
           {{ team_badge(team=match.away_team) }}
-          {%- if _is_live %}<span class="bracket-team-odds">{{ match.away_goals if match.away_goals is not none else 0 }}</span>
-          {%- elif match.home_team and match.away_team and match.away_prob is defined %}<span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{%- endif %}
+          {%- if _is_live and _has_score %}
+            <span class="bracket-team-score bracket-team-score--live">{{ match.away_goals }}{% if match.away_penalties is defined and match.away_penalties is not none %} ({{ match.away_penalties }}){% endif %}</span>
+          {%- elif _has_score %}
+            <span class="bracket-team-score{% if _away_won %} bracket-team-score--winning{% endif %}">{{ match.away_goals }}{% if match.away_penalties is defined and match.away_penalties is not none %} ({{ match.away_penalties }}){% endif %}</span>
+          {%- elif match.away_prob is defined %}
+            <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>
+          {%- endif %}
         </span>
       </div>
       {% else %}

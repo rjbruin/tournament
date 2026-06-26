@@ -113,6 +113,11 @@ def get_or_run_results(username: str, scenario_id: str = "current", n: int = Non
         cached = get_simulation_results(_POLLER_USER, "current")
         if cached is not None:
             return cached
+    # Fall back to the checkpoint warmer's pre-warmed result for historical scenarios.
+    if username != _POLLER_USER:
+        cached = get_simulation_results(_POLLER_USER, scenario_id)
+        if cached is not None:
+            return cached
     from app import data_store
     from app.simulation.draw import simulate_many_draws, is_draw_complete
 
@@ -452,3 +457,39 @@ def _maybe_start_live_poller(app):
     _live_poller_started = True
     threading.Thread(target=_live_poller_loop, args=(app,), daemon=True,
                      name="live-poller").start()
+    threading.Thread(target=_warm_checkpoints_loop, args=(app,), daemon=True,
+                     name="checkpoint-warmer").start()
+
+
+def _warm_checkpoints_loop(app):
+    """One-shot background thread: pre-warm all played match-checkpoint
+    scenarios at a low N so team-page chart loads don't block on cold sims."""
+    import time
+    time.sleep(5)  # let the live poller warm "current" first
+    try:
+        with app.app_context():
+            from app import data_store
+            engine = get_engine()
+            checkpoints = data_store.ordered_match_checkpoints(engine)
+            actuals = data_store.load_actuals()
+            played_pairs = set()
+            for gname, entries in actuals.get("group_results", {}).items():
+                for e in entries:
+                    played_pairs.add((gname, frozenset((e.get("home"), e.get("away")))))
+            ko_played = {int(k) for k in actuals.get("knockout_results", {}).keys()}
+
+            for cp in checkpoints:
+                if cp["kind"] == "group":
+                    if (cp["group"], frozenset((cp["home"], cp["away"]))) not in played_pairs:
+                        continue
+                elif cp["kind"] == "knockout":
+                    if cp.get("match_no") not in ko_played:
+                        continue
+                sid = data_store.match_scenario_id(cp["index"])
+                if get_simulation_results(_POLLER_USER, sid) is None:
+                    try:
+                        get_or_run_results(_POLLER_USER, sid, n=10_000)
+                    except Exception:
+                        app.logger.exception("checkpoint warmer: failed for %s", sid)
+    except Exception:
+        app.logger.exception("checkpoint warmer thread failed")

@@ -862,13 +862,16 @@ def team(name: str):
         ko_played.add(int(k))
 
     n = current_user.settings.get("n_simulations") if current_user.is_authenticated else None
+    # Historical chart only needs rough odds — use a low N so checkpoint
+    # scenarios load fast (10k ≈ 0.5s vs 250k ≈ 4.6s per checkpoint).
+    _chart_n = 10_000
 
     _empty_odds = {"group_advance_prob": None, "winner_prob": None}
 
     def _odds_for_scenario(sid):
         if sid is None:
             return None
-        r = app_module.get_or_run_results(_username(), sid, n=n)
+        r = app_module.get_or_run_results(_username(), sid, n=_chart_n)
         if r is None:
             return None
         return {

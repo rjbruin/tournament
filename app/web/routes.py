@@ -314,16 +314,16 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     from app import qualification
 
     if not featured_fixture or not featured_fixture.get("_group"):
-        return [], []
+        return []
     if featured_fixture.get("played") and not featured_fixture.get("in_progress"):
-        return [], []
+        return []
 
     gname = featured_fixture["_group"]
     cutoff = featured_fixture["_sort_key"]
     home = featured_fixture.get("home_team")
     away = featured_fixture.get("away_team")
     if not home or not away:
-        return [], []
+        return []
 
     # Which matchday is this fixture? Each group plays 6 matches across 3
     # matchdays (2 per matchday), in chronological order. Only show
@@ -333,10 +333,10 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     fidx = next((i for i, m in enumerate(group_matches)
                  if {m.get("home_team"), m.get("away_team")} == {home, away}), None)
     if fidx is None:
-        return [], []
+        return []
     matchday = fidx // 2 + 1
     if matchday < 2:
-        return [], []
+        return []
 
     # Reconstruct the state *before* this match: every group match that kicked
     # off earlier is kept (using its real result); this match and all later
@@ -355,7 +355,7 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     # Acute, this-match-framed stakes: headline + per-outcome advance odds.
     info = qualification.match_stakes(engine, before, gname, home, away)
     if info is None:
-        return [], []
+        return []
     stakes = info["teams"]
 
     # Overlay *theoretical* (sampling-free) clinch info so the stakes show a ✓
@@ -938,16 +938,36 @@ def bracket():
     order_r16 = [x for m in order_qf for x in (qf_by_match[m]["home"], qf_by_match[m]["away"])]
     order_r32 = [x for m in order_r16 for x in (r16_by_match[m]["home"], r16_by_match[m]["away"])]
 
-    ko_scores = data_store.load_actuals().get("knockout_scores", {})
+    actuals = data_store.load_actuals()
+    ko_scores = actuals.get("knockout_scores", {})
+    live_by_pair = {
+        frozenset((lm.get("home"), lm.get("away"))): lm
+        for lm in actuals.get("live_matches", [])
+    }
+
+    def _bracket_match(match_no):
+        nm = normalize_bracket_match(bm[match_no], ko_scores=ko_scores)
+        pair = frozenset((nm.get("home_team"), nm.get("away_team")))
+        lm = live_by_pair.get(pair)
+        if lm:
+            nm["in_progress"] = True
+            nm["minute"] = lm.get("minute")
+            # Pull live score from knockout_scores even without an actual_winner yet.
+            s = ko_scores.get(str(match_no))
+            if s:
+                nm["home_goals"] = s.get("home_goals")
+                nm["away_goals"] = s.get("away_goals")
+        return nm
+
     rounds_with_scores = [
-        (rname, [normalize_bracket_match(bm[m], ko_scores=ko_scores) for m in order])
+        (rname, [_bracket_match(m) for m in order])
         for rname, order in [
             ("Round of 32", order_r32),
             ("Round of 16", order_r16),
             ("Quarterfinals", order_qf),
             ("Semifinals", order_sf),
         ]
-    ] + [("Final", [normalize_bracket_match(bm[103], ko_scores=ko_scores)])]
+    ] + [("Final", [_bracket_match(103)])]
     return render_template("bracket.html", results=results, rounds=rounds_with_scores,
                            scenario_id=scenario_id, knocked_out_teams=_knocked_out_teams(results))
 

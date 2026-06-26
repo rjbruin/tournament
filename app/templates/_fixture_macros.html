@@ -525,7 +525,8 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 
 {# ---------- Knockout fixture: teams stacked vertically, no header ---------- #}
 {% macro knockout_fixture(match) %}
-<div class="card fixture-card knockout-card mb-3">
+{%- set _is_live = match.in_progress is defined and match.in_progress %}
+<div class="card fixture-card knockout-card mb-3{% if _is_live %} knockout-card--live{% endif %}">
   <div class="card-body p-2">
 
     {# Home slot #}
@@ -533,8 +534,12 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
       {% if match.home_team %}
       <div class="bracket-team-row {% if match.actual_winner == match.home_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.home_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}{{ live_dot(match.home_team) }}</span>
-        <span class="bracket-team-badges">{{ team_badge(team=match.home_team) }}{% if match.home_team and match.away_team and match.home_prob is defined %} <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{% endif %}</span>
+        <span class="bracket-team-name {% if match.actual_winner == match.home_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.home_team }}</span>
+        <span class="bracket-team-badges">
+          {{ team_badge(team=match.home_team) }}
+          {%- if _is_live %}<span class="bracket-team-odds">{{ match.home_goals if match.home_goals is not none else 0 }}</span>
+          {%- elif match.home_team and match.away_team and match.home_prob is defined %}<span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>{%- endif %}
+        </span>
       </div>
       {% else %}
       {% for cand, p in (match.home_candidates or {}).items() %}
@@ -553,8 +558,12 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
       {% if match.away_team %}
       <div class="bracket-team-row {% if match.actual_winner == match.away_team %}winner{% endif %}">
         <span class="bracket-team-flag">{{ match.away_team|flag }}</span>
-        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}{{ live_dot(match.away_team) }}</span>
-        <span class="bracket-team-badges">{{ team_badge(team=match.away_team) }}{% if match.home_team and match.away_team and match.away_prob is defined %} <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{% endif %}</span>
+        <span class="bracket-team-name {% if match.actual_winner == match.away_team %}is-winner{% elif match.actual_winner %}knocked-out{% endif %}">{{ match.away_team }}</span>
+        <span class="bracket-team-badges">
+          {{ team_badge(team=match.away_team) }}
+          {%- if _is_live %}<span class="bracket-team-odds">{{ match.away_goals if match.away_goals is not none else 0 }}</span>
+          {%- elif match.home_team and match.away_team and match.away_prob is defined %}<span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>{%- endif %}
+        </span>
       </div>
       {% else %}
       {% for cand, p in (match.away_candidates or {}).items() %}
@@ -572,6 +581,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
       <div class="text-muted small text-center">
         <span class="fw-semibold">#{{ match.match }}</span>
         {% if match.seed_home and match.seed_away %} &middot; {{ match.seed_home }} vs. {{ match.seed_away }}{% endif %}
+        {% if _is_live %} &middot; <span class="live-badge">🔴 {% if match.minute is not none %}{{ match.minute }}'{% else %}LIVE{% endif %}</span>{% endif %}
       </div>
       {% endif %}
       {% if match.date %}

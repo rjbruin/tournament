@@ -94,7 +94,7 @@
       {%- else -%}
         Up next
       {%- endif %}
-      {%- if _featured_group %} — Group {{ _featured_group }}{% endif %}
+      {%- if _featured_group %} — Group {{ _featured_group }}{% elif featured_fixtures[0].round is defined and featured_fixtures[0].round %} — {{ featured_fixtures[0].round }}{% endif %}
     </span>
     <div class="d-flex gap-2 align-items-center">
       {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}

@@ -10,9 +10,18 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.11.0"
+APP_VERSION = "1.11.1"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.11.1",
+        "date": "2026-06-28",
+        "features": [],
+        "fixes": [
+            "Live knockout match scores are now fetched automatically — the background poller was previously only handling group-stage matches and silently skipping knockout fixtures.",
+            "Finished knockout matches are now also auto-detected: final score, winner, and penalty shootout result are written without manual admin entry.",
+        ],
+    },
     {
         "version": "1.11.0",
         "date": "2026-06-28",

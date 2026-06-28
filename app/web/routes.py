@@ -302,6 +302,118 @@ def _stake_text_explanation(clinch_outcomes, elim_outcomes, clinch_position,
     return sentence[0].upper() + sentence[1:] + "."
 
 
+_KO_ROUND_ORDER = {
+    "Round of 32": 1,
+    "Round of 16": 2,
+    "Quarter-finals": 3,
+    "Semi-finals": 4,
+    "Final": 5,
+}
+
+
+def _team_journey(team, engine, actuals, results, featured_match_no=None):
+    """Build a team's tournament journey for the 'How they got here' block.
+
+    Returns::
+
+        {
+          "team": str,
+          "group_name": str | None,
+          "group_place": int | None,
+          "group_teams": list[str],
+          "knockout_wins": [
+            {
+              "opponent": str | None,
+              "round": str,
+              "team_goals": int | None,
+              "opp_goals": int | None,
+              "team_penalties": int | None,
+              "opp_penalties": int | None,
+            }, ...
+          ],
+        }
+    """
+    # --- Group placement ---
+    group_name = None
+    group_place = None
+    group_teams = []
+    teams_by_name = {t["name"]: t for t in engine.data["teams"]}
+    for g in engine.groups:
+        if team in g["teams"]:
+            group_name = g["name"]
+            group_teams = list(g["teams"])
+            raw_fx = (results or {}).get("fixtures", {}).get(group_name, [])
+            try:
+                table = compute_group_table(g, raw_fx, teams_by_name, results)
+                for row in table:
+                    if row["name"] == team:
+                        group_place = row["rank"]
+                        break
+            except Exception:
+                pass
+            break
+
+    # --- Knockout wins prior to the featured match ---
+    ko_results = actuals.get("knockout_results", {})
+    ko_scores = actuals.get("knockout_scores", {})
+    bm = (results or {}).get("bracket_matches", {})
+
+    featured_round_order = None
+    if featured_match_no is not None:
+        fm_entry = bm.get(featured_match_no) or bm.get(str(featured_match_no))
+        if fm_entry:
+            featured_round_order = _KO_ROUND_ORDER.get(fm_entry.get("round", ""), 99)
+
+    knockout_wins = []
+    for match_no_str, winner in ko_results.items():
+        if winner != team:
+            continue
+        match_no = int(match_no_str)
+        bm_entry = bm.get(match_no) or bm.get(str(match_no))
+        if not bm_entry:
+            continue
+
+        match_round = bm_entry.get("round", "")
+        round_order = _KO_ROUND_ORDER.get(match_round, 0)
+        if featured_round_order is not None and round_order >= featured_round_order:
+            continue
+
+        home_entry = bm_entry.get("home", {})
+        away_entry = bm_entry.get("away", {})
+        home_team = home_entry.get("team") if home_entry.get("determined") else None
+        away_team = away_entry.get("team") if away_entry.get("determined") else None
+        opponent = away_team if home_team == team else home_team
+        team_was_home = (home_team == team)
+
+        score = ko_scores.get(str(match_no)) or {}
+        hg, ag = score.get("home_goals"), score.get("away_goals")
+        hp, ap = score.get("home_penalties"), score.get("away_penalties")
+        team_goals = hg if team_was_home else ag
+        opp_goals = ag if team_was_home else hg
+        team_pens = hp if team_was_home else ap
+        opp_pens = ap if team_was_home else hp
+
+        knockout_wins.append({
+            "opponent": opponent,
+            "round": match_round,
+            "round_order": round_order,
+            "team_goals": team_goals,
+            "opp_goals": opp_goals,
+            "team_penalties": team_pens,
+            "opp_penalties": opp_pens,
+        })
+
+    knockout_wins.sort(key=lambda w: w["round_order"])
+
+    return {
+        "team": team,
+        "group_name": group_name,
+        "group_place": group_place,
+        "group_teams": group_teams,
+        "knockout_wins": knockout_wins,
+    }
+
+
 def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     """Build "what's at stake" info for the two teams in the featured group
     fixture, from the second group matchday onwards.
@@ -576,6 +688,19 @@ def index():
             except Exception:
                 pass
 
+    # Build "How they got here" journeys for knockout featured fixtures.
+    team_journeys = {}
+    if featured_fixtures and not featured_fixtures[0].get("_group"):
+        fm = featured_fixtures[0]
+        featured_match_no = fm.get("match")
+        for team in [fm.get("home_team"), fm.get("away_team")]:
+            if team:
+                try:
+                    team_journeys[team] = _team_journey(
+                        team, engine, actuals, results, featured_match_no)
+                except Exception:
+                    pass
+
     scenario_list = data_store.list_scenarios(_username())
     active_scenario = data_store.load_scenario(scenario_id, _username())
     last_updated_ts = data_store.actuals_last_updated()
@@ -619,6 +744,7 @@ def index():
         featured_group_table=featured_group_table,
         featured_before_adv=featured_before_adv,
         qualification_stakes=qualification_stakes,
+        team_journeys=team_journeys,
         previous_fixtures=previous_fixtures,
         previous_fixture=previous_fixtures[0] if previous_fixtures else None,
         previous_group_table=previous_group_table,

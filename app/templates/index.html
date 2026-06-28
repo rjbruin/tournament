@@ -243,6 +243,39 @@
       {%- if fm.home_team %}{%- if _path_teams.append(fm.home_team) %}{% endif %}{%- endif %}
       {%- if fm.away_team %}{%- if _path_teams.append(fm.away_team) %}{% endif %}{%- endif %}
     {%- endfor %}
+    {% if team_journeys %}
+    <hr class="mt-4">
+    <div class="small text-muted fw-bold mb-3">How they got here</div>
+    <div class="row g-3 mb-1">
+      {% for path_team in _path_teams %}
+      {%- set j = team_journeys.get(path_team) %}
+      {% if j %}
+      <div class="col-12 col-md-6">
+        <div class="fw-semibold mb-2">{{ path_team|flag }} {{ path_team }}</div>
+        <ul class="list-unstyled small mb-0">
+          {%- if j.group_name %}
+          {%- set _ordinals = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th"} %}
+          {%- set _place_str = _ordinals.get(j.group_place, j.group_place|string + "th") %}
+          {%- set _others = j.group_teams | reject("equalto", path_team) | list %}
+          <li class="mb-1 text-muted">{{ _place_str }} in Group {{ j.group_name }} <span class="text-muted">({{ _others | join(", ") }})</span></li>
+          {%- endif %}
+          {%- for win in j.knockout_wins %}
+          <li class="mb-1">
+            {%- if win.team_penalties is not none and win.opp_penalties is not none %}
+            Beat {{ win.opponent|flag if win.opponent else "" }}{{ win.opponent or "?" }} on penalties
+            {%- if win.team_goals is not none and win.opp_goals is not none %} ({{ win.team_goals }}–{{ win.opp_goals }}){%- endif %}
+            {%- else %}
+            Beat {{ win.opponent|flag if win.opponent else "" }}{{ win.opponent or "?" }}
+            {%- if win.team_goals is not none and win.opp_goals is not none %} {{ win.team_goals }}–{{ win.opp_goals }}{%- endif %}
+            {%- endif %}
+          </li>
+          {%- endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
     {% if _ns.future_rounds and results and results.opponent_probs %}
     <hr class="mt-4">
     <div class="small text-muted fw-bold mb-3">Path to the Cup</div>

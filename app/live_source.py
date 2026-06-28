@@ -174,21 +174,22 @@ def compute_poll_delay(engine, any_live: bool) -> int:
 
 
 def poll_live_matches(engine) -> dict:
-    """Poll the live feed and merge in-play group-stage state into actuals.
+    """Poll the live feed and merge in-play state into actuals.
+
+    Handles both group-stage and knockout matches. Group results are written
+    to ``group_results``; knockout scores go to ``knockout_scores`` and
+    ``knockout_results`` (on FINISHED). Both add entries to ``live_matches``
+    while the match is in play.
 
     Returns a summary dict::
 
         {
-          "any_live": bool,            # at least one group match in play now
-          "changed": bool,             # actuals.json was modified
-          "live": [ {group, home, away, home_goals, away_goals, minute, status} ],
-          "finished": [ {group, home, away, home_goals, away_goals} ],
+          "any_live": bool,
+          "changed": bool,
+          "live": [ {home, away, home_goals, away_goals, minute, status} ],
+          "finished": [ {home, away, home_goals, away_goals} ],
           "error": str,                # only present on failure
         }
-
-    Only group-stage matches are handled (consistent with the live-score data
-    model, which is group-only); knockout results continue to be entered via
-    the admin sync / manual flow.
     """
     settings = data_store.load_global_settings()
     api_key = settings.get("football_data_api_key", "")
@@ -286,6 +287,88 @@ def poll_live_matches(engine) -> dict:
                                  "home_goals": hg, "away_goals": ag})
 
     # Rebuild live_matches from the (possibly mutated) index.
+    actuals["live_matches"] = list(live_by_pair.values())
+
+    # --- Knockout matches ---
+    # Build a lookup: frozenset(home, away) -> match_no from the engine.
+    from app import get_or_run_results as _get_results
+    _results = _get_results("_system", "current")
+    bm = (_results or {}).get("bracket_matches", {})
+    ko_pair_to_no = {}
+    for mno, bme in bm.items():
+        h = (bme.get("home") or {})
+        a = (bme.get("away") or {})
+        ht = h.get("team") if h.get("determined") else None
+        at = a.get("team") if a.get("determined") else None
+        if ht and at:
+            ko_pair_to_no[_pair(ht, at)] = int(mno)
+
+    ko_scores = actuals.setdefault("knockout_scores", {})
+    ko_results = actuals.setdefault("knockout_results", {})
+
+    for m in matches:
+        status = m.get("status")
+        if status not in LIVE_STATUSES and status != "FINISHED":
+            continue
+        home = _normalize_team_name((m.get("homeTeam") or {}).get("name", ""))
+        away = _normalize_team_name((m.get("awayTeam") or {}).get("name", ""))
+        pair = _pair(home, away)
+        match_no = ko_pair_to_no.get(pair)
+        if match_no is None:
+            continue  # not a known knockout fixture
+
+        score_ft = (m.get("score") or {}).get("fullTime") or {}
+        score_reg = (m.get("score") or {}).get("regularTime") or {}
+        hg = score_ft.get("home") or 0
+        ag = score_ft.get("away") or 0
+        hg, ag = int(hg), int(ag)
+
+        mno_str = str(match_no)
+        existing_score = ko_scores.get(mno_str, {})
+
+        if status in LIVE_STATUSES:
+            minute = m.get("minute")
+            entry = {"home": home, "away": away, "status": status}
+            if minute is not None:
+                entry["minute"] = minute
+            prev_live = live_by_pair.get(pair)
+            if prev_live != entry:
+                changed = True
+            live_by_pair[pair] = entry
+            live_out.append({"home": home, "away": away,
+                             "home_goals": hg, "away_goals": ag,
+                             "minute": minute, "status": status})
+            new_score = {"home": home, "away": away,
+                         "home_goals": hg, "away_goals": ag}
+            if new_score != {k: v for k, v in existing_score.items()
+                             if k in new_score}:
+                ko_scores[mno_str] = {**existing_score, **new_score}
+                changed = True
+        else:  # FINISHED
+            if pair in live_by_pair:
+                del live_by_pair[pair]
+                changed = True
+            # Determine penalties if the match went to a shootout.
+            shootout = (m.get("score") or {}).get("penalties") or {}
+            hp = shootout.get("home")
+            ap = shootout.get("away")
+            reg_hg = score_reg.get("home")
+            reg_ag = score_reg.get("away")
+            new_score = {"home": home, "away": away,
+                         "home_goals": int(reg_hg) if reg_hg is not None else hg,
+                         "away_goals": int(reg_ag) if reg_ag is not None else ag}
+            if hp is not None and ap is not None:
+                new_score["home_penalties"] = int(hp)
+                new_score["away_penalties"] = int(ap)
+            winner = home if hg > ag else away
+            if ko_scores.get(mno_str) != new_score or ko_results.get(mno_str) != winner:
+                ko_scores[mno_str] = new_score
+                ko_results[mno_str] = winner
+                changed = True
+            finished_out.append({"home": home, "away": away,
+                                 "home_goals": hg, "away_goals": ag})
+
+    # Rebuild live_matches from the merged index (group + knockout live entries).
     actuals["live_matches"] = list(live_by_pair.values())
 
     if changed:

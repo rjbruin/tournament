@@ -10,9 +10,21 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.9.1"
+APP_VERSION = "1.10.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.10.0",
+        "date": "2026-06-28",
+        "features": [
+            "Bracket: live knockout matches now show the current score next to each team, with a pulsating red outline on the card and a 🔴 live badge showing the minute.",
+            "Bracket: finished knockout matches show the final score, with penalties written as '1 (5)' when applicable, and the winning team's row subtly highlighted.",
+            "Bracket: quality and form badges moved below the team name for a cleaner layout; scores and win odds use a larger, more prominent font.",
+        ],
+        "fixes": [
+            "Fixed a crash on the home page ('list object has no attribute odds') that appeared once the group stage was complete.",
+        ],
+    },
     {
         "version": "1.9.1",
         "date": "2026-06-26",

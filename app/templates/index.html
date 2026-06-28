@@ -105,58 +105,13 @@
   </div>
   <div class="card-body">
 
-    {# Render each concurrent fixture with its own explore/live-score panels #}
+    {# Render each concurrent fixture with its own live-score panel #}
     {% for fx_match in featured_fixtures %}
     {%- set fid = loop.index0 %}
     {%- set can_explore = current_user.is_authenticated and (not fx_match.played or fx_match.in_progress) %}
     {% if not loop.first %}<hr class="my-3">{% endif %}
     {%- set _is_ko_match = fx_match.round is defined and fx_match.round and not fx_match.get('_group') %}
-    {{ fx.large_fixture(fx_match, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=featured_before_adv, explore=can_explore, live=can_explore, idx=fid, win_prob=results.winner_prob if (_is_ko_match and results) else none) }}
-
-    {% if can_explore %}
-    <div id="explore-panel-{{ fid }}" class="d-none mt-3">
-      <div class="small text-muted mb-2">
-        What if this match ended differently? Edit the score below and explore the hypothetical scenario.
-      </div>
-      <form id="hypothetical-form-{{ fid }}"></form>
-      <div>{{ fx.large_fixture(fx_match, editable=true, form_id="hypothetical-form-" + fid|string) }}</div>
-    </div>
-    <script>
-    document.getElementById('explore-toggle-btn{{ fid }}')?.addEventListener('click', function () {
-      document.getElementById('explore-panel-{{ fid }}')?.classList.toggle('d-none');
-    });
-    document.getElementById('hypothetical-form-{{ fid }}')?.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const fd = new FormData(this);
-      const btn = document.querySelector('button[type=submit][form="hypothetical-form-{{ fid }}"]');
-      btn.disabled = true;
-      btn.textContent = 'Computing...';
-      document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
-      try {
-        const resp = await fetch(`${window.API_ROOT}/scenarios/hypothetical`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            group: {{ fx_match._group|tojson }},
-            home: {{ fx_match.home_team|tojson }},
-            away: {{ fx_match.away_team|tojson }},
-            home_goals: parseInt(fd.get('home_goals') || '0', 10),
-            away_goals: parseInt(fd.get('away_goals') || '0', 10),
-            base: {{ scenario_id|tojson }},
-          })
-        });
-        const data = await resp.json();
-        if (!resp.ok) { alert(data.error || 'Failed to compute hypothetical scenario.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = 'Show hypothetical scenario'; return; }
-        sessionStorage.setItem('wc2026-notice', '🔮 Showing a hypothetical "what if" scenario. It will be discarded once you switch to another scenario.');
-        window.location = `${window.location.pathname}?s=${data.scenario.id}`;
-      } catch (err) {
-        alert('Failed: ' + err);
-        document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
-        btn.disabled = false;
-        btn.textContent = 'Show hypothetical scenario';
-      }
-    });
-    </script>
+    {{ fx.large_fixture(fx_match, show_advance=true, advance_prob=results.group_advance_prob if results else none, before_adv=featured_before_adv, live=can_explore, idx=fid, win_prob=results.winner_prob if (_is_ko_match and results) else none) }}
 
     <div id="live-score-panel-{{ fid }}" class="d-none mt-3">
       <div class="small text-muted mb-2">

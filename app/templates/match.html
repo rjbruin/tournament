@@ -29,49 +29,7 @@
         advance_prob=after_adv,
         before_adv=before_adv,
         clinch=match_clinch,
-        explore=can_explore, live=can_explore, idx=0) }}
-
-    {% if can_explore %}
-    <div id="explore-panel-0" class="d-none mt-3">
-      <div class="small text-muted mb-2">
-        What if this match ended differently? Edit the score below and explore the hypothetical scenario.
-      </div>
-      <form id="hypothetical-form-0"></form>
-      <div>{{ fx.large_fixture(fixture, editable=true, form_id="hypothetical-form-0") }}</div>
-    </div>
-    <script>
-    document.getElementById('explore-toggle-btn0')?.addEventListener('click', function () {
-      document.getElementById('explore-panel-0')?.classList.toggle('d-none');
-    });
-    document.getElementById('hypothetical-form-0')?.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const fd = new FormData(this);
-      const btn = document.querySelector('button[type=submit][form="hypothetical-form-0"]');
-      btn.disabled = true; btn.textContent = 'Computing...';
-      document.getElementById('scenario-loading-overlay')?.classList.remove('d-none');
-      try {
-        const resp = await fetch(`${window.API_ROOT}/scenarios/hypothetical`, {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            group: {{ fixture._group|tojson }},
-            home: {{ fixture.home_team|default(none)|tojson }},
-            away: {{ fixture.away_team|default(none)|tojson }},
-            home_goals: parseInt(fd.get('home_goals') || '0', 10),
-            away_goals: parseInt(fd.get('away_goals') || '0', 10),
-            base: {{ scenario_id|tojson }},
-          })
-        });
-        const data = await resp.json();
-        if (!resp.ok) { alert(data.error || 'Failed.'); document.getElementById('scenario-loading-overlay')?.classList.add('d-none'); btn.disabled = false; btn.textContent = 'Show hypothetical scenario'; return; }
-        sessionStorage.setItem('wc2026-notice', '🔮 Showing a hypothetical "what if" scenario.');
-        window.location = `${window.location.pathname}?s=${data.scenario.id}`;
-      } catch (err) {
-        alert('Failed: ' + err);
-        document.getElementById('scenario-loading-overlay')?.classList.add('d-none');
-        btn.disabled = false; btn.textContent = 'Show hypothetical scenario';
-      }
-    });
-    </script>
+        live=can_explore, idx=0) }}
 
     <div id="live-score-panel-0" class="d-none mt-3">
       <div class="small text-muted mb-2">

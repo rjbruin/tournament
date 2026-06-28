@@ -100,18 +100,10 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
 {%- endif %}
 {%- endmacro %}
 
-{# Third-place ranking table. Shows only groups where the 3rd-place team has
-   finished all three group matches (gp == 3); incomplete groups appear as
-   placeholder rows below, so the table always has 12 rows when visible.
-   Visible from MD3 onwards (max_gp >= 2). #}
+{# Third-place ranking table. Shown once at least one group has fully finished
+   (so there is at least one real entry), and hidden again once all 12 groups
+   are done (the bracket/knockout view takes over). #}
 {% macro thirds_table(group_tables, groups, results) -%}
-{%- set max_gp = namespace(v=0) %}
-{%- for group in groups %}
-  {%- for row in group_tables[group.name] %}
-    {%- if row.gp > max_gp.v %}{%- set max_gp.v = row.gp %}{%- endif %}
-  {%- endfor %}
-{%- endfor %}
-{%- if max_gp.v >= 2 %}
 {%- set complete_thirds = [] %}
 {%- set incomplete_groups = [] %}
 {%- for group in groups %}
@@ -127,6 +119,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
     {%- if incomplete_groups.append(group.name) %}{% endif %}
   {%- endif %}
 {%- endfor %}
+{%- if complete_thirds | length > 0 and incomplete_groups | length > 0 %}
 {# Sort by pts desc, then GD desc, then GF desc #}
 {%- set sorted_thirds = complete_thirds | sort(attribute='gf', reverse=True) | sort(attribute='gd', reverse=True) | sort(attribute='pts', reverse=True) %}
 <div class="card shadow-sm mt-3 mb-4" id="thirds-table">

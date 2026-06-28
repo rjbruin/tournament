@@ -15,5 +15,6 @@ data/invites.json
 data/email_tokens.json
 data/.migrations.json
 data/scenarios/
+data/pageviews.jsonl
 .claude/
 *.tar.gz

@@ -575,11 +575,26 @@ def index():
     # Include bracket matches so the featured fixture can be a knockout match
     # once all group-stage games have been played.
     bracket_matches_raw = (results or {}).get("bracket_matches", {})
+    live_by_pair = {
+        frozenset((lm.get("home"), lm.get("away"))): lm
+        for lm in actuals.get("live_matches", [])
+    }
     if bracket_matches_raw and not _is_pre_draw(scenario_id):
         for mno, m in bracket_matches_raw.items():
             nm = normalize_bracket_match(m, ko_scores=ko_scores)
             nm["_group"] = None
             nm["_sort_key"] = _utc_sort_key(m)
+            # Merge live score into in-progress knockout matches.
+            pair = frozenset((nm.get("home_team"), nm.get("away_team")))
+            lm = live_by_pair.get(pair)
+            if lm:
+                nm["in_progress"] = True
+                nm["played"] = True  # enables score display in the fixture macro
+                nm["minute"] = lm.get("minute")
+                s = ko_scores.get(str(mno))
+                if s:
+                    nm["home_goals"] = s.get("home_goals")
+                    nm["away_goals"] = s.get("away_goals")
             all_normalized.append(nm)
 
     # The "current/next fixture" card: prefer an in-progress (live) match,

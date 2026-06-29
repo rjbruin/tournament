@@ -152,6 +152,8 @@ def compute_group_table(group: dict, fixtures: list, teams_by_name: dict, result
         if not m.get("played"):
             continue
         h, a = m["home"], m["away"]
+        if h not in stats or a not in stats:
+            continue
         hg, ag = m["home_goals"], m["away_goals"]
         stats[h]["gp"] += 1
         stats[a]["gp"] += 1

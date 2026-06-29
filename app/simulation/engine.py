@@ -239,6 +239,29 @@ class SimulationEngine:
             fixed_group_results = self._resolve_fixed_group_results(actuals.get("group_results", {}))
             fixed_knockout_winners = self._resolve_fixed_knockout_winners(actuals.get("knockout_results", {}))
 
+            # For live knockout matches where one team leads, treat the leader
+            # as a provisional winner so the rest of the bracket fills in.
+            # Only applied when goals differ (tied = no provisional winner).
+            live_ko_leaders: dict[int, str] = {}
+            ko_scores = actuals.get("knockout_scores", {})
+            live_pairs = {
+                frozenset((lm.get("home"), lm.get("away")))
+                for lm in actuals.get("live_matches", [])
+            }
+            for mno_str, sc in ko_scores.items():
+                pair = frozenset((sc.get("home"), sc.get("away")))
+                if pair not in live_pairs:
+                    continue  # not currently live
+                hg = sc.get("home_goals")
+                ag = sc.get("away_goals")
+                if hg is None or ag is None or hg == ag:
+                    continue  # tied — keep simulation open
+                leader = sc["home"] if hg > ag else sc["away"]
+                mno = int(mno_str)
+                if mno not in fixed_knockout_winners and leader in self.team_idx:
+                    fixed_knockout_winners[mno] = self.team_idx[leader]
+                    live_ko_leaders[mno] = leader
+
             # group_order[sim, g, pos] = team index at rank `pos` (0=1st..3=4th)
             # group_key[sim, g, pos]   = ranking key at that rank (for 3rd-place comparison)
             group_order, group_key = self._simulate_group_stage(n, fixed_group_results)
@@ -251,6 +274,7 @@ class SimulationEngine:
                 mn = m["match"]
                 if str(mn) in actuals.get("knockout_results", {}):
                     m["actual_winner"] = actuals["knockout_results"][str(mn)]
+                # Live leaders are NOT marked actual_winner — keeps live styling.
 
             self._attach_schedule(results)
 

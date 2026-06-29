@@ -335,6 +335,21 @@ def create_app():
             return f"{match['date']} {match['local_time']}"
         return dt.strftime(fmt)
 
+    @app.template_filter("kickoff_utc_ms")
+    def kickoff_utc_ms(match):
+        """Return the fixture's kickoff as milliseconds since epoch (for JS),
+        or None if the kickoff time is unknown."""
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        if not match or not match.get("date") or not match.get("local_time"):
+            return None
+        try:
+            dt = datetime.fromisoformat(f"{match['date']}T{match['local_time']}")
+            dt = dt.replace(tzinfo=ZoneInfo(match.get("local_timezone") or "UTC"))
+            return int(dt.timestamp() * 1000)
+        except Exception:
+            return None
+
     @app.context_processor
     def inject_settings():
         if current_user.is_authenticated:

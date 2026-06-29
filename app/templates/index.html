@@ -853,4 +853,25 @@ if (quickSim) {
 }
 </script>
 {% endif %}
+
+{% if featured_fixtures and not featured_is_live and not featured_fixtures[0].played %}
+{%- set _kickoff_ms = featured_fixtures[0]|kickoff_utc_ms %}
+{% if _kickoff_ms %}
+<script>
+(function () {
+  var kickoffMs = {{ _kickoff_ms }};
+  var reloadAt  = kickoffMs + 60 * 1000;   // 1 minute after kickoff
+  var delay     = reloadAt - Date.now();
+  if (delay < 0) {
+    // Kickoff already passed — reload after 30 s in case page is stale
+    delay = 30 * 1000;
+  } else if (delay > 4 * 60 * 60 * 1000) {
+    // More than 4 h away — skip; no point keeping a timer that long
+    return;
+  }
+  setTimeout(function () { window.location.reload(); }, delay);
+})();
+</script>
+{% endif %}
+{% endif %}
 {% endblock %}

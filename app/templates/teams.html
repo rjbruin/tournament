@@ -35,14 +35,14 @@
         {% for t in teams %}
         {% set _is_ko = knocked_out_teams and t.name in knocked_out_teams %}
         <tr
-          {% if favorite and t.name == favorite.name %}class="table-success"{% elif _is_ko %}class="text-muted"{% endif %}
+          {% if favorite and t.name == favorite.name %}class="table-success"{% endif %}
           data-sort-rank="{{ loop.index }}"
           data-sort-name="{{ t.name | lower }}"
           data-sort-fifa="{{ t.fifa_rank }}"
         >
           <td class="text-muted">{% if t.tournament_rank is not none %}{{ t.tournament_rank }}{% endif %}</td>
           <td>
-            <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none {% if _is_ko %}knocked-out text-muted{% else %}text-dark{% endif %}">
+            <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none text-dark">
               {{ t.name|flag }} {{ t.name }}
             </a>{{ fx.live_dot(t.name) }}
           </td>

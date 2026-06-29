@@ -59,6 +59,7 @@ from itertools import groupby, product
 OPEN = "open"
 CLINCHED_FIRST = "clinched_first"
 CLINCHED_TOP2 = "clinched_top2"
+CLINCHED_SECOND = "clinched_second"  # another team has clinched 1st, so top-2 = 2nd
 CLINCHED_THIRD_ADV = "clinched_third_adv"  # guaranteed to advance as best-third
 ELIMINATED = "eliminated"
 
@@ -237,6 +238,10 @@ def clinch_for_group(group: dict, fixtures: list) -> dict[str, str]:
     _pos, played = _played_from_fixtures(group, fixtures)
     by_index = group_clinch(played)
     result = {teams[i]: by_index[i] for i in range(4)}
+    # If one team has clinched 1st, any other team that has clinched top-2
+    # has effectively clinched 2nd (not just "one of the top 2").
+    if any(s == CLINCHED_FIRST for s in result.values()):
+        result = {t: (CLINCHED_SECOND if s == CLINCHED_TOP2 else s) for t, s in result.items()}
     _CACHE[name] = (sig, result)
     return result
 
@@ -547,7 +552,7 @@ def clinch_by_team(results: dict, groups: list) -> dict[str, str]:
 
     third_adv = _THIRD_ADV_CACHE[combined_sig]
     for team in third_adv:
-        if out.get(team) not in (CLINCHED_FIRST, CLINCHED_TOP2):
+        if out.get(team) not in (CLINCHED_FIRST, CLINCHED_TOP2, CLINCHED_SECOND):
             out[team] = CLINCHED_THIRD_ADV
 
     return out
@@ -555,4 +560,4 @@ def clinch_by_team(results: dict, groups: list) -> dict[str, str]:
 
 def advances_for_sure(status: str | None) -> bool:
     """Whether a status means the team is theoretically through to the knockouts."""
-    return status in (CLINCHED_FIRST, CLINCHED_TOP2, CLINCHED_THIRD_ADV)
+    return status in (CLINCHED_FIRST, CLINCHED_TOP2, CLINCHED_SECOND, CLINCHED_THIRD_ADV)

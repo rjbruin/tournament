@@ -20,7 +20,7 @@
         <h5 class="text-center mb-3">{{ round_name }}</h5>
         {% for m in matches %}
         <div class="mb-3 bracket-match" style="min-width: 220px;">
-          {{ fx.knockout_fixture(m) }}
+          {{ fx.knockout_fixture(m, match_url=url_for('web.match_detail', match_no=m.match) if m.match else none) }}
         </div>
         {% endfor %}
       </div>

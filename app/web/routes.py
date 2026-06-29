@@ -506,7 +506,7 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
                 stake["status"] = status
                 stake["text_explanation"] = ""  # headline already covers certain/impossible
                 continue
-            if _cur_clinch.get(team) == _clinch.ELIMINATED:
+            if _cur_clinch.get(team) == _clinch.ELIMINATED and not featured_fixture.get("in_progress"):
                 stake["clinch_outcomes"] = []
                 stake["elim_outcomes"] = valid_outcomes
                 stake["clinch_position"] = {}
@@ -1297,6 +1297,14 @@ def match_detail(match_no: int):
         except Exception:
             pass
 
+    # --- How they got here / Path to the Cup (knockout matches only) ---
+    team_journeys = {}
+    if not fixture_group:
+        for team in [fixture.get("home_team"), fixture.get("away_team")]:
+            if team:
+                team_journeys[team] = _team_journey(
+                    team, engine, actuals, results, featured_match_no=match_no)
+
     is_live = fixture.get("in_progress", False)
     can_explore = current_user.is_authenticated and (not fixture.get("played") or is_live)
 
@@ -1330,6 +1338,7 @@ def match_detail(match_no: int):
         group_table_before=group_table_before,
         before_adv=before_adv,
         qualification_stakes=qualification_stakes,
+        team_journeys=team_journeys,
         is_live=is_live,
         can_explore=can_explore,
         live_version=app_module.get_live_status()["version"],

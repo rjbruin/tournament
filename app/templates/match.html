@@ -83,7 +83,6 @@
       document.getElementById('finish-live-btn-0')?.addEventListener('click', function () { saveLiveScore(true); });
     })();
     </script>
-    {% endif %}
 
     {% if qualification_stakes %}
     <div class="qual-stake-box mt-3">
@@ -132,6 +131,109 @@
         {{ fx.group_table_collapsed(group_table_before, "Group " + fixture_group.name + " standings — before this match", "before-table-match") }}
       </div>
       {% endif %}
+    {% endif %}
+
+    {# Knockout: How they got here + Path to the Cup #}
+    {% if not fixture_group %}
+    {%- set _ko_round = fixture.round %}
+    {%- set _opp_round_seq = ["Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final"] %}
+    {%- set _bracket_to_opp = {"Round of 32": "Round of 32", "Round of 16": "Round of 16", "Quarterfinal": "Quarterfinals", "Semifinal": "Semifinals", "Final": "Final"} %}
+    {%- set _current_opp_round = _bracket_to_opp.get(_ko_round, _ko_round) %}
+    {%- set _ns = namespace(past=False, future_rounds=[]) %}
+    {%- for r in _opp_round_seq %}
+      {%- if _ns.past %}{%- set _ns.future_rounds = _ns.future_rounds + [r] %}{%- endif %}
+      {%- if r == _current_opp_round %}{%- set _ns.past = True %}{%- endif %}
+    {%- endfor %}
+    {%- set _path_teams = [] %}
+    {%- if fixture.home_team %}{%- if _path_teams.append(fixture.home_team) %}{% endif %}{%- endif %}
+    {%- if fixture.away_team %}{%- if _path_teams.append(fixture.away_team) %}{% endif %}{%- endif %}
+    {% if team_journeys %}
+    <hr class="mt-4">
+    <div class="small text-muted fw-bold mb-3">How they got here</div>
+    <div class="row g-3 mb-1">
+      {% for path_team in _path_teams %}
+      {%- set j = team_journeys.get(path_team) %}
+      {% if j %}
+      <div class="col-12 col-md-6">
+        <div class="fw-semibold mb-2">{{ path_team|flag }} {{ path_team }}</div>
+        <ul class="list-unstyled small mb-0">
+          {%- if j.group_name %}
+          {%- set _ordinals = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th"} %}
+          {%- set _place_str = _ordinals.get(j.group_place, j.group_place|string + "th") %}
+          {%- set _others = j.group_teams | reject("equalto", path_team) | list %}
+          <li class="mb-1 text-muted">{{ _place_str }} in Group {{ j.group_name }} <span class="text-muted">({{ _others | join(", ") }})</span></li>
+          {%- endif %}
+          {%- for win in j.knockout_wins %}
+          <li class="mb-1">
+            {%- if win.team_penalties is not none and win.opp_penalties is not none %}
+            Beat {{ win.opponent|flag if win.opponent else "" }}{{ win.opponent or "?" }} on penalties
+            {%- if win.team_goals is not none and win.opp_goals is not none %} ({{ win.team_goals }}–{{ win.opp_goals }}){%- endif %}
+            {%- else %}
+            Beat {{ win.opponent|flag if win.opponent else "" }}{{ win.opponent or "?" }}
+            {%- if win.team_goals is not none and win.opp_goals is not none %} {{ win.team_goals }}–{{ win.opp_goals }}{%- endif %}
+            {%- endif %}
+          </li>
+          {%- endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if _ns.future_rounds and results and results.opponent_probs %}
+    <hr class="mt-4">
+    <div class="small text-muted fw-bold mb-3">Path to the Cup</div>
+    {%- set _opp_a = results.opponent_probs.get(_path_teams[0]) if _path_teams|length > 0 else none %}
+    {%- set _opp_b = results.opponent_probs.get(_path_teams[1]) if _path_teams|length > 1 else none %}
+    {%- set _shared = (_opp_a and _opp_b and _path_teams|length == 2) %}
+    <div class="row g-3">
+      {% if _shared %}
+      <div class="col-12">
+        {% for r in _ns.future_rounds %}
+        {%- set _opps = _opp_a.get(r) %}
+        {% if _opps %}
+        <div class="mb-2">
+          <span class="text-muted small">{{ r }}:</span><br>
+          {% if _opps[0].probability >= 0.999 %}
+          <span class="small">{{ _opps[0].team|flag }} {{ _opps[0].team }}</span>
+          {% else %}
+          {%- set _shown = _opps[:4] if _opps|length > 2 else _opps %}
+          {% for o in _shown %}
+          <span class="small me-2">{{ o.team|flag }} {{ o.team }} <span class="text-muted">({{ o.probability|pct(0) }})</span></span>
+          {% endfor %}
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      {% for path_team in _path_teams %}
+      {%- set _team_opp = results.opponent_probs.get(path_team) %}
+      {% if _team_opp %}
+      <div class="col-12 col-md-6">
+        <div class="fw-semibold mb-2">{{ path_team|flag }} {{ path_team }}</div>
+        {% for r in _ns.future_rounds %}
+        {%- set _opps = _team_opp.get(r) %}
+        {% if _opps %}
+        <div class="mb-2">
+          <span class="text-muted small">{{ r }}:</span><br>
+          {% if _opps[0].probability >= 0.999 %}
+          <span class="small">{{ _opps[0].team|flag }} {{ _opps[0].team }}</span>
+          {% else %}
+          {%- set _shown = _opps[:4] if _opps|length > 2 else _opps %}
+          {% for o in _shown %}
+          <span class="small me-2">{{ o.team|flag }} {{ o.team }} <span class="text-muted">({{ o.probability|pct(0) }})</span></span>
+          {% endfor %}
+          {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
     {% endif %}
   </div>
 </div>

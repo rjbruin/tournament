@@ -779,7 +779,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   gap: .35rem;
 }
 .bracket-team-sub {
-  padding-left: 1.9rem;
+  padding-left: 0;
 }
 .bracket-team-odds {
   font-family: 'Bebas Neue', sans-serif;

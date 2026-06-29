@@ -194,11 +194,11 @@ def compute_group_table(group: dict, fixtures: list, teams_by_name: dict, result
         r["rank"] = i + 1
         status = status_by_team.get(r["name"], "open")
         r["clinch_status"] = status
-        r["clinched"] = status in ("clinched_first", "clinched_top2")
+        r["clinched"] = status in ("clinched_first", "clinched_top2", "clinched_second")
         r["eliminated"] = status == "eliminated"
         if status == "clinched_first":
             r["qual"] = "secured_first"
-        elif status == "clinched_top2":
+        elif status in ("clinched_top2", "clinched_second"):
             r["qual"] = "secured_second"
         elif status == "eliminated":
             r["qual"] = "eliminated"

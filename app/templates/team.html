@@ -68,7 +68,7 @@
           <dt class="col-6">Advance from group</dt>
           <dd class="col-6 text-end"><strong>
             {%- set _cs = (team_clinch or {}).get(team.name) -%}
-            {%- if _cs in ('clinched_first', 'clinched_top2', 'clinched_third_adv') %}Qualified ✓
+            {%- if _cs in ('clinched_first', 'clinched_top2', 'clinched_second', 'clinched_third_adv') %}Qualified ✓
             {%- elif _cs == 'eliminated' %}Out ✗
             {%- else %}{{ results.group_advance_prob.get(team.name,0)|pct }}{%- endif -%}
           </strong></dd>

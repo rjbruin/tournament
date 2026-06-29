@@ -10,9 +10,22 @@ Each entry is ``{"version", "date", "features": [...], "fixes": [...]}``.
 
 from __future__ import annotations
 
-APP_VERSION = "1.11.3"
+APP_VERSION = "1.12.0"
 
 CHANGELOG: list[dict] = [
+    {
+        "version": "1.12.0",
+        "date": "2026-06-29",
+        "features": [
+            "Bracket: each fixture card is now clickable and opens the match detail page.",
+            "Match detail page for knockout fixtures now shows 'How they got here' (group placement and prior knockout wins) and 'Path to the Cup' (likely future opponents), matching the home page.",
+            "Group standings: when one team has clinched first place, any other team that has clinched a top-two finish now shows '2nd ✓' instead of 'Top 2 ✓'.",
+            "Bracket: team rating badges now left-align with the flag instead of the team name.",
+        ],
+        "fixes": [
+            "What's at Stake during a live match no longer shows 'Can no longer advance' for all outcomes when the current score would eliminate a team — it now correctly analyses each outcome (win/draw/loss) independently.",
+        ],
+    },
     {
         "version": "1.11.3",
         "date": "2026-06-29",

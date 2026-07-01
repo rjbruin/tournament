@@ -574,6 +574,15 @@ def _load_actuals_for_edit():
     return scenario_id, actuals, False
 
 
+def _validate_group_teams(engine, gname: str, home: str, away: str):
+    """Return an error string if home/away don't both belong to gname, else None."""
+    group_teams = {t for grp in engine.groups if grp["name"] == gname for t in grp["teams"]}
+    bad = [t for t in (home, away) if t not in group_teams]
+    if bad:
+        return f"Team(s) {bad} do not belong to group {gname}"
+    return None
+
+
 @api_bp.post("/actuals/group_result")
 def post_group_result():
     """
@@ -593,6 +602,9 @@ def post_group_result():
     gname = body["group"].upper()
     if gname not in engine.group_pos:
         return jsonify({"error": "Unknown group"}), 404
+    err = _validate_group_teams(engine, gname, body["home"], body["away"])
+    if err:
+        return jsonify({"error": err}), 400
 
     base_scenario_id = _scenario_id()
     target_id, actuals, do_fork = _load_actuals_for_edit()
@@ -685,6 +697,9 @@ def create_hypothetical_scenario():
     gname = body["group"].upper()
     if gname not in engine.group_pos:
         return jsonify({"error": "Unknown group"}), 404
+    err = _validate_group_teams(engine, gname, body["home"], body["away"])
+    if err:
+        return jsonify({"error": err}), 400
 
     base_id = body.get("base") or _scenario_id()
     base = data_store.load_scenario(base_id, g.user.username)
@@ -755,6 +770,9 @@ def post_live_score():
     gname = body["group"].upper()
     if gname not in engine.group_pos:
         return jsonify({"error": "Unknown group"}), 404
+    err = _validate_group_teams(engine, gname, body["home"], body["away"])
+    if err:
+        return jsonify({"error": err}), 400
 
     base_scenario_id = _scenario_id()
     target_id, actuals, do_fork = _load_actuals_for_edit()

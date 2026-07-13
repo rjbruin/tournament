@@ -580,10 +580,12 @@ def index():
         for lm in actuals.get("live_matches", [])
     }
     if bracket_matches_raw and not _is_pre_draw(scenario_id):
+        ko_schedule = engine.data.get("schedule", {}).get("knockout", {})
         for mno, m in bracket_matches_raw.items():
             nm = normalize_bracket_match(m, ko_scores=ko_scores)
             nm["_group"] = None
-            nm["_sort_key"] = _utc_sort_key(m)
+            sched = ko_schedule.get(str(mno), {})
+            nm["_sort_key"] = _utc_sort_key({**m, **sched})
             # Merge live score into in-progress knockout matches.
             pair = frozenset((nm.get("home_team"), nm.get("away_team")))
             lm = live_by_pair.get(pair)

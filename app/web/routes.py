@@ -1782,3 +1782,78 @@ def admin_invite_delete(token):
     data_store.delete_invite(token)
     flash("Invite link deleted.", "success")
     return redirect(url_for("web.settings") + "#admin-invites")
+
+
+@web_bp.get("/retrospective")
+@login_required
+def retrospective():
+    from app.retrospective import (
+        load_retrospective, is_tournament_complete,
+        trigger_retrospective_if_complete, STAGE_LABELS,
+    )
+    engine = app_module.get_engine()
+    actuals = data_store.load_actuals()
+
+    if not is_tournament_complete(engine, actuals):
+        return render_template("retrospective.html", available=False,
+                               computing=False, retro=None)
+
+    retro = load_retrospective()
+    computing = retro is None
+
+    if computing:
+        # Trigger computation if not already running
+        trigger_retrospective_if_complete(engine, actuals)
+
+    flag = app_module.app.jinja_env.globals.get("flag", lambda x: "")
+
+    # Build teams table: all teams with pre/actual/surprise data
+    teams_table = []
+    if retro:
+        pre = retro.get("pre_tournament", {})
+        for team in engine.team_names:
+            actual_stage = retro["team_actual_stage"].get(team, 0)
+            expected_stage = retro["team_expected_stage"].get(team, 0.0)
+            surprise = actual_stage - expected_stage
+            teams_table.append({
+                "name": team,
+                "flag": flag(team),
+                "actual_stage": actual_stage,
+                "actual_stage_label": STAGE_LABELS.get(actual_stage, ""),
+                "expected_stage": expected_stage,
+                "surprise": round(surprise, 2),
+                "pre_win_pct": round(pre.get("winner_prob", {}).get(team, 0) * 100, 1),
+                "pre_final_pct": round(pre.get("finalist_prob", {}).get(team, 0) * 100, 1),
+                "pre_sf_pct": round(pre.get("semifinal_prob", {}).get(team, 0) * 100, 1),
+                "pre_qf_pct": round(pre.get("quarterfinal_prob", {}).get(team, 0) * 100, 1),
+            })
+        # Sort: actual stage desc, then surprise desc
+        teams_table.sort(key=lambda t: (-t["actual_stage"], -t["surprise"]))
+
+    return render_template(
+        "retrospective.html",
+        available=True,
+        computing=computing,
+        retro=retro,
+        teams_table=teams_table,
+        stage_labels=STAGE_LABELS,
+        flag=flag,
+    )
+
+
+@web_bp.post("/admin/retrospective/recompute")
+@login_required
+def admin_retro_recompute():
+    if not current_user.is_admin:
+        return redirect(url_for("web.retrospective"))
+    from app.retrospective import trigger_retrospective_if_complete, _RETRO_PATH
+    import os
+    # Delete cache so trigger runs fresh
+    path = os.path.realpath(_RETRO_PATH)
+    if os.path.exists(path):
+        os.remove(path)
+    engine = app_module.get_engine()
+    actuals = data_store.load_actuals()
+    trigger_retrospective_if_complete(engine, actuals)
+    flash("Retrospective recomputation started.", "info")
+    return redirect(url_for("web.retrospective"))

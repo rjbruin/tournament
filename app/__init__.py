@@ -357,6 +357,11 @@ def create_app():
         return {"app_settings": auth.DEFAULT_USER_SETTINGS, "current_user": current_user}
 
     @app.context_processor
+    def inject_retro_available():
+        from app.retrospective import load_retrospective
+        return {"retro_available": load_retrospective() is not None}
+
+    @app.context_processor
     def inject_form():
         # Team "form" badges (Elo modifier vs. expected results), computed
         # for the scenario currently being viewed (defaults to "current").

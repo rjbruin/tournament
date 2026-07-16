@@ -18,6 +18,7 @@ import uuid
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 ACTUALS_PATH = os.path.join(DATA_DIR, "actuals.json")
+RETROSPECTIVE_PATH = os.path.join(DATA_DIR, "retrospective.json")
 SETTINGS_PATH = os.path.join(DATA_DIR, "settings.json")
 INVITES_PATH = os.path.join(DATA_DIR, "invites.json")
 EMAIL_TOKENS_PATH = os.path.join(DATA_DIR, "email_tokens.json")

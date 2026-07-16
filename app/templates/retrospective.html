@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Retrospective — WC 2026{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-baseline justify-content-between flex-wrap gap-2 mb-4">
+  <h2 class="mb-0">🏆 Retrospective</h2>
+  {% if available and not computing and current_user.is_admin %}
+  <form method="post" action="{{ url_for('web.admin_retro_recompute') }}" class="mb-0">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Recompute</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if not available %}
+{# ------------------------------------------------------------------ #}
+{# Tournament not finished yet                                          #}
+{# ------------------------------------------------------------------ #}
+<div class="text-center py-5">
+  <div class="display-6 mb-3">⏳</div>
+  <h4 class="text-muted">Not available yet</h4>
+  <p class="text-muted">The Retrospective page will unlock once the final has been played.</p>
+</div>
+
+{% elif computing %}
+{# ------------------------------------------------------------------ #}
+{# Analysis in progress                                                 #}
+{# ------------------------------------------------------------------ #}
+<div class="text-center py-5">
+  <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+  <h4>Computing retrospective…</h4>
+  <p class="text-muted">This runs once and takes a minute. Refresh in a moment.</p>
+</div>
+<script>
+  setTimeout(function () { location.reload(); }, 15000);
+</script>
+
+{% else %}
+{# ------------------------------------------------------------------ #}
+{# Full retrospective                                                   #}
+{# ------------------------------------------------------------------ #}
+
+{%- set pre = retro.pre_tournament -%}
+{%- set winner = retro.winner -%}
+{%- set finalists = retro.finalists -%}
+
+{# ---- Hero: Champion ---- #}
+<div class="card shadow-sm mb-4 border-0" style="background: linear-gradient(135deg, #1a3a1a 0%, #2e7d32 100%); color: #fff;">
+  <div class="card-body text-center py-4">
+    <div class="small text-white-50 text-uppercase fw-bold mb-2">World Champion</div>
+    <div style="font-size: 3rem; line-height: 1.1;">{{ winner|flag }}</div>
+    <h2 class="fw-bold mt-2 mb-1">{{ winner }}</h2>
+    {%- set win_pct = (pre.winner_prob.get(winner, 0) * 100) | round(1) %}
+    <div class="text-white-50 small">Pre-tournament win probability: <strong class="text-white">{{ "%.1f"|format(win_pct) }}%</strong></div>
+    {%- if retro.final_pair_prob is not none %}
+    {%- set pair_pct = (retro.final_pair_prob * 100) | round(2) %}
+    <div class="text-white-50 small mt-1">
+      Probability of this exact final: <strong class="text-white">{{ "%.2f"|format(pair_pct) }}%</strong>
+    </div>
+    {%- endif %}
+  </div>
+</div>
+
+{# ---- The Final ---- #}
+{% if finalists|length == 2 %}
+{%- set fin_a = finalists[0] %}
+{%- set fin_b = finalists[1] %}
+{%- set final_mno = retro.ko_match_odds.values() | selectattr("round", "equalto", "final") | list %}
+{%- set final_m = final_mno[0] if final_mno else none %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold">The Final</div>
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-center gap-4 flex-wrap">
+      {%- for side in [fin_a, fin_b] %}
+      <div class="text-center">
+        <div style="font-size: 2rem;">{{ side|flag }}</div>
+        <div class="fw-bold">{{ side }}</div>
+        <div class="text-muted small">
+          Pre-tournament win: {{ "%.1f"|format((pre.winner_prob.get(side, 0) * 100)) }}%<br>
+          Pre-tournament final: {{ "%.1f"|format((pre.finalist_prob.get(side, 0) * 100)) }}%
+        </div>
+      </div>
+      {%- if loop.first %}
+      <div class="text-center">
+        {% if final_m %}
+        {%- set hg = final_m.actual_home_goals %}
+        {%- set ag = final_m.actual_away_goals %}
+        {%- set hp = final_m.actual_home_penalties %}
+        {%- set ap = final_m.actual_away_penalties %}
+        <div class="fs-3 fw-bold">{{ hg }} – {{ ag }}</div>
+        {% if hp is not none and ap is not none %}
+        <div class="text-muted small">({{ hp }}–{{ ap }} pen.)</div>
+        {% endif %}
+        {%- if final_m.actual_result_prob is defined %}
+        <div class="text-muted small mt-1" title="Pre-match probability of this outcome">
+          Odds: {{ "%.1f"|format(final_m.actual_result_prob * 100) }}%
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="fs-3 fw-bold text-muted">vs</div>
+        {% endif %}
+      </div>
+      {%- endif %}
+      {%- endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ---- Key Participants ---- #}
+<div class="row g-3 mb-4">
+  {%- for label, teams, prob_key in [
+      ("Semi-finalists", retro.semifinalists, "semifinal_prob"),
+      ("Quarter-finalists", retro.quarterfinalists, "quarterfinal_prob")
+    ] %}
+  <div class="col-12 col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-bold">{{ label }}</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0 align-middle">
+          <tbody>
+            {% for team in teams | sort %}
+            {%- set pct = (pre[prob_key].get(team, 0) * 100) %}
+            <tr>
+              <td>{{ team|flag }} {{ team }}</td>
+              <td class="text-end text-muted small">
+                Pre-tournament: {{ "%.1f"|format(pct) }}%
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {%- endfor %}
+</div>
+
+{# ---- Biggest Upsets ---- #}
+{% if retro.biggest_upsets %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold">Biggest Upsets</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0 align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Match</th>
+            <th>Stage</th>
+            <th>Result</th>
+            <th class="text-end" title="Pre-match probability of the actual outcome">Odds</th>
+          </tr>
+        </thead>
+        <tbody>
+          {%- set round_labels = {"r32": "R32", "r16": "R16", "qf": "QF", "sf": "SF", "final": "Final"} %}
+          {% for m in retro.biggest_upsets %}
+          <tr>
+            <td class="text-muted">{{ loop.index }}</td>
+            <td>
+              {%- if m.type == "group" %}
+              {{ m.home|flag }} {{ m.home }} vs {{ m.away|flag }} {{ m.away }}
+              {%- else %}
+              {{ m.home|flag }} {{ m.home }} vs {{ m.away|flag }} {{ m.away }}
+              {%- endif %}
+            </td>
+            <td class="text-muted small">
+              {%- if m.type == "group" %}
+              Group {{ m.group[-1] if m.group else "" }}
+              {%- else %}
+              {{ round_labels.get(m.round, m.round | upper) }}
+              {%- endif %}
+            </td>
+            <td>
+              {%- if m.type == "group" %}
+              {%- set ah = m.actual_home if m.actual_home else m.home %}
+              {%- set aw = m.actual_away if m.actual_away else m.away %}
+              {{ ah|flag }} {{ m.actual_home_goals }} – {{ m.actual_away_goals }} {{ aw|flag }}
+              {%- else %}
+              {%- set hg = m.actual_home_goals %}
+              {%- set ag = m.actual_away_goals %}
+              {%- set hp = m.actual_home_penalties %}
+              {%- set ap = m.actual_away_penalties %}
+              {{ m.home|flag }} {{ hg }} – {{ ag }} {{ m.away|flag }}
+              {%- if hp is not none and ap is not none %} ({{ hp }}–{{ ap }} pen.){% endif %}
+              <span class="badge bg-success ms-1">{{ m.actual_winner|flag if m.actual_winner }}</span>
+              {%- endif %}
+            </td>
+            <td class="text-end">
+              <span class="badge bg-danger">{{ "%.1f"|format(m.actual_result_prob * 100) }}%</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ---- All Teams Table ---- #}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex align-items-baseline justify-content-between">
+    <span class="fw-bold">All Teams</span>
+    <span class="text-muted small">Sorted by actual performance, then surprise factor</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0 align-middle" id="retro-teams-table">
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th>Reached</th>
+            <th class="text-end" title="Probability-weighted expected stage before the tournament">Expected</th>
+            <th class="text-end" title="Actual stage minus expected stage">Surprise</th>
+            <th class="text-end" title="Pre-tournament win probability">Win %</th>
+            <th class="text-end d-none d-md-table-cell" title="Pre-tournament finalist probability">Final %</th>
+            <th class="text-end d-none d-md-table-cell" title="Pre-tournament semi-final probability">SF %</th>
+            <th class="text-end d-none d-md-table-cell" title="Pre-tournament quarter-final probability">QF %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {%- set ns = namespace(prev_stage=none) %}
+          {% for t in teams_table %}
+          {%- if ns.prev_stage is not none and t.actual_stage != ns.prev_stage %}
+          <tr class="table-light">
+            <td colspan="8" class="py-1"></td>
+          </tr>
+          {%- endif %}
+          <tr>
+            <td>
+              <a href="{{ url_for('web.team', name=t.name) }}" class="text-decoration-none text-dark">
+                {{ t.flag }} {{ t.name }}
+              </a>
+            </td>
+            <td>
+              {%- set stage = t.actual_stage %}
+              {%- if stage == 6 %}
+              <span class="badge bg-warning text-dark">🏆 Winner</span>
+              {%- elif stage == 5 %}
+              <span class="badge bg-secondary">Finalist</span>
+              {%- elif stage == 4 %}
+              <span class="badge bg-primary">SF</span>
+              {%- elif stage == 3 %}
+              <span class="badge bg-info text-dark">QF</span>
+              {%- elif stage == 2 %}
+              <span class="badge bg-light text-dark border">R16</span>
+              {%- elif stage == 1 %}
+              <span class="badge bg-light text-dark border">R32</span>
+              {%- else %}
+              <span class="text-muted small">Group stage</span>
+              {%- endif %}
+            </td>
+            <td class="text-end text-muted small">{{ "%.2f"|format(t.expected_stage) }}</td>
+            <td class="text-end">
+              {%- set s = t.surprise %}
+              {%- if s > 1.5 %}
+              <span class="text-success fw-bold">+{{ "%.2f"|format(s) }}</span>
+              {%- elif s > 0.3 %}
+              <span class="text-success">+{{ "%.2f"|format(s) }}</span>
+              {%- elif s < -1.5 %}
+              <span class="text-danger fw-bold">{{ "%.2f"|format(s) }}</span>
+              {%- elif s < -0.3 %}
+              <span class="text-danger">{{ "%.2f"|format(s) }}</span>
+              {%- else %}
+              <span class="text-muted">{{ "%+.2f"|format(s) }}</span>
+              {%- endif %}
+            </td>
+            <td class="text-end text-muted small">{{ "%.1f"|format(t.pre_win_pct) }}%</td>
+            <td class="text-end text-muted small d-none d-md-table-cell">{{ "%.1f"|format(t.pre_final_pct) }}%</td>
+            <td class="text-end text-muted small d-none d-md-table-cell">{{ "%.1f"|format(t.pre_sf_pct) }}%</td>
+            <td class="text-end text-muted small d-none d-md-table-cell">{{ "%.1f"|format(t.pre_qf_pct) }}%</td>
+          </tr>
+          {%- set ns.prev_stage = t.actual_stage %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="text-muted small text-end mb-4">
+  Analysis computed {{ retro.computed_at[:16] | replace("T", " ") }} UTC using 100,000 simulations.
+</div>
+
+{% endif %}{# end if not available #}
+
+{% endblock %}

@@ -671,6 +671,8 @@ def _save_edited_actuals(target_id, base_scenario_id, actuals, do_fork):
     if target_id == "current":
         data_store.save_actuals(actuals)
         data_store.ensure_match_scenarios()
+        from app.retrospective import trigger_retrospective_if_complete
+        trigger_retrospective_if_complete(app_module.get_engine(), actuals)
     else:
         existing = data_store.load_scenario(target_id, g.user.username)
         data_store.save_scenario(existing["label"], actuals, scenario_id=target_id, username=g.user.username)

@@ -31,6 +31,9 @@
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.bracket') }}">Bracket</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.teams') }}">Teams</a></li>
           <li class="nav-item"><a class="nav-link" href="{{ url_for('web.draw') }}">Draw</a></li>
+          {% if retro_available and current_user.is_authenticated %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('web.retrospective') }}">Retrospective</a></li>
+          {% endif %}
         </ul>
         <ul class="navbar-nav">
           {% if current_user.is_authenticated %}

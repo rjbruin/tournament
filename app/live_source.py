@@ -374,6 +374,8 @@ def poll_live_matches(engine) -> dict:
     if changed:
         data_store.save_actuals(actuals)
         data_store.ensure_match_scenarios()
+        from app.retrospective import trigger_retrospective_if_complete
+        trigger_retrospective_if_complete(engine, actuals)
 
     return {
         "any_live": bool(live_out),

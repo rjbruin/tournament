@@ -741,6 +741,10 @@ def index():
         raw_fixtures = (results or {}).get("fixtures", {}).get(g["name"], [])
         index_group_tables[g["name"]] = compute_group_table(g, raw_fixtures, teams_by_name, results)
 
+    from app.retrospective import is_tournament_complete, load_retrospective
+    tournament_over = is_tournament_complete(engine, actuals)
+    retro = load_retrospective() if tournament_over else None
+
     return render_template(
         "index.html",
         tournament=engine.data["tournament"],
@@ -769,6 +773,8 @@ def index():
         groups=groups,
         group_tables=index_group_tables,
         knocked_out_teams=_knocked_out_teams(results),
+        tournament_over=tournament_over,
+        retro=retro,
     )
 
 

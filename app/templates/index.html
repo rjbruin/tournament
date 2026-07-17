@@ -10,7 +10,31 @@
 </div>
 {% endif %}
 
-{% if not current_user.is_authenticated %}
+{% if tournament_over and retro %}
+{# ---- Post-tournament: winner hero banner ---- #}
+<div class="hero-banner mb-4" style="text-align:center; padding:2.5rem 2rem 2rem;">
+  <div class="small mb-1" style="color:rgba(255,255,255,.65); text-transform:uppercase; letter-spacing:.18em; font-size:.72rem; font-weight:700;">{{ tournament.year }} FIFA World Cup Champion</div>
+  <div style="font-size:4rem; line-height:1.1; margin-bottom:.25rem;">{{ retro.winner|flag }}</div>
+  <h1 class="fw-bold mb-2" style="font-size:2.6rem; letter-spacing:.02em;">{{ retro.winner }}</h1>
+  {%- set _win_pct = retro.pre_tournament.winner_prob.get(retro.winner, 0) * 100 %}
+  <div style="color:rgba(255,255,255,.7); font-size:.9rem;">Pre-tournament win probability: <strong style="color:#fff;">{{ "%.1f"|format(_win_pct) }}%</strong></div>
+  {% if current_user.is_authenticated %}
+  <div class="mt-3 d-flex flex-wrap align-items-center justify-content-center gap-2" style="font-size:.85rem;">
+    {% if active_scenario and active_scenario.is_current and last_updated %}
+    <span style="color:rgba(255,255,255,.65);">Last updated: {{ last_updated }}</span>
+    {% endif %}
+    {% if current_user.is_admin %}
+    {% if results_up_to_date %}
+    <button type="button" class="btn btn-outline-light btn-sm" disabled>✅ Results up to date</button>
+    {% else %}
+    <button type="button" id="update-results-btn" class="btn btn-outline-light btn-sm">🔄 Update results</button>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% elif not current_user.is_authenticated %}
 <div class="hero-banner hero-banner--splash mb-4">
   <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4">
     <div>
@@ -89,12 +113,16 @@
     <span class="fw-bold">
       {%- if featured_is_live -%}
         {{ "Live matches" if _featured_concurrent else "Live match" }}
+      {%- elif tournament_over and not _featured_group -%}
+        The Final
       {%- elif featured_fixtures[0].played -%}
         Latest result{{ "s" if _featured_concurrent else "" }}
       {%- else -%}
         Up next
       {%- endif %}
-      {%- if _featured_group %} — Group {{ _featured_group }}{% elif featured_fixtures[0].round is defined and featured_fixtures[0].round %} — {{ featured_fixtures[0].round }}{% endif %}
+      {%- if not tournament_over or _featured_group -%}
+        {%- if _featured_group %} — Group {{ _featured_group }}{% elif featured_fixtures[0].round is defined and featured_fixtures[0].round %} — {{ featured_fixtures[0].round }}{% endif %}
+      {%- endif %}
     </span>
     <div class="d-flex gap-2 align-items-center">
       {% if scenario_id and scenario_id != "current" %}<span class="badge bg-secondary">Scenario: {{ scenario_id }}</span>{% endif %}
@@ -481,7 +509,94 @@
 
 {{ fx.thirds_table(group_tables, groups, results) }}
 
-{% if results %}
+{% if tournament_over and retro %}
+{# ---- Retrospective highlights ---- #}
+{%- set _pre = retro.pre_tournament %}
+{%- set _winner = retro.winner %}
+{%- set _finalists = retro.finalists %}
+{%- set _runner_up = (_finalists | reject("equalto", _winner) | list | first) if _finalists | length == 2 else none %}
+{%- set _sf_losers = retro.semifinalists | reject("equalto", _winner) | reject("equalto", _runner_up) | list if _runner_up else [] %}
+
+{% if retro.biggest_upsets and current_user.is_authenticated %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <span class="fw-bold">Tournament Highlights</span>
+    <a href="{{ url_for('web.retrospective') }}" class="btn btn-outline-secondary btn-sm">Full retrospective →</a>
+  </div>
+  <div class="card-body p-0">
+    <div class="small fw-bold text-muted text-uppercase px-3 pt-3 pb-1">Biggest upsets</div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-middle">
+        <tbody>
+          {%- set _rl = {"r32": "R32", "r16": "R16", "qf": "QF", "sf": "SF", "final": "Final"} %}
+          {% for m in retro.biggest_upsets[:5] %}
+          <tr>
+            <td class="text-muted small ps-3" style="width:2rem;">{{ loop.index }}</td>
+            <td>
+              {%- if m.type == "group" %}
+              {%- set _ah = m.actual_home if m.actual_home else m.home %}
+              {%- set _aw = m.actual_away if m.actual_away else m.away %}
+              {{ _ah|flag }} {{ _ah }} {{ m.actual_home_goals }}–{{ m.actual_away_goals }} {{ _aw|flag }} {{ _aw }}
+              <span class="text-muted small ms-1">{{ m.group }}</span>
+              {%- else %}
+              {{ m.home|flag }} {{ m.home }} {{ m.actual_home_goals }}–{{ m.actual_away_goals }} {{ m.away|flag }} {{ m.away }}
+              <span class="text-muted small ms-1">{{ _rl.get(m.round, m.round | upper) }}</span>
+              {%- endif %}
+            </td>
+            <td class="text-end pe-3">
+              <span class="badge bg-danger">{{ "%.1f"|format(m.actual_result_prob * 100) }}%</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ---- Post-tournament podium ---- #}
+<h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 {{ tournament.year }} World Cup 🏆</h2>
+
+<div class="row g-3 mb-3 justify-content-center">
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="champion-card">
+      <span class="trophy">🏆</span>
+      <div class="crown-label">World Champion</div>
+      <div class="team-name">{{ _winner|flag }} {{ _winner }}</div>
+      {%- set _wp = _pre.winner_prob.get(_winner, 0) * 100 %}
+      <div class="team-prob">{{ "%.1f"|format(_wp) }}%</div>
+      <div class="text-muted small mt-1">pre-tournament win probability</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-5 justify-content-center">
+  {% if _runner_up %}
+  <div class="col-6 col-md-3">
+    <div class="podium-card">
+      <span class="rank-badge rank-2">2nd</span>
+      <div class="team-name">{{ _runner_up|flag }} {{ _runner_up }}</div>
+      {%- set _rp = _pre.winner_prob.get(_runner_up, 0) * 100 %}
+      <div class="team-prob">{{ "%.1f"|format(_rp) }}%</div>
+      <div class="text-muted small">win probability</div>
+    </div>
+  </div>
+  {% endif %}
+  {% for _sf in _sf_losers %}
+  <div class="col-6 col-md-3">
+    <div class="podium-card">
+      <span class="rank-badge rank-{{ loop.index + 2 }}">SF</span>
+      <div class="team-name">{{ _sf|flag }} {{ _sf }}</div>
+      {%- set _sfp = _pre.winner_prob.get(_sf, 0) * 100 %}
+      <div class="team-prob">{{ "%.1f"|format(_sfp) }}%</div>
+      <div class="text-muted small">win probability</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% elif results %}
 {% set top10 = results.winner_prob.items() | selectattr(1, 'gt', 0) | sort(attribute=1, reverse=True) | list %}
 <h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 Champion Projection 🏆</h2>
 

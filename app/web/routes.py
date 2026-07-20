@@ -1811,7 +1811,7 @@ def retrospective():
         # Trigger computation if not already running
         trigger_retrospective_if_complete(engine, actuals)
 
-    flag = app_module.app.jinja_env.globals.get("flag", lambda x: "")
+    from app.flags import flag_emoji
 
     # Build teams table: all teams with pre/actual/surprise data
     teams_table = []
@@ -1823,7 +1823,7 @@ def retrospective():
             surprise = actual_stage - expected_stage
             teams_table.append({
                 "name": team,
-                "flag": flag(team),
+                "flag": flag_emoji(team),
                 "actual_stage": actual_stage,
                 "actual_stage_label": STAGE_LABELS.get(actual_stage, ""),
                 "expected_stage": expected_stage,
@@ -1843,7 +1843,6 @@ def retrospective():
         retro=retro,
         teams_table=teams_table,
         stage_labels=STAGE_LABELS,
-        flag=flag,
     )
 
 

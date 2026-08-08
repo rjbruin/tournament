@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Bracket — {{ tournament.name }}{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">{{ tournament.name }} — Bracket</h2>
+
+{% set round_labels = {
+  "r128": "First round", "r64": "Second round", "r32": "Third round",
+  "r16": "Fourth round", "qf": "Quarterfinals", "sf": "Semifinals", "final": "Final"
+} %}
+
+{% for round_id, matches in rounds %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold">{{ round_labels.get(round_id, round_id) }}</div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0 align-middle">
+      <tbody>
+        {% for m in matches %}
+        <tr>
+          <td style="width:40%;">
+            {% if m.side_a.determined %}
+              {{ m.side_a.team }}
+              {% if m.actual and m.actual.winner == m.side_a.team %}<span class="badge bg-success ms-1">W</span>{% endif %}
+            {% elif m.side_a.candidates %}
+              <span class="text-muted small">{{ m.side_a.candidates[0].team }} ({{ (m.side_a.candidates[0].probability * 100) | round(0) }}%)</span>
+            {% else %}
+              <span class="text-muted">TBD</span>
+            {% endif %}
+          </td>
+          <td class="text-center text-muted small" style="width:20%;">
+            {% if m.outcome %}
+              {{ (m.outcome.home_win * 100) | round(0) }}% – {{ (m.outcome.away_win * 100) | round(0) }}%
+            {% else %}
+              vs
+            {% endif %}
+          </td>
+          <td style="width:40%;">
+            {% if m.side_b.determined %}
+              {{ m.side_b.team }}
+              {% if m.actual and m.actual.winner == m.side_b.team %}<span class="badge bg-success ms-1">W</span>{% endif %}
+            {% elif m.side_b.candidates %}
+              <span class="text-muted small">{{ m.side_b.candidates[0].team }} ({{ (m.side_b.candidates[0].probability * 100) | round(0) }}%)</span>
+            {% else %}
+              <span class="text-muted">TBD</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

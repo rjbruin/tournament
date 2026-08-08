@@ -22,6 +22,7 @@ from app.simulation.phases.round_robin import RoundRobinPhase
 from app.simulation.phases.seeding import StaticGroupsSeeding, StaticPositionsSeeding
 from app.simulation.sports.base import MatchRules
 from app.simulation.sports.football import Football
+from app.simulation.sports.tennis import Tennis
 
 
 @dataclass
@@ -99,4 +100,62 @@ def from_wc2026_json(tournament_data: dict, annex_c: dict) -> TournamentSpec:
         },
     )
 
+
+def from_wimbledon_json(entries_data: list[dict], positions: list[str], elo_field: str = "elo_grass",
+                         sets_to_win: int = 3) -> TournamentSpec:
+    """Build a spec for a single-elimination, groupless bracket tournament
+    (e.g. Wimbledon gentlemen's singles) from a flat entries list and an
+    ordered draw-position list.
+
+    Args:
+        entries_data: ``[{"name", ..., <elo_field>: float}, ...]`` — order
+            doesn't matter, only ``positions`` determines draw seats.
+        positions: ``positions[i]`` is the entry name occupying draw seat i;
+            length must be a power of 2.
+        elo_field: which key in each entry dict holds the rating to use
+            (e.g. a surface-specific rating like "elo_grass").
+        sets_to_win: 3 for best-of-5 (men's Slams), 2 for best-of-3.
+    """
+    entry_names = [e["name"] for e in entries_data]
+    entry_idx = {name: i for i, name in enumerate(entry_names)}
+    entry_elos = np.array([e[elo_field] for e in entries_data], dtype=float)
+
+    n_seats = len(positions)
+    if n_seats & (n_seats - 1) != 0:
+        raise ValueError(f"positions has {n_seats} entries; must be a power of 2")
+
+    n_rounds = n_seats.bit_length() - 1
+    # WC-style "entrants" naming (r128 round = 128 entrants), consistent
+    # with from_wc2026_json's stage_ids so compat_wc-style reach_prob
+    # threshold semantics read the same way across formats.
+    named_tail = ["qf", "sf", "final"]
+    n_named = min(len(named_tail), n_rounds)
+    n_numeric = n_rounds - n_named
+    round_ids = [f"r{n_seats // (2 ** i)}" for i in range(n_numeric)] + named_tail[len(named_tail) - n_named:]
+
+    rounds = generate_single_elimination(n_seats, round_ids=round_ids)
+    knockout = KnockoutPhase(
+        # Tennis.simulate_h2h/outcome_probs don't consult `decider` at all —
+        # every match resolves to a winner by construction (no draws exist
+        # in tennis). "sets" documents why, rather than reusing football's
+        # "draw"/"shootout" vocabulary where neither applies.
+        rounds=rounds,
+        rules=MatchRules(decider="sets", extra={"sets_to_win": sets_to_win}),
+        winner_stage="champion",
+    )
+
+    def seeding_factory(groups_override):
+        # No "groups" concept for a bracket-only format; groups_override is
+        # accepted (for a uniform run.simulate(..., groups=) signature) and
+        # ignored.
+        return StaticPositionsSeeding(positions)
+
+    return TournamentSpec(
+        sport=Tennis(),
+        entry_names=entry_names, entry_idx=entry_idx, entry_elos=entry_elos,
+        stage_ids=round_ids + ["champion"],
+        phases=[knockout],
+        seeding_factory=seeding_factory,
+        raw_data={"entries": entries_data, "positions": positions},
+    )
 

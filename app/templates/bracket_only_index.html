@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ tournament.name }}{% endblock %}
+{% block content %}
+
+<div class="hero-banner mb-4">
+  <h1 class="mb-0">{{ tournament.name }}</h1>
+  <div class="hero-subtitle">{{ tournament.host_countries | join(" · ") }} — {{ tournament.year }}</div>
+</div>
+
+<h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 Champion Projection 🏆</h2>
+
+<div class="row g-3 mb-3 justify-content-center">
+  {% set name, prob = top10[0] %}
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="champion-card">
+      <span class="trophy">🏆</span>
+      <div class="crown-label">Most Likely Champion</div>
+      <div class="team-name">{{ name }}</div>
+      <div class="team-prob">{{ (prob * 100) | round(1) }}%</div>
+      <div class="text-muted small mt-1">to win the title</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-5 justify-content-center">
+  {% for name, prob in top10[1:5] %}
+  {% set rank = loop.index + 1 %}
+  <div class="col-6 col-md-3">
+    <div class="podium-card">
+      <span class="rank-badge rank-{{ rank }}">{{ rank }}</span>
+      <div class="team-name">{{ name }}</div>
+      <div class="team-prob">{{ (prob * 100) | round(1) }}%</div>
+      <div class="text-muted small">title probability</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="text-center mb-5">
+  <a href="{{ url_for('web.bracket') }}" class="btn btn-primary btn-lg">View full bracket →</a>
+</div>
+
+<div class="text-muted small text-center">
+  Monte Carlo projection from {{ "{:,}".format(n_simulations) }} simulations.
+</div>
+
+{% endblock %}

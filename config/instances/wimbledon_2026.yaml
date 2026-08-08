@@ -1,0 +1,48 @@
+# Wimbledon 2026 — Gentlemen's Singles
+#
+# Data provenance: data/tournaments/wimbledon_2026/SOURCE.md documents
+# exactly what's real (names, seeds, countries, draw positions — all parsed
+# directly from Wikipedia's raw wikitext) vs. modeled (the ATP-points-to-Elo
+# curve for the 32 seeds; a flat baseline Elo tier for the other 96 real,
+# named entrants, since Wikipedia's seeded-players table doesn't cover them
+# individually).
+#
+# Unlike wc2026.yaml, this instance's data lives under its own
+# data/tournaments/wimbledon_2026/ directory from day one — there's no
+# legacy top-level-path history to preserve here.
+
+id: wimbledon_2026
+slug: wimbledon-2026
+name: "Wimbledon 2026 — Gentlemen's Singles"
+template: wimbledon
+sport: tennis
+year: 2026
+host_countries: [UK]
+
+data:
+  entries: data/tournaments/wimbledon_2026/entries.json
+  positions: data/tournaments/wimbledon_2026/positions.json
+  elo_field: elo_grass
+  sets_to_win: 3   # best of 5
+  actuals: data/tournaments/wimbledon_2026/actuals.json
+  scenarios_dir: data/tournaments/wimbledon_2026/scenarios
+  retrospective: data/tournaments/wimbledon_2026/retrospective.json
+
+theme:
+  palette: wimbledon
+  primary_color: "#4f2683"    # AELTC purple
+  bright_color: "#6a3fb5"
+  gold_color: "#c9a86a"       # trophy gold
+  gold_deep_color: "#a8863f"
+  pink_color: "#00703c"       # AELTC green (repurposing the "pink" slot's
+                               # accent role — no pink in this palette)
+  blue_color: "#1a1a2e"
+  bg_color: "#f7f5fa"
+  logo: null
+  landing: null
+
+defaults:
+  n_simulations: 250000
+
+results_compat:
+  legacy_wc_keys: false

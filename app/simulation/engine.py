@@ -211,6 +211,7 @@ class SimulationEngine:
         annex_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "annex_c.json")
         with open(annex_path) as f:
             annex = json.load(f)
+        self._annex_raw = annex
         self.annex_match_order = annex["match_order"]  # [74,77,79,80,81,82,85,87]
         # Build dense LUT array of size 4096: bitmask -> 8 group indices (or -1 if invalid)
         self._annex_lut = np.full((4096, 8), -1, dtype=int)
@@ -227,11 +228,44 @@ class SimulationEngine:
             self.r32_defs + self.r16_defs + self.qf_defs + self.sf_defs + [self.final_def]
         )
 
+        # Generic spec (app.simulation.spec/run/compat_wc) — what run() below
+        # actually executes. Built once here since tournament_data is fixed
+        # for the lifetime of this engine instance. The private methods below
+        # (_rank_group_with_h2h, _simulate_group_stage, _simulate_knockout,
+        # _resolve_slot, _simulate_knockout_match, etc.) are NO LONGER called
+        # by run() — they are retained only as the frozen reference
+        # implementation that tests/golden/ validates the generic engine
+        # against, and are safe to delete once that historical-parity
+        # coverage is migrated to a standalone frozen reference module.
+        from app.simulation.spec import from_wc2026_json
+        self._spec = from_wc2026_json(tournament_data, annex)
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     def run(self, n: int = 10_000, actuals: dict | None = None, groups: dict | None = None) -> dict:
+        from app.simulation.run import simulate as _simulate
+        from app.simulation.compat_wc import to_legacy_results
+
+        actuals = actuals or {"group_results": {}, "knockout_results": {}}
+        # Derive a per-call seed from the (possibly test-seeded) global
+        # numpy RNG so `np.random.seed(k); engine.run(...)` stays exactly
+        # reproducible (tests/conftest.py's autouse _seed_rng fixture, and
+        # tests/test_engine.py's determinism test, both rely on this). Once
+        # derived, the entire simulation runs through an explicit SimRng and
+        # touches no shared global state again — a strict reduction versus
+        # today's interleaved global-RNG draws throughout a run, though not
+        # a complete fix for concurrent callers (see app.simulation.rng).
+        seed = int(np.random.randint(0, 2**31 - 1))
+        tournament_run = _simulate(self._spec, actuals=actuals, n=n, seed=seed, groups=groups)
+        return to_legacy_results(tournament_run)
+
+    def _run_legacy(self, n: int = 10_000, actuals: dict | None = None, groups: dict | None = None) -> dict:
+        """The original (pre-refactor) implementation, kept ONLY as the
+        frozen reference oracle for tests/golden/'s parity suite — not
+        called by run() or any production code. Delete once that coverage
+        moves to a standalone reference module."""
         with self._temporary_groups(groups):
             t0 = time.perf_counter()
             actuals = actuals or {"group_results": {}, "knockout_results": {}}

@@ -1,0 +1,1033 @@
+{
+  "actuals_snapshot": {
+    "group_results": {
+      "A": [
+        {
+          "away": "South Africa",
+          "away_goals": 1,
+          "home": "Mexico",
+          "home_goals": 0
+        },
+        {
+          "away": "Czech Republic",
+          "away_goals": 2,
+          "home": "South Korea",
+          "home_goals": 1
+        },
+        {
+          "away": "Czech Republic",
+          "away_goals": 0,
+          "home": "South Africa",
+          "home_goals": 2
+        },
+        {
+          "away": "South Korea",
+          "away_goals": 1,
+          "home": "Mexico",
+          "home_goals": 0
+        }
+      ],
+      "B": [
+        {
+          "away": "Bosnia and Herzegovina",
+          "away_goals": 1,
+          "home": "Canada",
+          "home_goals": 0
+        },
+        {
+          "away": "Switzerland",
+          "away_goals": 2,
+          "home": "Qatar",
+          "home_goals": 1
+        },
+        {
+          "away": "Switzerland",
+          "away_goals": 0,
+          "home": "Bosnia and Herzegovina",
+          "home_goals": 2
+        },
+        {
+          "away": "Qatar",
+          "away_goals": 1,
+          "home": "Canada",
+          "home_goals": 0
+        }
+      ],
+      "C": [
+        {
+          "away": "Morocco",
+          "away_goals": 1,
+          "home": "Brazil",
+          "home_goals": 0
+        },
+        {
+          "away": "Scotland",
+          "away_goals": 2,
+          "home": "Haiti",
+          "home_goals": 1
+        },
+        {
+          "away": "Scotland",
+          "away_goals": 0,
+          "home": "Morocco",
+          "home_goals": 2
+        },
+        {
+          "away": "Haiti",
+          "away_goals": 1,
+          "home": "Brazil",
+          "home_goals": 0
+        }
+      ],
+      "D": [
+        {
+          "away": "Paraguay",
+          "away_goals": 1,
+          "home": "USA",
+          "home_goals": 0
+        },
+        {
+          "away": "Turkey",
+          "away_goals": 2,
+          "home": "Australia",
+          "home_goals": 1
+        },
+        {
+          "away": "Australia",
+          "away_goals": 0,
+          "home": "USA",
+          "home_goals": 2
+        },
+        {
+          "away": "Turkey",
+          "away_goals": 1,
+          "home": "Paraguay",
+          "home_goals": 0
+        }
+      ],
+      "E": [
+        {
+          "away": "Curacao",
+          "away_goals": 1,
+          "home": "Germany",
+          "home_goals": 0
+        },
+        {
+          "away": "Ecuador",
+          "away_goals": 2,
+          "home": "Ivory Coast",
+          "home_goals": 1
+        },
+        {
+          "away": "Ivory Coast",
+          "away_goals": 0,
+          "home": "Germany",
+          "home_goals": 2
+        },
+        {
+          "away": "Ecuador",
+          "away_goals": 1,
+          "home": "Curacao",
+          "home_goals": 0
+        }
+      ],
+      "F": [
+        {
+          "away": "Japan",
+          "away_goals": 1,
+          "home": "Netherlands",
+          "home_goals": 0
+        },
+        {
+          "away": "Tunisia",
+          "away_goals": 2,
+          "home": "Sweden",
+          "home_goals": 1
+        },
+        {
+          "away": "Sweden",
+          "away_goals": 0,
+          "home": "Netherlands",
+          "home_goals": 2
+        },
+        {
+          "away": "Tunisia",
+          "away_goals": 1,
+          "home": "Japan",
+          "home_goals": 0
+        }
+      ],
+      "G": [
+        {
+          "away": "Egypt",
+          "away_goals": 1,
+          "home": "Belgium",
+          "home_goals": 0
+        },
+        {
+          "away": "New Zealand",
+          "away_goals": 2,
+          "home": "Iran",
+          "home_goals": 1
+        },
+        {
+          "away": "Iran",
+          "away_goals": 0,
+          "home": "Belgium",
+          "home_goals": 2
+        },
+        {
+          "away": "New Zealand",
+          "away_goals": 1,
+          "home": "Egypt",
+          "home_goals": 0
+        }
+      ],
+      "H": [
+        {
+          "away": "Cape Verde",
+          "away_goals": 1,
+          "home": "Spain",
+          "home_goals": 0
+        },
+        {
+          "away": "Uruguay",
+          "away_goals": 2,
+          "home": "Saudi Arabia",
+          "home_goals": 1
+        },
+        {
+          "away": "Saudi Arabia",
+          "away_goals": 0,
+          "home": "Spain",
+          "home_goals": 2
+        },
+        {
+          "away": "Uruguay",
+          "away_goals": 1,
+          "home": "Cape Verde",
+          "home_goals": 0
+        }
+      ],
+      "I": [
+        {
+          "away": "Senegal",
+          "away_goals": 1,
+          "home": "France",
+          "home_goals": 0
+        },
+        {
+          "away": "Norway",
+          "away_goals": 2,
+          "home": "Iraq",
+          "home_goals": 1
+        },
+        {
+          "away": "Iraq",
+          "away_goals": 0,
+          "home": "France",
+          "home_goals": 2
+        },
+        {
+          "away": "Norway",
+          "away_goals": 1,
+          "home": "Senegal",
+          "home_goals": 0
+        }
+      ],
+      "J": [
+        {
+          "away": "Algeria",
+          "away_goals": 1,
+          "home": "Argentina",
+          "home_goals": 0
+        },
+        {
+          "away": "Jordan",
+          "away_goals": 2,
+          "home": "Austria",
+          "home_goals": 1
+        },
+        {
+          "away": "Austria",
+          "away_goals": 0,
+          "home": "Argentina",
+          "home_goals": 2
+        },
+        {
+          "away": "Jordan",
+          "away_goals": 1,
+          "home": "Algeria",
+          "home_goals": 0
+        }
+      ],
+      "K": [
+        {
+          "away": "DR Congo",
+          "away_goals": 1,
+          "home": "Portugal",
+          "home_goals": 0
+        },
+        {
+          "away": "Colombia",
+          "away_goals": 2,
+          "home": "Uzbekistan",
+          "home_goals": 1
+        },
+        {
+          "away": "Uzbekistan",
+          "away_goals": 0,
+          "home": "Portugal",
+          "home_goals": 2
+        },
+        {
+          "away": "Colombia",
+          "away_goals": 1,
+          "home": "DR Congo",
+          "home_goals": 0
+        }
+      ],
+      "L": [
+        {
+          "away": "Croatia",
+          "away_goals": 1,
+          "home": "England",
+          "home_goals": 0
+        },
+        {
+          "away": "Panama",
+          "away_goals": 2,
+          "home": "Ghana",
+          "home_goals": 1
+        },
+        {
+          "away": "Ghana",
+          "away_goals": 0,
+          "home": "England",
+          "home_goals": 2
+        },
+        {
+          "away": "Panama",
+          "away_goals": 1,
+          "home": "Croatia",
+          "home_goals": 0
+        }
+      ]
+    },
+    "knockout_results": {},
+    "live_matches": []
+  },
+  "finalist_prob": {
+    "Algeria": 0.0129,
+    "Argentina": 0.195725,
+    "Australia": 0.0036,
+    "Austria": 0.00805,
+    "Belgium": 0.0954,
+    "Bosnia and Herzegovina": 0.023575,
+    "Brazil": 0.044575,
+    "Canada": 0.0052,
+    "Cape Verde": 0.00755,
+    "Colombia": 0.077325,
+    "Croatia": 0.0601,
+    "Curacao": 0.004125,
+    "Czech Republic": 0.0181,
+    "DR Congo": 0.008225,
+    "Ecuador": 0.0407,
+    "Egypt": 0.0131,
+    "England": 0.123,
+    "France": 0.159975,
+    "Germany": 0.0926,
+    "Ghana": 0.000925,
+    "Haiti": 0.003625,
+    "Iran": 0.004175,
+    "Iraq": 0.001,
+    "Ivory Coast": 0.00535,
+    "Japan": 0.0372,
+    "Jordan": 0.0088,
+    "Mexico": 0.008875,
+    "Morocco": 0.0703,
+    "Netherlands": 0.11385,
+    "New Zealand": 0.0056,
+    "Norway": 0.050025,
+    "Panama": 0.0144,
+    "Paraguay": 0.019275,
+    "Portugal": 0.112425,
+    "Qatar": 0.00615,
+    "Saudi Arabia": 0.0018,
+    "Scotland": 0.016825,
+    "Senegal": 0.03945,
+    "South Africa": 0.01685,
+    "South Korea": 0.035675,
+    "Spain": 0.197725,
+    "Sweden": 0.003475,
+    "Switzerland": 0.045025,
+    "Tunisia": 0.02235,
+    "Turkey": 0.046275,
+    "USA": 0.042925,
+    "Uruguay": 0.0741,
+    "Uzbekistan": 0.0017
+  },
+  "group_advance_prob": {
+    "Algeria": 0.5596,
+    "Argentina": 0.975175,
+    "Australia": 0.1307,
+    "Austria": 0.15305,
+    "Belgium": 0.9681,
+    "Bosnia and Herzegovina": 1.0,
+    "Brazil": 0.331625,
+    "Canada": 0.158175,
+    "Cape Verde": 0.62555,
+    "Colombia": 1.0,
+    "Croatia": 0.77235,
+    "Curacao": 0.534825,
+    "Czech Republic": 0.630175,
+    "DR Congo": 0.634975,
+    "Ecuador": 1.0,
+    "Egypt": 0.60525,
+    "England": 0.95135,
+    "France": 0.935675,
+    "Germany": 0.9353,
+    "Ghana": 0.05585,
+    "Haiti": 0.5353,
+    "Iran": 0.136875,
+    "Iraq": 0.068075,
+    "Ivory Coast": 0.187775,
+    "Japan": 0.684275,
+    "Jordan": 1.0,
+    "Mexico": 0.2299,
+    "Morocco": 1.0,
+    "Netherlands": 0.948025,
+    "New Zealand": 1.0,
+    "Norway": 1.0,
+    "Panama": 1.0,
+    "Paraguay": 0.642125,
+    "Portugal": 0.90645,
+    "Qatar": 0.6726,
+    "Saudi Arabia": 0.1258,
+    "Scotland": 0.5414,
+    "Senegal": 0.751175,
+    "South Africa": 1.0,
+    "South Korea": 0.82005,
+    "Spain": 0.9389,
+    "Sweden": 0.101425,
+    "Switzerland": 0.73875,
+    "Tunisia": 1.0,
+    "Turkey": 1.0,
+    "USA": 0.89925,
+    "Uruguay": 1.0,
+    "Uzbekistan": 0.114225
+  },
+  "group_finish": {
+    "A": {
+      "Czech Republic": {
+        "advance_prob": 0.630175,
+        "eliminate_prob": 0.369825,
+        "first_prob": 0.0,
+        "fourth_prob": 0.338925,
+        "second_prob": 0.378675,
+        "third_prob": 0.2824
+      },
+      "Mexico": {
+        "advance_prob": 0.2299,
+        "eliminate_prob": 0.7701,
+        "first_prob": 0.0,
+        "fourth_prob": 0.636925,
+        "second_prob": 0.052325,
+        "third_prob": 0.31075
+      },
+      "South Africa": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.615325,
+        "fourth_prob": 0.0,
+        "second_prob": 0.364275,
+        "third_prob": 0.0204
+      },
+      "South Korea": {
+        "advance_prob": 0.82005,
+        "eliminate_prob": 0.17995,
+        "first_prob": 0.384675,
+        "fourth_prob": 0.02415,
+        "second_prob": 0.204725,
+        "third_prob": 0.3865
+      }
+    },
+    "B": {
+      "Bosnia and Herzegovina": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.786625,
+        "fourth_prob": 0.0,
+        "second_prob": 0.204075,
+        "third_prob": 0.009375
+      },
+      "Canada": {
+        "advance_prob": 0.158175,
+        "eliminate_prob": 0.841825,
+        "first_prob": 0.0,
+        "fourth_prob": 0.738675,
+        "second_prob": 0.057375,
+        "third_prob": 0.204
+      },
+      "Qatar": {
+        "advance_prob": 0.6726,
+        "eliminate_prob": 0.3274,
+        "first_prob": 0.213375,
+        "fourth_prob": 0.035575,
+        "second_prob": 0.185975,
+        "third_prob": 0.56505
+      },
+      "Switzerland": {
+        "advance_prob": 0.73875,
+        "eliminate_prob": 0.26125,
+        "first_prob": 0.0,
+        "fourth_prob": 0.22575,
+        "second_prob": 0.5526,
+        "third_prob": 0.22165
+      }
+    },
+    "C": {
+      "Brazil": {
+        "advance_prob": 0.331625,
+        "eliminate_prob": 0.668375,
+        "first_prob": 0.0,
+        "fourth_prob": 0.528825,
+        "second_prob": 0.18475,
+        "third_prob": 0.286425
+      },
+      "Haiti": {
+        "advance_prob": 0.5353,
+        "eliminate_prob": 0.4647,
+        "first_prob": 0.152675,
+        "fourth_prob": 0.06535,
+        "second_prob": 0.198025,
+        "third_prob": 0.583925
+      },
+      "Morocco": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.847325,
+        "fourth_prob": 0.0,
+        "second_prob": 0.150875,
+        "third_prob": 0.001775
+      },
+      "Scotland": {
+        "advance_prob": 0.5414,
+        "eliminate_prob": 0.4586,
+        "first_prob": 0.0,
+        "fourth_prob": 0.4058,
+        "second_prob": 0.46635,
+        "third_prob": 0.12785
+      }
+    },
+    "D": {
+      "Australia": {
+        "advance_prob": 0.1307,
+        "eliminate_prob": 0.8693,
+        "first_prob": 0.0,
+        "fourth_prob": 0.699225,
+        "second_prob": 0.021575,
+        "third_prob": 0.2792
+      },
+      "Paraguay": {
+        "advance_prob": 0.642125,
+        "eliminate_prob": 0.357875,
+        "first_prob": 0.009625,
+        "fourth_prob": 0.300775,
+        "second_prob": 0.467175,
+        "third_prob": 0.222425
+      },
+      "Turkey": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.623475,
+        "fourth_prob": 0.0,
+        "second_prob": 0.2894,
+        "third_prob": 0.087125
+      },
+      "USA": {
+        "advance_prob": 0.89925,
+        "eliminate_prob": 0.10075,
+        "first_prob": 0.3669,
+        "fourth_prob": 0.0,
+        "second_prob": 0.22185,
+        "third_prob": 0.411275
+      }
+    },
+    "E": {
+      "Curacao": {
+        "advance_prob": 0.534825,
+        "eliminate_prob": 0.465175,
+        "first_prob": 0.006625,
+        "fourth_prob": 0.415275,
+        "second_prob": 0.352325,
+        "third_prob": 0.22585
+      },
+      "Ecuador": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.52415,
+        "fourth_prob": 0.0,
+        "second_prob": 0.3901,
+        "third_prob": 0.0857
+      },
+      "Germany": {
+        "advance_prob": 0.9353,
+        "eliminate_prob": 0.0647,
+        "first_prob": 0.46925,
+        "fourth_prob": 0.0,
+        "second_prob": 0.23065,
+        "third_prob": 0.3001
+      },
+      "Ivory Coast": {
+        "advance_prob": 0.187775,
+        "eliminate_prob": 0.812225,
+        "first_prob": 0.0,
+        "fourth_prob": 0.584725,
+        "second_prob": 0.026925,
+        "third_prob": 0.38835
+      }
+    },
+    "F": {
+      "Japan": {
+        "advance_prob": 0.684275,
+        "eliminate_prob": 0.315725,
+        "first_prob": 0.014075,
+        "fourth_prob": 0.284325,
+        "second_prob": 0.45005,
+        "third_prob": 0.251475
+      },
+      "Netherlands": {
+        "advance_prob": 0.948025,
+        "eliminate_prob": 0.051975,
+        "first_prob": 0.546625,
+        "fourth_prob": 0.0,
+        "second_prob": 0.146975,
+        "third_prob": 0.3064
+      },
+      "Sweden": {
+        "advance_prob": 0.101425,
+        "eliminate_prob": 0.898575,
+        "first_prob": 0.0,
+        "fourth_prob": 0.715675,
+        "second_prob": 0.008825,
+        "third_prob": 0.2755
+      },
+      "Tunisia": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.439275,
+        "fourth_prob": 0.0,
+        "second_prob": 0.394125,
+        "third_prob": 0.1666
+      }
+    },
+    "G": {
+      "Belgium": {
+        "advance_prob": 0.9681,
+        "eliminate_prob": 0.0319,
+        "first_prob": 0.644075,
+        "fourth_prob": 0.0,
+        "second_prob": 0.1384,
+        "third_prob": 0.21755
+      },
+      "Egypt": {
+        "advance_prob": 0.60525,
+        "eliminate_prob": 0.39475,
+        "first_prob": 0.010075,
+        "fourth_prob": 0.368125,
+        "second_prob": 0.36445,
+        "third_prob": 0.257325
+      },
+      "Iran": {
+        "advance_prob": 0.136875,
+        "eliminate_prob": 0.863125,
+        "first_prob": 0.0,
+        "fourth_prob": 0.631875,
+        "second_prob": 0.00965,
+        "third_prob": 0.358475
+      },
+      "New Zealand": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.34585,
+        "fourth_prob": 0.0,
+        "second_prob": 0.4875,
+        "third_prob": 0.16665
+      }
+    },
+    "H": {
+      "Cape Verde": {
+        "advance_prob": 0.62555,
+        "eliminate_prob": 0.37445,
+        "first_prob": 0.010725,
+        "fourth_prob": 0.3335,
+        "second_prob": 0.4136,
+        "third_prob": 0.2422
+      },
+      "Saudi Arabia": {
+        "advance_prob": 0.1258,
+        "eliminate_prob": 0.8742,
+        "first_prob": 0.0,
+        "fourth_prob": 0.6665,
+        "second_prob": 0.01455,
+        "third_prob": 0.31895
+      },
+      "Spain": {
+        "advance_prob": 0.9389,
+        "eliminate_prob": 0.0611,
+        "first_prob": 0.5084,
+        "fourth_prob": 0.0,
+        "second_prob": 0.180575,
+        "third_prob": 0.311
+      },
+      "Uruguay": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.4809,
+        "fourth_prob": 0.0,
+        "second_prob": 0.391275,
+        "third_prob": 0.127875
+      }
+    },
+    "I": {
+      "France": {
+        "advance_prob": 0.935675,
+        "eliminate_prob": 0.064325,
+        "first_prob": 0.517075,
+        "fourth_prob": 0.0,
+        "second_prob": 0.131325,
+        "third_prob": 0.351575
+      },
+      "Iraq": {
+        "advance_prob": 0.068075,
+        "eliminate_prob": 0.931925,
+        "first_prob": 0.0,
+        "fourth_prob": 0.781275,
+        "second_prob": 0.006125,
+        "third_prob": 0.2126
+      },
+      "Norway": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.463525,
+        "fourth_prob": 0.0,
+        "second_prob": 0.347825,
+        "third_prob": 0.18865
+      },
+      "Senegal": {
+        "advance_prob": 0.751175,
+        "eliminate_prob": 0.248825,
+        "first_prob": 0.0194,
+        "fourth_prob": 0.218725,
+        "second_prob": 0.514725,
+        "third_prob": 0.247125
+      }
+    },
+    "J": {
+      "Algeria": {
+        "advance_prob": 0.5596,
+        "eliminate_prob": 0.4404,
+        "first_prob": 0.008125,
+        "fourth_prob": 0.4163,
+        "second_prob": 0.319875,
+        "third_prob": 0.255725
+      },
+      "Argentina": {
+        "advance_prob": 0.975175,
+        "eliminate_prob": 0.024825,
+        "first_prob": 0.698675,
+        "fourth_prob": 0.0,
+        "second_prob": 0.12825,
+        "third_prob": 0.17305
+      },
+      "Austria": {
+        "advance_prob": 0.15305,
+        "eliminate_prob": 0.84695,
+        "first_prob": 0.0,
+        "fourth_prob": 0.5837,
+        "second_prob": 0.0096,
+        "third_prob": 0.406725
+      },
+      "Jordan": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.293225,
+        "fourth_prob": 0.0,
+        "second_prob": 0.542275,
+        "third_prob": 0.16455
+      }
+    },
+    "K": {
+      "Colombia": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.5697,
+        "fourth_prob": 0.0,
+        "second_prob": 0.327675,
+        "third_prob": 0.1026
+      },
+      "DR Congo": {
+        "advance_prob": 0.634975,
+        "eliminate_prob": 0.365025,
+        "first_prob": 0.010375,
+        "fourth_prob": 0.311075,
+        "second_prob": 0.4481,
+        "third_prob": 0.230475
+      },
+      "Portugal": {
+        "advance_prob": 0.90645,
+        "eliminate_prob": 0.09355,
+        "first_prob": 0.419925,
+        "fourth_prob": 0.0,
+        "second_prob": 0.20585,
+        "third_prob": 0.374225
+      },
+      "Uzbekistan": {
+        "advance_prob": 0.114225,
+        "eliminate_prob": 0.885775,
+        "first_prob": 0.0,
+        "fourth_prob": 0.688925,
+        "second_prob": 0.018375,
+        "third_prob": 0.2927
+      }
+    },
+    "L": {
+      "Croatia": {
+        "advance_prob": 0.77235,
+        "eliminate_prob": 0.22765,
+        "first_prob": 0.022225,
+        "fourth_prob": 0.20505,
+        "second_prob": 0.515975,
+        "third_prob": 0.256725
+      },
+      "England": {
+        "advance_prob": 0.95135,
+        "eliminate_prob": 0.04865,
+        "first_prob": 0.59375,
+        "fourth_prob": 0.0,
+        "second_prob": 0.1069,
+        "third_prob": 0.29935
+      },
+      "Ghana": {
+        "advance_prob": 0.05585,
+        "eliminate_prob": 0.94415,
+        "first_prob": 0.0,
+        "fourth_prob": 0.79495,
+        "second_prob": 0.00375,
+        "third_prob": 0.201325
+      },
+      "Panama": {
+        "advance_prob": 1.0,
+        "eliminate_prob": 0.0,
+        "first_prob": 0.383975,
+        "fourth_prob": 0.0,
+        "second_prob": 0.373375,
+        "third_prob": 0.242625
+      }
+    }
+  },
+  "n_draws": 4,
+  "n_eff": 1000000,
+  "n_per_draw": 250000,
+  "quarterfinal_prob": {
+    "Algeria": 0.0898,
+    "Argentina": 0.4702,
+    "Australia": 0.02205,
+    "Austria": 0.0403,
+    "Belgium": 0.339,
+    "Bosnia and Herzegovina": 0.173175,
+    "Brazil": 0.130475,
+    "Canada": 0.033725,
+    "Cape Verde": 0.078175,
+    "Colombia": 0.3046,
+    "Croatia": 0.22355,
+    "Curacao": 0.05395,
+    "Czech Republic": 0.126275,
+    "DR Congo": 0.07585,
+    "Ecuador": 0.214525,
+    "Egypt": 0.096,
+    "England": 0.3634,
+    "France": 0.410275,
+    "Germany": 0.3105,
+    "Ghana": 0.00795,
+    "Haiti": 0.051125,
+    "Iran": 0.026375,
+    "Iraq": 0.00965,
+    "Ivory Coast": 0.036575,
+    "Japan": 0.17245,
+    "Jordan": 0.1014,
+    "Mexico": 0.05315,
+    "Morocco": 0.2999,
+    "Netherlands": 0.363125,
+    "New Zealand": 0.08515,
+    "Norway": 0.248875,
+    "Panama": 0.131825,
+    "Paraguay": 0.122325,
+    "Portugal": 0.342525,
+    "Qatar": 0.076325,
+    "Saudi Arabia": 0.017625,
+    "Scotland": 0.110125,
+    "Senegal": 0.199975,
+    "South Africa": 0.14745,
+    "South Korea": 0.191125,
+    "Spain": 0.45825,
+    "Sweden": 0.018775,
+    "Switzerland": 0.2137,
+    "Tunisia": 0.17795,
+    "Turkey": 0.2477,
+    "USA": 0.215725,
+    "Uruguay": 0.301475,
+    "Uzbekistan": 0.015575
+  },
+  "round_of_16_prob": {
+    "Algeria": 0.220025,
+    "Argentina": 0.66205,
+    "Australia": 0.056575,
+    "Austria": 0.085425,
+    "Belgium": 0.593075,
+    "Bosnia and Herzegovina": 0.4705,
+    "Brazil": 0.20655,
+    "Canada": 0.076725,
+    "Cape Verde": 0.20435,
+    "Colombia": 0.542725,
+    "Croatia": 0.4254,
+    "Curacao": 0.175025,
+    "Czech Republic": 0.294,
+    "DR Congo": 0.22975,
+    "Ecuador": 0.4901,
+    "Egypt": 0.274125,
+    "England": 0.567375,
+    "France": 0.62425,
+    "Germany": 0.5705,
+    "Ghana": 0.018375,
+    "Haiti": 0.16505,
+    "Iran": 0.067975,
+    "Iraq": 0.0251,
+    "Ivory Coast": 0.089075,
+    "Japan": 0.3372,
+    "Jordan": 0.29525,
+    "Mexico": 0.11285,
+    "Morocco": 0.548775,
+    "Netherlands": 0.57525,
+    "New Zealand": 0.324525,
+    "Norway": 0.5122,
+    "Panama": 0.35865,
+    "Paraguay": 0.3325,
+    "Portugal": 0.544975,
+    "Qatar": 0.247175,
+    "Saudi Arabia": 0.049325,
+    "Scotland": 0.231225,
+    "Senegal": 0.40195,
+    "South Africa": 0.41375,
+    "South Korea": 0.4148,
+    "Spain": 0.671775,
+    "Sweden": 0.041425,
+    "Switzerland": 0.424475,
+    "Tunisia": 0.413275,
+    "Turkey": 0.546475,
+    "USA": 0.475775,
+    "Uruguay": 0.55165,
+    "Uzbekistan": 0.040775
+  },
+  "semifinal_prob": {
+    "Algeria": 0.034125,
+    "Argentina": 0.3097,
+    "Australia": 0.009475,
+    "Austria": 0.0178,
+    "Belgium": 0.178375,
+    "Bosnia and Herzegovina": 0.063625,
+    "Brazil": 0.0786,
+    "Canada": 0.013125,
+    "Cape Verde": 0.0252,
+    "Colombia": 0.156375,
+    "Croatia": 0.119025,
+    "Curacao": 0.015475,
+    "Czech Republic": 0.047825,
+    "DR Congo": 0.02625,
+    "Ecuador": 0.09865,
+    "Egypt": 0.0361,
+    "England": 0.216675,
+    "France": 0.263475,
+    "Germany": 0.1771,
+    "Ghana": 0.002775,
+    "Haiti": 0.014075,
+    "Iran": 0.01055,
+    "Iraq": 0.003175,
+    "Ivory Coast": 0.014425,
+    "Japan": 0.082725,
+    "Jordan": 0.03035,
+    "Mexico": 0.021725,
+    "Morocco": 0.149,
+    "Netherlands": 0.209875,
+    "New Zealand": 0.022,
+    "Norway": 0.117375,
+    "Panama": 0.045875,
+    "Paraguay": 0.049975,
+    "Portugal": 0.19875,
+    "Qatar": 0.0215,
+    "Saudi Arabia": 0.005825,
+    "Scotland": 0.04375,
+    "Senegal": 0.091175,
+    "South Africa": 0.05225,
+    "South Korea": 0.084625,
+    "Spain": 0.3079,
+    "Sweden": 0.0085,
+    "Switzerland": 0.09765,
+    "Tunisia": 0.064075,
+    "Turkey": 0.107,
+    "USA": 0.097675,
+    "Uruguay": 0.152875,
+    "Uzbekistan": 0.0055
+  },
+  "winner_prob": {
+    "Algeria": 0.0044,
+    "Argentina": 0.119675,
+    "Australia": 0.00135,
+    "Austria": 0.003375,
+    "Belgium": 0.0482,
+    "Bosnia and Herzegovina": 0.008075,
+    "Brazil": 0.0247,
+    "Canada": 0.00195,
+    "Cape Verde": 0.002125,
+    "Colombia": 0.036375,
+    "Croatia": 0.028775,
+    "Curacao": 0.001075,
+    "Czech Republic": 0.00645,
+    "DR Congo": 0.00235,
+    "Ecuador": 0.0162,
+    "Egypt": 0.00435,
+    "England": 0.067375,
+    "France": 0.095325,
+    "Germany": 0.04745,
+    "Ghana": 0.000325,
+    "Haiti": 0.0009,
+    "Iran": 0.001525,
+    "Iraq": 0.0003,
+    "Ivory Coast": 0.001925,
+    "Japan": 0.0163,
+    "Jordan": 0.002225,
+    "Mexico": 0.0034,
+    "Morocco": 0.0327,
+    "Netherlands": 0.060475,
+    "New Zealand": 0.00125,
+    "Norway": 0.020475,
+    "Panama": 0.0042,
+    "Paraguay": 0.006775,
+    "Portugal": 0.060525,
+    "Qatar": 0.001625,
+    "Saudi Arabia": 0.000575,
+    "Scotland": 0.006125,
+    "Senegal": 0.016725,
+    "South Africa": 0.005375,
+    "South Korea": 0.014575,
+    "Spain": 0.123325,
+    "Sweden": 0.0013,
+    "Switzerland": 0.019775,
+    "Tunisia": 0.007675,
+    "Turkey": 0.0187,
+    "USA": 0.0178,
+    "Uruguay": 0.03295,
+    "Uzbekistan": 0.000525
+  }
+}

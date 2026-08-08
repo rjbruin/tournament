@@ -3,6 +3,7 @@ Helpers that normalize engine output into the shapes expected by the
 unified fixture display macros (app/templates/_fixture_macros.html).
 """
 
+import functools
 import json
 import os
 from datetime import datetime
@@ -12,10 +13,16 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 _LETTERS = "ABCDEFGHIJKL"
 
 
+@functools.cache
 def _build_seed_labels() -> dict:
     """Precompute, for each knockout match number (73-103), a pair of
     human-readable seed labels for the home/away slots, e.g. "1A", "2B",
-    "3A/C/D/F", "W77"."""
+    "3A/C/D/F", "W77".
+
+    Lazy (module-import used to eagerly read two JSON files as a side
+    effect of `import app.web.view_helpers`, which four other modules do
+    transitively — routes, api, llm/interface, conftest). Cached so the
+    files are still only read once per process."""
     with open(os.path.join(_DATA_DIR, "wc2026.json")) as f:
         bracket = json.load(f)["bracket"]
     with open(os.path.join(_DATA_DIR, "annex_c.json")) as f:
@@ -42,9 +49,6 @@ def _build_seed_labels() -> dict:
 
     defs = bracket["r32"] + bracket["r16"] + bracket["qf"] + bracket["sf"] + [bracket["final"]]
     return {m["match"]: (slot_label(m["home"]), slot_label(m["away"])) for m in defs}
-
-
-SEED_LABELS = _build_seed_labels()
 
 
 def utc_sort_key(match: dict):
@@ -104,7 +108,7 @@ def normalize_bracket_match(m: dict, ko_scores: dict = None) -> dict:
         "place": m.get("place"),
         "actual_winner": m.get("actual_winner"),
     }
-    out["seed_home"], out["seed_away"] = SEED_LABELS.get(m["match"], (None, None))
+    out["seed_home"], out["seed_away"] = _build_seed_labels().get(m["match"], (None, None))
     home, away = m["home"], m["away"]
     if home.get("determined"):
         out["home_team"] = home["team"]

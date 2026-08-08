@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Tournaments{% endblock %}
+{% block content %}
+
+<h2 class="mb-4 text-center">Choose a tournament</h2>
+
+<div class="row g-4 justify-content-center">
+  {% for t in tournaments %}
+  <div class="col-12 col-md-6 col-lg-4">
+    <a href="{{ url_for('web.index', slug=t.slug) }}" class="text-decoration-none">
+      <div class="card shadow-sm h-100" style="border-top: 4px solid {{ t.theme.primary_color }};">
+        <div class="card-body text-center">
+          {% if t.theme.logo %}
+          <img src="{{ t.theme.logo }}" alt="" style="max-height:64px;" class="mb-3">
+          {% endif %}
+          <h4 class="text-dark mb-1">{{ t.name }}</h4>
+          <div class="text-muted small">{{ t.year }}{% if t.host_countries %} &middot; {{ t.host_countries | join(", ") }}{% endif %}</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

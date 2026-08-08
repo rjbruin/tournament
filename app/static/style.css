@@ -1,17 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --wc-green: #0a3b2a;
-  --wc-green-bright: #00843d;
-  --wc-gold: #ffc72c;
-  --wc-gold-deep: #e6a800;
-  --wc-pink: #ff3b6e;
-  --wc-blue: #0b3954;
-  --wc-bg: #f4f7f4;
+  --tournament-primary: #0a3b2a;
+  --tournament-bright: #00843d;
+  --tournament-gold: #ffc72c;
+  --tournament-gold-deep: #e6a800;
+  --tournament-pink: #ff3b6e;
+  --tournament-blue: #0b3954;
+  --tournament-bg: #f4f7f4;
 }
 
 body {
-  background: var(--wc-bg);
+  background: var(--tournament-bg);
   font-family: 'Inter', system-ui, sans-serif;
   background-image:
     radial-gradient(circle at 100% 0%, rgba(0, 132, 61, 0.08), transparent 40%),
@@ -24,12 +24,12 @@ h1, h2, h3, h4, .navbar-brand {
   font-family: 'Bebas Neue', 'Inter', sans-serif;
   letter-spacing: 0.04em;
 }
-h1, h2 { color: var(--wc-green); }
+h1, h2 { color: var(--tournament-primary); }
 
 /* ---------- Navbar ---------- */
 .navbar.bg-dark {
-  background: linear-gradient(90deg, var(--wc-green) 0%, #0f5c3f 60%, var(--wc-green-bright) 100%) !important;
-  border-bottom: 4px solid var(--wc-gold);
+  background: linear-gradient(90deg, var(--tournament-primary) 0%, #0f5c3f 60%, var(--tournament-bright) 100%) !important;
+  border-bottom: 4px solid var(--tournament-gold);
   box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
 .navbar-brand {
@@ -37,7 +37,7 @@ h1, h2 { color: var(--wc-green); }
   text-transform: uppercase;
   color: #fff !important;
 }
-.navbar-brand .accent { color: var(--wc-gold); }
+.navbar-brand .accent { color: var(--tournament-gold); }
 .navbar .nav-link {
   font-weight: 600;
   text-transform: uppercase;
@@ -48,18 +48,18 @@ h1, h2 { color: var(--wc-green); }
 }
 .navbar .nav-link:hover,
 .navbar .nav-link.active {
-  color: var(--wc-gold) !important;
+  color: var(--tournament-gold) !important;
 }
 .navbar #run-sim {
-  background: var(--wc-gold);
-  border-color: var(--wc-gold-deep);
-  color: var(--wc-green);
+  background: var(--tournament-gold);
+  border-color: var(--tournament-gold-deep);
+  color: var(--tournament-primary);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .navbar #run-sim:hover {
-  background: var(--wc-gold-deep);
+  background: var(--tournament-gold-deep);
   color: #fff;
 }
 
@@ -69,7 +69,7 @@ h1, h2 { color: var(--wc-green); }
   border: 1px solid rgba(10, 59, 42, 0.08);
 }
 .card-header {
-  background: var(--wc-green);
+  background: var(--tournament-primary);
   color: #fff;
   border-radius: 0.9rem 0.9rem 0 0 !important;
   font-family: 'Bebas Neue', sans-serif;
@@ -77,7 +77,7 @@ h1, h2 { color: var(--wc-green); }
   font-size: 1.05rem;
 }
 .table-dark, thead.table-dark th {
-  background: var(--wc-green) !important;
+  background: var(--tournament-primary) !important;
   color: #fff;
 }
 .table-light thead, thead.table-light th {
@@ -85,11 +85,11 @@ h1, h2 { color: var(--wc-green); }
 }
 
 .progress { border-radius: 2px; }
-.progress-bar.bg-success { background: linear-gradient(90deg, var(--wc-green-bright), var(--wc-gold)) !important; }
+.progress-bar.bg-success { background: linear-gradient(90deg, var(--tournament-bright), var(--tournament-gold)) !important; }
 
 /* ---------- Hero / Champion projection ---------- */
 .hero-banner {
-  background: linear-gradient(135deg, var(--wc-green) 0%, var(--wc-green-bright) 55%, #00b35e 100%);
+  background: linear-gradient(135deg, var(--tournament-primary) 0%, var(--tournament-bright) 55%, #00b35e 100%);
   border-radius: 1rem;
   color: #fff;
   padding: 1.75rem 2rem;
@@ -164,7 +164,7 @@ h1, h2 { color: var(--wc-green); }
 .champion-card {
   position: relative;
   background: linear-gradient(160deg, #ffffff 0%, #fffdf4 100%);
-  border: 2px solid var(--wc-gold);
+  border: 2px solid var(--tournament-gold);
   border-radius: 1rem;
   text-align: center;
   padding: 1.75rem 1rem 1.25rem;
@@ -188,18 +188,18 @@ h1, h2 { color: var(--wc-green); }
   letter-spacing: 0.18em;
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--wc-gold-deep);
+  color: var(--tournament-gold-deep);
 }
 .champion-card .team-name {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.9rem;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   margin: 0.15rem 0;
 }
 .champion-card .team-prob {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 2.6rem;
-  background: linear-gradient(90deg, var(--wc-green-bright), var(--wc-gold-deep));
+  background: linear-gradient(90deg, var(--tournament-bright), var(--tournament-gold-deep));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -229,17 +229,17 @@ h1, h2 { color: var(--wc-green); }
 }
 .podium-card .team-name {
   font-weight: 700;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
 }
 .podium-card .team-prob {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
-  color: var(--wc-green-bright);
+  color: var(--tournament-bright);
 }
 .rank-2 { background: #9aa5ad; }
 .rank-3 { background: #cd7f32; }
-.rank-4, .rank-5 { background: var(--wc-blue); }
-.rank-other { background: #c7d3cb; color: var(--wc-green); }
+.rank-4, .rank-5 { background: var(--tournament-blue); }
+.rank-other { background: #c7d3cb; color: var(--tournament-primary); }
 
 .podium-card-sm {
   padding: 0.75rem 0.4rem;
@@ -259,12 +259,12 @@ h1, h2 { color: var(--wc-green); }
 .team-prob-sm {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.15rem;
-  color: var(--wc-green-bright);
+  color: var(--tournament-bright);
 }
 
 /* Group advance badges */
-.badge.bg-success { background-color: var(--wc-green-bright) !important; }
-.badge.bg-warning { background-color: var(--wc-gold) !important; }
+.badge.bg-success { background-color: var(--tournament-bright) !important; }
+.badge.bg-warning { background-color: var(--tournament-gold) !important; }
 
 /* ---------- Groups page nav ---------- */
 .group-nav {
@@ -279,7 +279,7 @@ h1, h2 { color: var(--wc-green); }
   position: sticky;
   top: calc(var(--navbar-height, 56px) + .75rem);
   z-index: 100;
-  background: var(--wc-bg);
+  background: var(--tournament-bg);
   padding: .4rem 0 .5rem;
   margin-bottom: .25rem;
 }
@@ -293,13 +293,13 @@ h1, h2 { color: var(--wc-green); }
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.05rem;
   letter-spacing: .04em;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   text-decoration: none;
   transition: background .12s, color .12s;
 }
 .group-nav-btn:hover,
 .group-nav-btn.active {
-  background: var(--wc-green);
+  background: var(--tournament-primary);
   color: #fff;
 }
 /* Wider pill for labelled sections (MD1, R32, QF, Final, …) */
@@ -325,7 +325,7 @@ h1, h2 { color: var(--wc-green); }
 .qual-place-second td:first-child { border-left-color: rgba(0,132,61,.45); }
 .qual-place-third td:first-child  { border-left-color: rgba(255,193,7,.8); }
 .qual-secured-first td:first-child,
-.qual-secured-second td:first-child { border-left-color: var(--wc-green); }
+.qual-secured-second td:first-child { border-left-color: var(--tournament-primary); }
 .qual-secured-third-adv td:first-child { border-left-color: rgba(0,132,61,.6); }
 .qual-secured-qualified td:first-child { border-left-color: #1b9e77; }
 
@@ -340,7 +340,7 @@ h1, h2 { color: var(--wc-green); }
   margin-left: .25rem;
   white-space: nowrap;
 }
-.qual-marker-secured { background: var(--wc-green); color: #fff; }
+.qual-marker-secured { background: var(--tournament-primary); color: #fff; }
 
 /* "What's at stake" — neutral note vs. styled qualification box */
 .qual-stake-neutral { font-style: italic; }
@@ -362,11 +362,11 @@ h1, h2 { color: var(--wc-green); }
 .qual-stake-lines { color: #6c757d; }
 /* Per-case emphasis */
 .qual-stake-certain    { color: #0f5132; }
-.qual-stake-certain strong { color: var(--wc-green); }
+.qual-stake-certain strong { color: var(--tournament-primary); }
 .qual-stake-impossible { color: #842029; }
 .qual-stake-impossible strong { color: #b02a37; }
-.qual-stake-swing strong { color: var(--wc-green); }
-.qual-stake-open strong { color: var(--wc-green); }
+.qual-stake-swing strong { color: var(--tournament-primary); }
+.qual-stake-open strong { color: var(--tournament-primary); }
 
 /* Per-outcome advancement odds chips */
 .qual-odds { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
@@ -377,7 +377,7 @@ h1, h2 { color: var(--wc-green); }
   gap: .25rem;
   font-size: .8rem;
   font-weight: 600;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   background: rgba(0,132,61,.08);
   border-radius: .4rem;
   padding: .05rem .4rem;
@@ -385,13 +385,13 @@ h1, h2 { color: var(--wc-green); }
 .qual-odds-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; color: #6c757d; }
 .qual-odds-chip--active {
   background: rgba(0,132,61,.22);
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   outline: 1.5px solid rgba(0,132,61,.45);
 }
 .qual-odds-chip--active .qual-odds-label { color: rgba(0,100,50,.8); }
 
 /* "Full scenarios" expander */
-.qual-full > summary { cursor: pointer; font-size: .82rem; color: var(--wc-green); }
+.qual-full > summary { cursor: pointer; font-size: .82rem; color: var(--tournament-primary); }
 .qual-full-item { color: #495057; }
 
 /* Odds-type icons (cup for the title, advancement marker for the knockouts) */
@@ -466,7 +466,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .fixtures-section-title {
   font-family: 'Bebas Neue', sans-serif;
   letter-spacing: .05em;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   border-bottom: 2px solid rgba(10,59,42,.12);
   padding-bottom: .3rem;
 }
@@ -532,7 +532,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 }
 .fixture-card .card-header a { color: rgba(255,255,255,.85); }
 .fixture-card-body {
-  background: var(--wc-green);
+  background: var(--tournament-primary);
   padding: 0;
 }
 .fixture-hero {
@@ -660,7 +660,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .compact-team {
   font-weight: 600;
   font-size: .85rem;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -668,7 +668,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .compact-score {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1rem;
-  background: var(--wc-green);
+  background: var(--tournament-primary);
   color: #fff;
   border-radius: .25rem;
   padding: .05rem .45rem;
@@ -678,7 +678,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 }
 .compact-odds {
   font-size: .8rem;
-  color: var(--wc-green-bright);
+  color: var(--tournament-bright);
   font-weight: 600;
 }
 
@@ -727,7 +727,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .match-event-minute {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   min-width: 2.4rem;
 }
 .match-event-icon { font-size: .9rem; line-height: 1; }
@@ -765,14 +765,14 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .bracket-team-name {
   font-weight: 600;
   font-size: .92rem;
-  color: var(--wc-green);
+  color: var(--tournament-primary);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.bracket-team-name.is-winner { color: var(--wc-green-bright); }
+.bracket-team-name.is-winner { color: var(--tournament-bright); }
 .bracket-team-main {
   display: flex;
   align-items: center;
@@ -784,7 +784,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .bracket-team-odds {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.15rem;
-  color: var(--wc-green-bright);
+  color: var(--tournament-bright);
   flex-shrink: 0;
 }
 .bracket-team-score {
@@ -794,7 +794,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   flex-shrink: 0;
 }
 .bracket-team-score--winning {
-  color: var(--wc-green-bright);
+  color: var(--tournament-bright);
 }
 .bracket-team-score--live {
   color: #dc3545;
@@ -825,7 +825,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .bracket-cand-odds {
   font-family: 'Bebas Neue', sans-serif;
   font-size: .85rem;
-  color: var(--wc-green-bright);
+  color: var(--tournament-bright);
   flex-shrink: 0;
 }
 .bracket-slot-divider {
@@ -885,7 +885,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 }
 .bracket-connector {
   fill: none;
-  stroke: var(--wc-green-bright, #28a745);
+  stroke: var(--tournament-bright, #28a745);
   stroke-width: 1.5;
   stroke-opacity: 0.35;
 }
@@ -909,7 +909,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   color: #fff;
   animation: notif-slide-in .32s cubic-bezier(.2,1.4,.5,1) both;
 }
-.live-notif.notif-goal { background: var(--wc-green); border-bottom: 2px solid var(--wc-gold); }
+.live-notif.notif-goal { background: var(--tournament-primary); border-bottom: 2px solid var(--tournament-gold); }
 .live-notif.notif-fulltime { background: #1a1a2e; border-bottom: 2px solid rgba(255,255,255,.15); }
 @keyframes notif-slide-in {
   from { transform: translateY(-110%); opacity: 0; }
@@ -925,7 +925,7 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
   letter-spacing: .1em;
-  color: var(--wc-gold);
+  color: var(--tournament-gold);
   line-height: 1;
 }
 .live-notif.notif-fulltime .live-notif-word { color: rgba(255,255,255,.85); font-size: 1.1rem; }

@@ -128,7 +128,7 @@ def live_fetch():
         return jsonify({"error": "Admin only"}), 403
     from app import live_source
     try:
-        summary = live_source.poll_live_matches(app_module._engine)
+        summary = live_source.poll_live_matches(app_module.get_engine())
         if summary.get("changed"):
             app_module.invalidate_results("current")
         return jsonify({"ok": True, "summary": {k: v for k, v in summary.items() if isinstance(v, (bool, int, str, type(None)))}})

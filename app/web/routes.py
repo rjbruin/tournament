@@ -1,16 +1,32 @@
 import os
 
-from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash, session, Response
+from flask import Blueprint, abort, g, render_template, redirect, url_for, request, jsonify, flash, session, Response
 from flask_login import current_user, login_required
 
 import app as app_module
 from app import auth, data_store
 from app.web.view_helpers import normalize_group_match, normalize_bracket_match, compute_group_table, utc_sort_key as _utc_sort_key
 
+# Tournament-scoped pages: groups/bracket/fixtures/team/match/draw/scenarios/
+# retrospective/diagnostics — registered under /t/<slug> (see app/__init__.py).
 web_bp = Blueprint("web", __name__)
 
+# Account/app-wide pages that aren't about any one tournament: settings,
+# onboarding, changelog, admin user/invite management, usage stats. Stay at
+# the top level regardless of which tournament is active.
+account_bp = Blueprint("account", __name__)
 
-@web_bp.before_request
+# 301 redirects from the pre-Stage-2 top-level paths (e.g. /groups) to the
+# equivalent /t/<default-tournament-slug>/... page, so existing bookmarks,
+# links, and the installed PWA's start_url keep working.
+legacy_bp = Blueprint("legacy", __name__)
+
+# The multi-tournament picker at "/" — today just redirects straight through
+# since there's only one tournament; becomes a real picker once a second one
+# is registered (see picker() below).
+picker_bp = Blueprint("picker", __name__)
+
+
 def _track_pageview():
     from flask_login import current_user as _cu
     ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
@@ -21,7 +37,36 @@ def _track_pageview():
         pass
 
 
-@web_bp.get("/manifest.json")
+web_bp.before_request(_track_pageview)
+account_bp.before_request(_track_pageview)
+
+
+@web_bp.url_value_preprocessor
+def _pull_tournament_slug(endpoint, values):
+    """Resolves the /t/<slug> segment to a tournament, stashes it on
+    flask.g, and remembers it in the session so account-scoped pages (and
+    url_for('web.X') calls from anywhere) default back to the same
+    tournament until the user visits a different one."""
+    if values is None or "slug" not in values:
+        return
+    slug = values.pop("slug")
+    inst = app_module.get_registry().get(slug)
+    if inst is None:
+        abort(404)
+    g.tournament = inst
+    g.tournament_slug = inst.slug
+    session["tournament_slug"] = inst.slug
+
+
+@web_bp.url_defaults
+def _add_tournament_slug(endpoint, values):
+    if "slug" in values:
+        return
+    slug = getattr(g, "tournament_slug", None) or app_module.get_registry().default_slug()
+    values["slug"] = slug
+
+
+@account_bp.get("/manifest.json")
 def manifest():
     import json
     data = {
@@ -552,8 +597,45 @@ def _qualification_notes(engine, scenario_id, featured_fixture, all_normalized):
     return stakes
 
 
+def _is_bracket_only_tournament() -> bool:
+    """True for a groups-less, single-knockout-phase format (Wimbledon) —
+    used to branch index()/bracket() to their dedicated minimal views, and
+    to 404 the WC-only pages (groups/teams/draw/fixtures/results-manual/
+    scenario-compare/diagnostics) that assume a football-shaped engine."""
+    return bool(g.tournament) and g.tournament.template != "fifa_world_cup"
+
+
+def _require_group_stage_format():
+    if _is_bracket_only_tournament():
+        abort(404)
+
+
+def _bracket_only_results(n: int = 50_000):
+    """Run g.tournament's engine directly against ITS OWN actuals.json —
+    deliberately bypassing data_store.load_scenario()/get_or_run_results(),
+    both of which read the single global data/actuals.json (today's WC2026
+    real-world state) regardless of which tournament is active. A bracket-
+    only tournament's actuals live under its own data_paths["actuals"]."""
+    import json as _json
+
+    tournament = g.tournament
+    cached = app_module.get_simulation_results("_anon", "current", tournament.id)
+    if cached is not None:
+        return cached
+    actuals_path = tournament.data_paths.get("actuals")
+    actuals = {"knockout_results": {}, "live_matches": []}
+    if actuals_path and os.path.exists(actuals_path):
+        with open(actuals_path) as f:
+            actuals = _json.load(f)
+    results = tournament.engine.run(n=n, actuals=actuals)
+    app_module.set_simulation_results("_anon", results, "current", tournament.id)
+    return results
+
+
 @web_bp.get("/")
 def index():
+    if _is_bracket_only_tournament():
+        return _bracket_only_index()
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
@@ -780,6 +862,7 @@ def index():
 
 @web_bp.get("/groups")
 def groups():
+    _require_group_stage_format()
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
@@ -809,6 +892,7 @@ def groups():
 
 @web_bp.get("/group/<name>")
 def group(name: str):
+    _require_group_stage_format()
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
@@ -827,6 +911,7 @@ def group(name: str):
 
 @web_bp.get("/teams")
 def teams():
+    _require_group_stage_format()
     from app import data_store
     from app.form import compute_form
 
@@ -940,6 +1025,7 @@ def teams():
 
 @web_bp.get("/team")
 def team_default():
+    _require_group_stage_format()
     default_team = "Netherlands"
     if current_user.is_authenticated:
         default_team = current_user.settings.get("default_team", "Netherlands")
@@ -948,6 +1034,7 @@ def team_default():
 
 @web_bp.get("/team/<name>")
 def team(name: str):
+    _require_group_stage_format()
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
@@ -1061,8 +1148,39 @@ def team(name: str):
     )
 
 
+def _bracket_only_index():
+    results = _bracket_only_results()
+    top10 = sorted(results["reach_prob"]["champion"].items(), key=lambda x: -x[1])[:10]
+    return render_template(
+        "bracket_only_index.html",
+        tournament=g.tournament,
+        top10=top10,
+        n_simulations=results["meta"]["n_simulations"],
+    )
+
+
+def _bracket_only_bracket():
+    results = _bracket_only_results()
+    matches_by_round: dict[str, list] = {}
+    for m in results["matches"]:
+        matches_by_round.setdefault(m["round_id"], []).append(m)
+    for round_matches in matches_by_round.values():
+        round_matches.sort(key=lambda m: m["extra"].get("index", 0))
+    # stage_ids is ["r128", ..., "final", "champion"] — "champion" isn't a
+    # round, drop it for display ordering.
+    round_order = [s for s in g.tournament.engine.spec.stage_ids if s != "champion"]
+    rounds = [(rid, matches_by_round[rid]) for rid in round_order if rid in matches_by_round]
+    return render_template(
+        "bracket_only_bracket.html",
+        tournament=g.tournament,
+        rounds=rounds,
+    )
+
+
 @web_bp.get("/bracket")
 def bracket():
+    if _is_bracket_only_tournament():
+        return _bracket_only_bracket()
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
@@ -1123,6 +1241,7 @@ def bracket():
 
 @web_bp.get("/fixtures")
 def fixtures():
+    _require_group_stage_format()
     engine = app_module.get_engine()
     scenario_id = _scenario_id()
     results = _results_for_scenario(scenario_id)
@@ -1357,6 +1476,7 @@ def match_detail(match_no: int):
 @web_bp.get("/results/manual")
 @login_required
 def results_manual():
+    _require_group_stage_format()
     """A page listing every group-stage fixture with editable score fields,
     for manually entering real-world results when the football-data.org feed
     is slow or incorrect. Saving here overwrites "current"."""
@@ -1383,6 +1503,7 @@ def results_manual():
 
 @web_bp.get("/draw")
 def draw():
+    _require_group_stage_format()
     from app.simulation.draw import load_draw_pots
     engine = app_module.get_engine()
     pots_data = load_draw_pots()
@@ -1432,7 +1553,7 @@ def scenarios_new():
     import copy
     scenario = data_store.fork_scenario(base_id, copy.deepcopy(actuals), label=label, username=current_user.username)
     flash(f"Created scenario '{scenario['label']}'.", "success")
-    return redirect(url_for("web.settings"))
+    return redirect(url_for("account.settings"))
 
 
 @web_bp.post("/scenarios/<scenario_id>/delete")
@@ -1440,17 +1561,18 @@ def scenarios_new():
 def scenarios_delete(scenario_id):
     if data_store._is_global_scenario_id(scenario_id) and not current_user.is_admin:
         flash("Only the admin can delete this scenario.", "danger")
-        return redirect(url_for("web.settings"))
+        return redirect(url_for("account.settings"))
     if data_store.delete_scenario(scenario_id, current_user.username):
         flash("Scenario deleted.", "success")
     else:
         flash("Could not delete that scenario.", "danger")
-    return redirect(url_for("web.settings"))
+    return redirect(url_for("account.settings"))
 
 
 @web_bp.get("/scenarios/compare")
 @login_required
 def scenario_compare():
+    _require_group_stage_format()
     engine = app_module.get_engine()
     scenario_list = data_store.list_scenarios(_username())
     ids = [s["id"] for s in scenario_list]
@@ -1492,12 +1614,12 @@ def scenario_compare():
     )
 
 
-@web_bp.get("/simulation-logic")
+@account_bp.get("/simulation-logic")
 def simulation_logic():
     return render_template("simulation_logic.html")
 
 
-@web_bp.get("/changelog")
+@account_bp.get("/changelog")
 def changelog():
     from app import changelog as changelog_mod
     return render_template("changelog.html",
@@ -1505,7 +1627,7 @@ def changelog():
                            app_version=changelog_mod.APP_VERSION)
 
 
-@web_bp.get("/onboarding")
+@account_bp.get("/onboarding")
 def onboarding():
     engine = app_module.get_engine()
     all_team_names = sorted(t["name"] for t in engine.data["teams"])
@@ -1516,7 +1638,7 @@ def onboarding():
     )
 
 
-@web_bp.post("/onboarding")
+@account_bp.post("/onboarding")
 def onboarding_save():
     n_simulations = request.form.get("n_simulations", "").strip()
     try:
@@ -1539,6 +1661,7 @@ def onboarding_save():
 @web_bp.get("/admin/diagnostics")
 @login_required
 def admin_diagnostics():
+    _require_group_stage_format()
     if not current_user.is_admin:
         return redirect(url_for("web.index"))
     engine = app_module.get_engine()
@@ -1567,7 +1690,7 @@ def admin_diagnostics():
     )
 
 
-@web_bp.get("/admin/usage")
+@account_bp.get("/admin/usage")
 @login_required
 def admin_usage():
     if not current_user.is_admin:
@@ -1648,7 +1771,7 @@ def admin_usage():
     )
 
 
-@web_bp.get("/settings")
+@account_bp.get("/settings")
 def settings():
     engine = app_module.get_engine()
     all_team_names = sorted(t["name"] for t in engine.data["teams"])
@@ -1665,7 +1788,7 @@ def settings():
     )
 
 
-@web_bp.post("/settings")
+@account_bp.post("/settings")
 def settings_save():
     n_simulations = request.form.get("n_simulations", "").strip()
     try:
@@ -1712,17 +1835,17 @@ def settings_save():
             data_store.save_global_settings(global_updates)
 
     flash("Settings saved.", "success")
-    return redirect(url_for("web.settings"))
+    return redirect(url_for("account.settings"))
 
 
-@web_bp.post("/account/regenerate-api-slug")
+@account_bp.post("/account/regenerate-api-slug")
 def regenerate_api_slug():
     auth.regenerate_api_slug(current_user.username)
     flash("API slug regenerated. Update any scripts using the old one.", "success")
-    return redirect(url_for("web.settings"))
+    return redirect(url_for("account.settings"))
 
 
-@web_bp.post("/account/password")
+@account_bp.post("/account/password")
 def change_password():
     current_password = request.form.get("current_password") or ""
     new_password = request.form.get("new_password") or ""
@@ -1730,45 +1853,45 @@ def change_password():
 
     if not current_user.check_password(current_password):
         flash("Current password is incorrect.", "danger")
-        return redirect(url_for("web.settings"))
+        return redirect(url_for("account.settings"))
 
     error = auth.validate_password(new_password)
     if not error and new_password != new_password_confirm:
         error = "New passwords do not match."
     if error:
         flash(error, "danger")
-        return redirect(url_for("web.settings"))
+        return redirect(url_for("account.settings"))
 
     auth.set_password(current_user.username, new_password)
     flash("Password updated.", "success")
-    return redirect(url_for("web.settings"))
+    return redirect(url_for("account.settings"))
 
 
-@web_bp.get("/admin/approve/<username>")
+@account_bp.get("/admin/approve/<username>")
 @login_required
 def admin_approve_user(username):
     if not current_user.is_admin:
         flash("Only the admin can approve accounts.", "danger")
-        return redirect(url_for("web.settings"))
+        return redirect(url_for("account.settings"))
     if auth.approve_user(username):
         flash(f"Account '{username}' approved — they can now log in.", "success")
     else:
         flash(f"Account '{username}' not found.", "danger")
-    return redirect(url_for("web.settings"))
+    return redirect(url_for("account.settings"))
 
 
-@web_bp.post("/admin/approve/<username>")
+@account_bp.post("/admin/approve/<username>")
 @login_required
 def admin_approve_user_post(username):
     return admin_approve_user(username)
 
 
-@web_bp.post("/admin/invites/new")
+@account_bp.post("/admin/invites/new")
 @login_required
 def admin_invite_create():
     if not current_user.is_admin:
         flash("Only the admin can create invite links.", "danger")
-        return redirect(url_for("web.settings"))
+        return redirect(url_for("account.settings"))
     label = request.form.get("label", "").strip() or "Invite"
     try:
         max_uses = max(1, int(request.form.get("max_uses", 1)))
@@ -1776,23 +1899,24 @@ def admin_invite_create():
         max_uses = 1
     data_store.create_invite(label, max_uses)
     flash(f"Invite link '{label}' created.", "success")
-    return redirect(url_for("web.settings") + "#admin-invites")
+    return redirect(url_for("account.settings") + "#admin-invites")
 
 
-@web_bp.post("/admin/invites/<token>/delete")
+@account_bp.post("/admin/invites/<token>/delete")
 @login_required
 def admin_invite_delete(token):
     if not current_user.is_admin:
         flash("Only the admin can delete invite links.", "danger")
-        return redirect(url_for("web.settings"))
+        return redirect(url_for("account.settings"))
     data_store.delete_invite(token)
     flash("Invite link deleted.", "success")
-    return redirect(url_for("web.settings") + "#admin-invites")
+    return redirect(url_for("account.settings") + "#admin-invites")
 
 
 @web_bp.get("/retrospective")
 @login_required
 def retrospective():
+    _require_group_stage_format()
     from app.retrospective import (
         load_retrospective, is_tournament_complete,
         trigger_retrospective_if_complete, STAGE_LABELS,
@@ -1849,6 +1973,7 @@ def retrospective():
 @web_bp.post("/admin/retrospective/recompute")
 @login_required
 def admin_retro_recompute():
+    _require_group_stage_format()
     if not current_user.is_admin:
         return redirect(url_for("web.retrospective"))
     from app.retrospective import trigger_retrospective_if_complete, _RETRO_PATH
@@ -1862,3 +1987,66 @@ def admin_retro_recompute():
     trigger_retrospective_if_complete(engine, actuals)
     flash("Retrospective recomputation started.", "info")
     return redirect(url_for("web.retrospective"))
+
+
+# ---------------------------------------------------------------------------
+# Picker: "/" — lists tournaments once there's more than one to choose from.
+# ---------------------------------------------------------------------------
+
+@picker_bp.get("/")
+def picker():
+    registry = app_module.get_registry()
+    tournaments = registry.list()
+    if len(tournaments) == 1:
+        # Nothing to pick — go straight to the one tournament's home page.
+        # A 302 (not 301): this becomes a real choice the moment a second
+        # tournament is registered, so the redirect must not be cached as
+        # permanent by browsers.
+        return redirect(url_for("web.index", slug=tournaments[0].slug), code=302)
+    return render_template("picker.html", tournaments=tournaments)
+
+
+# ---------------------------------------------------------------------------
+# Legacy redirects: pre-Stage-2 top-level paths -> /t/<default-slug>/...
+#
+# Only GET pages a user might have bookmarked or linked to get a redirect;
+# POST-only action endpoints (scenario mutation, admin recompute) are always
+# reached via a freshly-rendered form whose action="" already points at the
+# current URL, so there's no stale-bookmark case to cover for those.
+# ---------------------------------------------------------------------------
+
+_LEGACY_GET_ROUTES = [
+    ("/groups", "web.groups"),
+    ("/group/<name>", "web.group"),
+    ("/teams", "web.teams"),
+    ("/team", "web.team_default"),
+    ("/team/<name>", "web.team"),
+    ("/bracket", "web.bracket"),
+    ("/fixtures", "web.fixtures"),
+    ("/match/<int:match_no>", "web.match_detail"),
+    ("/results/manual", "web.results_manual"),
+    ("/draw", "web.draw"),
+    ("/scenarios/compare", "web.scenario_compare"),
+    ("/admin/diagnostics", "web.admin_diagnostics"),
+    ("/retrospective", "web.retrospective"),
+]
+
+
+def _make_legacy_redirect(target_endpoint):
+    def view(**kwargs):
+        slug = app_module.get_registry().default_slug()
+        target = url_for(target_endpoint, slug=slug, **kwargs)
+        qs = request.query_string.decode()
+        if qs:
+            target = f"{target}?{qs}"
+        return redirect(target, code=301)
+    return view
+
+
+for _path, _endpoint in _LEGACY_GET_ROUTES:
+    legacy_bp.add_url_rule(
+        _path,
+        endpoint=_endpoint.replace(".", "_"),
+        view_func=_make_legacy_redirect(_endpoint),
+        methods=["GET"],
+    )

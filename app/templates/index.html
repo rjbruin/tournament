@@ -6,7 +6,7 @@
 {% if pending_approvals %}
 <div class="alert alert-warning d-flex justify-content-between align-items-center">
   <span><strong>{{ pending_approvals }} account{{ 's' if pending_approvals != 1 else '' }}</strong> waiting for approval.</span>
-  <a href="{{ url_for('web.settings') }}#admin-users" class="btn btn-sm btn-warning">Review</a>
+  <a href="{{ url_for('account.settings') }}#admin-users" class="btn btn-sm btn-warning">Review</a>
 </div>
 {% endif %}
 
@@ -689,7 +689,7 @@
     {% set api_key = current_user.settings.get('openrouter_api_key') %}
     {% if not api_key %}
     <div class="alert alert-warning">
-      Ask AI requires an OpenRouter API key. <a href="{{ url_for('web.settings') }}">Set one up on the Settings page</a> to enable this feature.
+      Ask AI requires an OpenRouter API key. <a href="{{ url_for('account.settings') }}">Set one up on the Settings page</a> to enable this feature.
     </div>
     <div id="chat-box" class="border rounded p-3 mb-3 bg-light text-muted text-center" style="min-height:120px;">
       Ask AI is disabled until an OpenRouter API key is configured.

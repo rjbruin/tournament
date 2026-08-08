@@ -1,0 +1,44 @@
+# FIFA World Cup 2026 — the one tournament instance that exists today.
+#
+# Stage 2 scope note: `data.actuals` / `data.scenarios_dir` /
+# `data.retrospective` deliberately point at the SAME top-level `data/`
+# paths this app has always used, rather than a nested
+# `data/tournaments/wc2026/` layout. This is a live, deployed app with real
+# user accounts and an in-progress tournament — moving those files is a
+# real-data migration with real rollback cost, and buys nothing until a
+# second tournament instance actually needs the isolation. A future
+# instance (e.g. Wimbledon) can point its `data.*` paths at
+# `data/tournaments/<id>/...` from day one with no code change here.
+
+id: wc2026
+slug: world-cup-2026
+name: "FIFA World Cup 2026"
+template: fifa_world_cup
+sport: football
+year: 2026
+host_countries: [USA, Canada, Mexico]
+
+data:
+  tournament_data: data/wc2026.json
+  annex_c: data/annex_c.json
+  actuals: data/actuals.json
+  scenarios_dir: data/scenarios
+  retrospective: data/retrospective.json
+
+theme:
+  palette: wc2026
+  primary_color: "#0a3b2a"
+  bright_color: "#00843d"
+  gold_color: "#ffc72c"
+  gold_deep_color: "#e6a800"
+  pink_color: "#ff3b6e"
+  blue_color: "#0b3954"
+  bg_color: "#f4f7f4"
+  logo: null
+  landing: null
+
+defaults:
+  n_simulations: 250000
+
+results_compat:
+  legacy_wc_keys: true

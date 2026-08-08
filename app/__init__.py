@@ -1,20 +1,21 @@
-import json
 import os
 import secrets
 
-from flask import Flask, abort, redirect, request, session, url_for
+from flask import Flask, abort, g, redirect, request, session, url_for
 from flask_login import LoginManager, current_user
 
 from app import auth
 from app.simulation.engine import SimulationEngine
+from app.tournaments import TournamentRegistry, load_registry
 from app.flags import flag_emoji, flag_url
 
-# Per-account in-memory simulation results: {username: results_dict}.
-# Snapshots are persisted to disk (see data_store), but the "current" results
-# only live in memory and are lost on restart — the user can re-run the
-# simulation from their last snapshot's settings.
+# Per-account in-memory simulation results: {(username, tournament_id,
+# scenario_id): results_dict}. Snapshots are persisted to disk (see
+# data_store), but the "current" results only live in memory and are lost
+# on restart — the user can re-run the simulation from their last
+# snapshot's settings.
 _simulation_results: dict[tuple, dict] = {}
-_engine: SimulationEngine = None
+_registry: TournamentRegistry = None
 
 # Live-results state shared between the background poller and the status API.
 # _live_version increments each time the poller writes new data AND the
@@ -34,26 +35,68 @@ def get_live_status() -> dict:
     }
 
 
-def get_engine() -> SimulationEngine:
-    return _engine
+def get_registry() -> TournamentRegistry:
+    return _registry
 
 
-def get_simulation_results(username: str, scenario_id: str = "current"):
-    key = ((username or "_anon").lower(), scenario_id or "current")
-    return _simulation_results.get(key)
+def default_tournament_id() -> str:
+    """The tournament to operate on when no explicit tournament_id is given.
+
+    Inside a request, this is the tournament resolved from the URL/session
+    by the app-level before_request hook (flask.g.tournament); outside a
+    request (tests, background threads using a bare app_context, scripts)
+    it falls back to the registry's first configured tournament — today the
+    only one, so every pre-Stage-2 call site keeps behaving identically."""
+    from flask import g, has_app_context
+    if has_app_context():
+        inst = getattr(g, "tournament", None)
+        if inst is not None:
+            return inst.id
+    return _registry.default_id()
 
 
-def set_simulation_results(username: str, results, scenario_id: str = "current") -> None:
-    key = ((username or "_anon").lower(), scenario_id or "current")
-    _simulation_results[key] = results
+def get_engine(tournament_id: str = None) -> SimulationEngine:
+    """Returns the engine for `tournament_id` (default: the registry's
+    default tournament — today the only one, world-cup-2026/wc2026). Every
+    existing zero-argument call site keeps working unchanged."""
+    tid = tournament_id or default_tournament_id()
+    inst = _registry.get_by_id(tid)
+    if inst is None:
+        raise ValueError(f"unknown tournament id {tid!r}")
+    return inst.engine
 
 
-def invalidate_results(scenario_id: str = "current") -> None:
-    """Drop cached simulation results for `scenario_id` across all accounts, so
-    the next page load/API call re-runs against the freshly-updated actuals.
-    Used by the live poller when a live score changes the real results."""
+def _cache_key(username: str, scenario_id: str = "current", tournament_id: str = None) -> tuple:
+    tid = tournament_id or default_tournament_id()
+    return ((username or "_anon").lower(), tid, scenario_id or "current")
+
+
+def get_simulation_results(username: str, scenario_id: str = "current", tournament_id: str = None):
+    return _simulation_results.get(_cache_key(username, scenario_id, tournament_id))
+
+
+def set_simulation_results(
+    username: str, results, scenario_id: str = "current", tournament_id: str = None
+) -> None:
+    _simulation_results[_cache_key(username, scenario_id, tournament_id)] = results
+
+
+def forget_results(username: str, scenario_id: str, tournament_id: str = None) -> None:
+    """Drop one cached results entry, e.g. when a user switches away from a
+    scenario that should recompute fresh next time it's viewed. Callers
+    used to reach into `_simulation_results` directly to do this — go
+    through here instead so the cache-key shape stays encapsulated."""
+    _simulation_results.pop(_cache_key(username, scenario_id, tournament_id), None)
+
+
+def invalidate_results(scenario_id: str = "current", tournament_id: str = None) -> None:
+    """Drop cached simulation results for `scenario_id` (in `tournament_id`,
+    default the default tournament) across all accounts, so the next page
+    load/API call re-runs against the freshly-updated actuals. Used by the
+    live poller when a live score changes the real results."""
+    tid = tournament_id or default_tournament_id()
     for key in list(_simulation_results.keys()):
-        if key[1] == scenario_id:
+        if key[1] == tid and key[2] == scenario_id:
             _simulation_results.pop(key, None)
 
 
@@ -97,25 +140,29 @@ def _average_results(per_draw_results: list[dict]) -> dict:
 _POLLER_USER = "_system"
 
 
-def get_or_run_results(username: str, scenario_id: str = "current", n: int = None):
-    """Return cached simulation results for (account, scenario), running and
-    caching a fresh simulation against that scenario's actuals if needed.
+def get_or_run_results(
+    username: str, scenario_id: str = "current", n: int = None, tournament_id: str = None
+):
+    """Return cached simulation results for (account, tournament, scenario),
+    running and caching a fresh simulation against that scenario's actuals
+    if needed.
 
     For the "current" scenario with default N, the background poller pre-warms
     a shared cache entry under _POLLER_USER. Users without a custom N setting
     fall through to that entry, avoiding a redundant re-simulation."""
     scenario_id = scenario_id or "current"
-    cached = get_simulation_results(username, scenario_id)
+    tid = tournament_id or default_tournament_id()
+    cached = get_simulation_results(username, scenario_id, tid)
     if cached is not None:
         return cached
     # Fall back to the poller's pre-warmed result when no custom N is set.
     if scenario_id == "current" and n is None and username != _POLLER_USER:
-        cached = get_simulation_results(_POLLER_USER, "current")
+        cached = get_simulation_results(_POLLER_USER, "current", tid)
         if cached is not None:
             return cached
     # Fall back to the checkpoint warmer's pre-warmed result for historical scenarios.
     if username != _POLLER_USER:
-        cached = get_simulation_results(_POLLER_USER, scenario_id)
+        cached = get_simulation_results(_POLLER_USER, scenario_id, tid)
         if cached is not None:
             return cached
     from app import data_store
@@ -127,21 +174,22 @@ def get_or_run_results(username: str, scenario_id: str = "current", n: int = Non
 
     n = n or 250_000
     draw = scenario.get("draw")
+    engine = get_engine(tid)
 
     if scenario.get("is_pre_draw") or (draw is not None and not is_draw_complete(draw)):
         # Marginalize over many possible draws (fully random for "pre-draw",
         # or completing the fixed/partial draw for a partial-draw scenario).
         n_per_draw = max(100, n // N_DRAWS)
         draws = simulate_many_draws(N_DRAWS, fixed=draw)
-        per_draw_results = [_engine.run(n_per_draw, actuals=scenario["actuals"], groups=d) for d in draws]
+        per_draw_results = [engine.run(n_per_draw, actuals=scenario["actuals"], groups=d) for d in draws]
         results = _average_results(per_draw_results)
     elif draw is not None:
         # Fully completed custom draw.
-        results = _engine.run(n, actuals=scenario["actuals"], groups=draw)
+        results = engine.run(n, actuals=scenario["actuals"], groups=draw)
     else:
-        results = _engine.run(n, actuals=scenario["actuals"])
+        results = engine.run(n, actuals=scenario["actuals"])
 
-    set_simulation_results(username, results, scenario_id)
+    set_simulation_results(username, results, scenario_id, tid)
     return results
 
 
@@ -171,7 +219,7 @@ class PrefixMiddleware:
 
 
 def create_app():
-    global _engine
+    global _registry
 
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -197,11 +245,7 @@ def create_app():
     from app.migrations import run_pending_migrations
     run_pending_migrations()
 
-    data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "wc2026.json")
-    with open(data_path) as f:
-        tournament_data = json.load(f)
-
-    _engine = SimulationEngine(tournament_data)
+    _registry = load_registry()
 
     # Rebuild the canonical set of auto-generated scenarios (one per unique
     # state of the tournament). Cheap when already up to date; also what
@@ -212,11 +256,14 @@ def create_app():
     except Exception:
         pass
 
-    from app.web.routes import web_bp
+    from app.web.routes import account_bp, legacy_bp, picker_bp, web_bp
     from app.web.auth_routes import auth_bp
     from app.api.routes import api_bp
 
-    app.register_blueprint(web_bp)
+    app.register_blueprint(web_bp, url_prefix="/t/<slug>")
+    app.register_blueprint(account_bp)
+    app.register_blueprint(legacy_bp)
+    app.register_blueprint(picker_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
 
@@ -235,22 +282,42 @@ def create_app():
     login_manager.init_app(app)
 
     @app.before_request
+    def resolve_tournament():
+        # Runs before every request (any blueprint) so g.tournament /
+        # g.tournament_slug are always available — including from
+        # account-scoped pages (settings, changelog) that need to build a
+        # `url_for('web.X')` link back into a tournament, and from
+        # background threads that never go through a request at all (see
+        # app.default_tournament_id's has_app_context guard). The active
+        # tournament is "sticky" via the session, set authoritatively by
+        # web_bp's url_value_preprocessor whenever a /t/<slug>/... URL is
+        # visited (see app/web/routes.py).
+        registry = get_registry()
+        slug = session.get("tournament_slug") or registry.default_slug()
+        inst = registry.get(slug) or registry.get(registry.default_slug())
+        g.tournament = inst
+        g.tournament_slug = inst.slug if inst else None
+        g.all_tournaments = registry.list()
+
+    @app.before_request
     def require_login():
-        # Allow unauthenticated access only to the auth pages and static
-        # assets. Everything else (including the API, which uses its own
-        # session-or-api-slug check) requires a logged-in account.
+        # Allow unauthenticated access only to the auth pages, static
+        # assets, and legacy-URL redirects (which just forward to a public
+        # or private page — the target enforces its own auth). Everything
+        # else (including the API, which uses its own session-or-api-slug
+        # check) requires a logged-in account.
         if request.endpoint is None:
             return
         if request.endpoint == "static" or request.endpoint.startswith("auth."):
             return
-        if request.blueprint == "api":
+        if request.blueprint in ("api", "legacy", "picker"):
             return
         # The default "current" scenario (real tournament state) is public
         # so the app is useful while watching a game without an account.
         public_endpoints = {
             "web.index", "web.groups", "web.group", "web.team", "web.team_default",
             "web.bracket", "web.fixtures", "web.match_detail", "web.teams", "web.draw",
-            "web.manifest", "web.changelog", "web.simulation_logic",
+            "account.manifest", "account.changelog", "account.simulation_logic",
         }
         if request.endpoint in public_endpoints:
             return
@@ -369,14 +436,25 @@ def create_app():
         from app.form import compute_form
         if request.blueprint == "api" or request.endpoint in (None, "static") or (request.endpoint or "").startswith("auth."):
             return {}
+        # This whole function assumes a football-shaped engine
+        # (data_store.load_scenario's global actuals.json, engine.groups,
+        # engine.data["teams"]) — a groups-less bracket tournament
+        # (Wimbledon) has none of that. base.html only ever reads
+        # `active_scenario` unconditionally, so None is a safe default for
+        # everything else here.
+        tournament = getattr(g, "tournament", None)
+        if tournament is not None and tournament.template != "fifa_world_cup":
+            return {"team_form": {}, "active_scenario": None, "team_elos": {},
+                    "team_clinch": {}, "live_teams": set()}
         scenario_id = request.args.get("s") or session.get("scenario_id") or "current"
         username = current_user.username if current_user.is_authenticated else None
         scenario = data_store.load_scenario(scenario_id, username) or data_store.load_scenario("current")
+        engine = get_engine()
         try:
-            team_form = compute_form(scenario["actuals"], _engine)
+            team_form = compute_form(scenario["actuals"], engine)
         except Exception:
             team_form = {}
-        team_elos = {t["name"]: t["elo"] for t in _engine.data["teams"]} if _engine else {}
+        team_elos = {t["name"]: t["elo"] for t in engine.data["teams"]} if engine else {}
 
         # Theoretical (sampling-free) qualification status per team for the
         # scenario being viewed, so badges everywhere can show a true "Q ✓"
@@ -386,7 +464,7 @@ def create_app():
             from app import clinch as _clinch
             _results = get_or_run_results(username, scenario_id)
             if _results:
-                team_clinch = _clinch.clinch_by_team(_results, _engine.groups)
+                team_clinch = _clinch.clinch_by_team(_results, engine.groups)
         except Exception:
             team_clinch = {}
 
@@ -429,10 +507,15 @@ def _live_poller_loop(app):
 
     global _live_version, _live_processing, _live_any_live
 
+    # Polls the default (today: only) tournament. live_source's results feed
+    # is itself WC2026-specific (FOOTBALL_DATA_URL); scoping this loop to
+    # iterate several tournaments, each against its own results source, is
+    # Stage 3 work done alongside wiring up a second tournament's feed.
+    engine = get_engine()
     while True:
         delay = live_source.IDLE_MAX
         try:
-            summary = live_source.poll_live_matches(_engine)
+            summary = live_source.poll_live_matches(engine)
             any_live = summary.get("any_live", False)
             _live_any_live = any_live
             if summary.get("changed"):
@@ -448,7 +531,7 @@ def _live_poller_loop(app):
             if summary.get("error"):
                 delay = max(live_source.LIVE_INTERVAL, 120)
             else:
-                delay = live_source.compute_poll_delay(_engine, any_live)
+                delay = live_source.compute_poll_delay(engine, any_live)
         except Exception:
             app.logger.exception("live poller iteration failed")
             delay = 120

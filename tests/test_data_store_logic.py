@@ -9,14 +9,20 @@ from conftest import group_teams, scheduled_group_matches
 
 @pytest.fixture
 def installed_engine(engine):
-    """Install the real engine as the module-level global, for functions that
-    call ``app.get_engine()`` (e.g. describe_progress)."""
-    saved = app_module._engine
-    app_module._engine = engine
+    """Install the real engine as the default tournament's engine in the
+    module-level registry, for functions that call ``app.get_engine()``
+    (e.g. describe_progress)."""
+    from app.tournaments import TournamentRegistry, load_registry
+
+    saved = app_module._registry
+    reg = load_registry()
+    inst = reg.get(reg.default_slug())
+    inst.engine = engine
+    app_module._registry = TournamentRegistry([inst])
     try:
         yield engine
     finally:
-        app_module._engine = saved
+        app_module._registry = saved
 
 
 # ---------------------------------------------------------------------------

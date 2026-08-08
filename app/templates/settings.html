@@ -6,7 +6,7 @@
   <div class="col-12 col-lg-7">
     <h2 class="mb-4">Settings</h2>
 
-    <form method="post" action="{{ url_for('web.settings_save') }}">
+    <form method="post" action="{{ url_for('account.settings_save') }}">
       <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
 
       <div class="card shadow-sm">
@@ -98,7 +98,7 @@
       <div class="card shadow-sm mt-4 border-warning">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span class="fw-bold">Admin settings</span>
-          <a href="{{ url_for('web.admin_usage') }}" class="btn btn-outline-secondary btn-sm">📊 Usage statistics</a>
+          <a href="{{ url_for('account.admin_usage') }}" class="btn btn-outline-secondary btn-sm">📊 Usage statistics</a>
         </div>
         <div class="card-body">
           <p class="text-muted small">
@@ -180,7 +180,7 @@
                   {% endif %}
                 </div>
                 {% if not u.approved %}
-                <a href="{{ url_for('web.admin_approve_user', username=u.username) }}" class="btn btn-success btn-sm">Approve</a>
+                <a href="{{ url_for('account.admin_approve_user', username=u.username) }}" class="btn btn-success btn-sm">Approve</a>
                 {% endif %}
               </div>
               {% if u.llm_usage %}
@@ -218,7 +218,7 @@
       <div class="card-header fw-bold">Invite links</div>
       <div class="card-body">
         <p class="text-muted small">Generate invite links to share with people you want to give access.</p>
-        <form method="post" action="{{ url_for('web.admin_invite_create') }}" class="row g-2 mb-4">
+        <form method="post" action="{{ url_for('account.admin_invite_create') }}" class="row g-2 mb-4">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
           <div class="col">
             <input type="text" class="form-control form-control-sm" name="label" placeholder="Label (e.g. 'Friends')" required>
@@ -249,7 +249,7 @@
                           onclick="navigator.clipboard.writeText(document.getElementById('invite-{{ inv.token }}').value)">Copy</button>
                 </div>
               </div>
-              <form method="post" action="{{ url_for('web.admin_invite_delete', token=inv.token) }}"
+              <form method="post" action="{{ url_for('account.admin_invite_delete', token=inv.token) }}"
                     onsubmit="return confirm('Delete this invite link?')">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -294,7 +294,7 @@
             Pass this as <code>Authorization: Bearer &lt;key&gt;</code> or <code>?api_key=&lt;key&gt;</code> when calling the API.
           </div>
         </div>
-        <form method="post" action="{{ url_for('web.regenerate_api_slug') }}" onsubmit="return confirm('Regenerate API key? Any scripts using the old key will stop working.');">
+        <form method="post" action="{{ url_for('account.regenerate_api_slug') }}" onsubmit="return confirm('Regenerate API key? Any scripts using the old key will stop working.');">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
           <button type="submit" class="btn btn-outline-danger btn-sm">Regenerate API key</button>
         </form>
@@ -302,7 +302,7 @@
         <hr>
 
         <h6 class="mb-3">Change password</h6>
-        <form method="post" action="{{ url_for('web.change_password') }}">
+        <form method="post" action="{{ url_for('account.change_password') }}">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
           <div class="mb-3">
             <label for="current_password" class="form-label">Current password</label>

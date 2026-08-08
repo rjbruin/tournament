@@ -267,7 +267,7 @@ def magic_link_consume(token):
     flash(f"Signed in as {user.username}. You can set a new password below if you like.", "success")
     # Store a flag so the settings page can show the "set new password" form prominently
     session["magic_link_login"] = True
-    return redirect(url_for("web.settings"))
+    return redirect(url_for("account.settings"))
 
 
 # ---------------------------------------------------------------------------
@@ -283,7 +283,7 @@ def resend_verification():
         return redirect(url_for("web.index"))
     if not user.email:
         flash("No email address on your account. Add one in Settings first.", "warning")
-        return redirect(url_for("web.settings"))
+        return redirect(url_for("account.settings"))
     token = data_store.create_email_token("verify", user.username)
     verify_url = url_for("auth.verify_email", token=token, _external=True)
     sent = send_verification_email(user.email, verify_url)

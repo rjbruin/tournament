@@ -14,6 +14,7 @@
 id: wimbledon_2026
 slug: wimbledon-2026
 name: "Wimbledon 2026 — Gentlemen's Singles"
+short_name: "Wimbledon 2026"
 template: wimbledon
 sport: tennis
 year: 2026
@@ -22,6 +23,7 @@ host_countries: [UK]
 data:
   entries: data/tournaments/wimbledon_2026/entries.json
   positions: data/tournaments/wimbledon_2026/positions.json
+  matches: data/tournaments/wimbledon_2026/matches.json
   elo_field: elo_grass
   sets_to_win: 3   # best of 5
   actuals: data/tournaments/wimbledon_2026/actuals.json

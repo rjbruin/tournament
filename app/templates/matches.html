@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Matches — {{ tournament.short_name }}{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">Matches</h2>
+
+{% if not days %}
+<div class="alert alert-info">No match schedule available yet for this tournament.</div>
+{% else %}
+
+{% for day in days %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold">
+    {% if day.date %}
+      {{ day.date }}
+    {% else %}
+      {{ day.date_range[0] }}{% if day.date_range[1] != day.date_range[0] %}–{{ day.date_range[1] }}{% endif %}
+      <span class="text-muted small fw-normal">(exact day not individually confirmed)</span>
+    {% endif %}
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0 align-middle">
+      <tbody>
+        {% for m in day.matches %}
+        <tr>
+          <td class="text-muted small" style="width:14%;">{{ round_labels.get(m.round, m.round) }}</td>
+          <td style="width:36%;">
+            <span class="{% if m.winner == m.player1 %}fw-bold{% endif %}">{{ m.player1 }}</span>
+          </td>
+          <td class="text-muted text-center small" style="width:4%;">vs</td>
+          <td style="width:36%;">
+            <span class="{% if m.winner == m.player2 %}fw-bold{% endif %}">{{ m.player2 }}</span>
+          </td>
+          <td class="text-muted small text-end" style="width:10%;">{{ m.score }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+{% endif %}
+
+{% endblock %}

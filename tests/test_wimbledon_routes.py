@@ -90,3 +90,42 @@ def test_tournament_switcher_present_with_two_tournaments(client):
     resp = client.get("/t/world-cup-2026/")
     assert b"dropdown-toggle" in resp.data
     assert b"wimbledon-2026" in resp.data
+
+
+def test_header_shows_tournament_short_name_not_hardcoded_wc(client):
+    resp = client.get("/t/wimbledon-2026/")
+    assert b"Wimbledon 2026" in resp.data
+    resp = client.get("/t/world-cup-2026/")
+    assert b"WC" in resp.data
+    assert b"navbar-brand" in resp.data
+
+
+def test_switcher_button_does_not_leak_full_tournament_name(client):
+    # The switcher button itself should be compact/icon-only -- the name
+    # belongs in the navbar-brand, not duplicated onto the switcher control.
+    resp = client.get("/t/world-cup-2026/").data.decode()
+    switcher_start = resp.index("tournament-switcher")
+    switcher_button_html = resp[switcher_start:switcher_start + 300]
+    assert "FIFA World Cup 2026" not in switcher_button_html
+
+
+def test_wimbledon_players_page_ranked_by_atp_rank(client):
+    resp = client.get("/t/wimbledon-2026/players")
+    assert resp.status_code == 200
+    text = resp.data.decode()
+    # Sinner is ATP rank 1 -- must appear before the next few ranked seeds.
+    assert text.index("Jannik Sinner") < text.index("Alexander Zverev")
+    assert b"\xf0\x9f\x8f\x86 Champion" in resp.data  # trophy emoji badge
+
+
+def test_wimbledon_matches_page_groups_by_day_with_real_scores(client):
+    resp = client.get("/t/wimbledon-2026/matches")
+    assert resp.status_code == 200
+    assert b"2026-07-12" in resp.data  # the real final date
+    assert "6–7(7–9)".encode() in resp.data  # real final score, first set
+
+
+@pytest.mark.parametrize("path", ["/t/world-cup-2026/players", "/t/world-cup-2026/matches"])
+def test_tennis_only_pages_404_for_wc2026(client, path):
+    resp = client.get(path, follow_redirects=False)
+    assert resp.status_code == 404, f"{path} -> {resp.status_code}"

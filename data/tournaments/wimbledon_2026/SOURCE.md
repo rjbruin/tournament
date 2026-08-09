@@ -26,7 +26,36 @@ exact.
   qualifiers/wildcards/lucky-losers/protected-ranking entrants (consistent
   with usually sitting outside the ATP top ~100).
 
-No match results were transcribed (this instance starts from an empty
-`actuals.json`, i.e. purely the pre-tournament draw) — the champion
-(Jannik Sinner, who won the real 2026 final) is not baked in anywhere; the
-simulator projects it the same way it would have before a ball was hit.
+- `atp_rank` (seeded players only): the real ATP ranking number (distinct
+  from ATP ranking *points*) from the same seeded-players table's "Rank"
+  column. Not available for the other 96 entrants — `null`.
+
+## Match results and schedule (`matches.json`, `actuals.json`)
+
+Since the real 2026 Championships concluded before this data was added
+(final: 12 July 2026), match results were pulled too, from the same
+draw article's bracket templates (`{{16TeamBracket-Compact-Tennis5}}` ×8
+sections + `{{8TeamBracket-Tennis5}}` for QF/SF/F) — winner, opponent, and
+full set score for all 127 matches, real. `actuals.json`'s
+`knockout_results` is populated from this, so the live app now shows the
+real completed bracket rather than a blank pre-tournament draw.
+
+**Match dates**: Wikipedia's draw article itself carries no per-match
+dates (confirmed — neither this article nor prior years' equivalents
+include them). A separate real source did exist for a meaningful subset:
+[`2026 Wimbledon Championships – Day-by-day summaries`](https://en.wikipedia.org/wiki/2026_Wimbledon_Championships_%E2%80%93_Day-by-day_summaries)
+lists exact per-match dates for "main court" (marquee) matches only. Cross-
+referencing by player pair against the 127 parsed matches gave:
+- **Real, exact dates for 55/127 matches** (`date_confirmed: true`,
+  `date` set) — this is **100% of the Round of 16 onward** (all 8 R16, all
+  4 QF, both SF, and the Final — every match from that point on happened
+  to be a main-court match) plus 40 marquee matches from the first three
+  rounds.
+- **No exact date for the remaining 72 matches** (`date_confirmed: false`,
+  `date: null`), all in the first three rounds — Wikipedia doesn't publish
+  a per-match date for non-featured early-round matches, and other sources
+  checked (wimbledon.com, ATP tour) were unreachable or blocked. Each of
+  these carries a `date_range` (e.g. `["2026-06-29","2026-06-30"]`) — the
+  real two-day window that round was played over, from the tournament's
+  official dates (29 June – 12 July 2026) — rather than a fabricated exact
+  day.

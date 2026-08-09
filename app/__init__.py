@@ -7,7 +7,7 @@ from flask_login import LoginManager, current_user
 from app import auth
 from app.simulation.engine import SimulationEngine
 from app.tournaments import TournamentRegistry, load_registry
-from app.flags import flag_emoji, flag_url
+from app.flags import flag_emoji, flag_emoji_ioc, flag_url
 
 # Per-account in-memory simulation results: {(username, tournament_id,
 # scenario_id): results_dict}. Snapshots are persisted to disk (see
@@ -317,6 +317,7 @@ def create_app():
         public_endpoints = {
             "web.index", "web.groups", "web.group", "web.team", "web.team_default",
             "web.bracket", "web.fixtures", "web.match_detail", "web.teams", "web.draw",
+            "web.players", "web.matches",
             "account.manifest", "account.changelog", "account.simulation_logic",
         }
         if request.endpoint in public_endpoints:
@@ -347,6 +348,7 @@ def create_app():
 
     app.jinja_env.filters["flag"] = flag_emoji
     app.jinja_env.filters["flag_url"] = flag_url
+    app.jinja_env.filters["flag_ioc"] = flag_emoji_ioc
 
     @app.template_filter("pct")
     def pct_filter(value, decimals=1):

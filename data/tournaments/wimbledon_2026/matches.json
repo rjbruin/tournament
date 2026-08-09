@@ -1,0 +1,1909 @@
+{
+  "matches": [
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 0,
+      "player1": "Jannik Sinner",
+      "player2": "Miomir Kecmanović",
+      "winner": "Jannik Sinner",
+      "score": "4–6, 6–3, 6–7(6–8), 6–2, 6–3",
+      "date": "2026-06-29",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 1,
+      "player1": "Nuno Borges",
+      "player2": "Tristan Boyer",
+      "winner": "Nuno Borges",
+      "score": "6–3, 7–5, 7–5",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 2,
+      "player1": "Aleksandar Vukic",
+      "player2": "Jenson Brooksby",
+      "winner": "Jenson Brooksby",
+      "score": "6–7(7–9), 1–6, 1–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 3,
+      "player1": "Emilio Nava",
+      "player2": "Ignacio Buse",
+      "winner": "Ignacio Buse",
+      "score": "6–7(3–7), 6–3, 5–7, 0–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 4,
+      "player1": "Rafael Jódar",
+      "player2": "Felix Gill",
+      "winner": "Rafael Jódar",
+      "score": "6–3, 6–3, 7–5",
+      "date": "2026-06-29",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 5,
+      "player1": "Denis Shapovalov",
+      "player2": "Pablo Carreño Busta",
+      "winner": "Pablo Carreño Busta",
+      "score": "3–6, 6–7(7–9), ret.",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 6,
+      "player1": "Shintaro Mochizuki",
+      "player2": "Max Basing",
+      "winner": "Shintaro Mochizuki",
+      "score": "6–3, 6–0, 6–0",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 7,
+      "player1": "Ethan Quinn",
+      "player2": "Luciano Darderi",
+      "winner": "Ethan Quinn",
+      "score": "7–6(9–7), 7–5, 6–2",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 8,
+      "player1": "Casper Ruud",
+      "player2": "Hubert Hurkacz",
+      "winner": "Hubert Hurkacz",
+      "score": "6–4, 6–2, 7–6(9–7)",
+      "date": "2026-06-29",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 9,
+      "player1": "Hamad Medjedovic",
+      "player2": "Sebastian Ofner",
+      "winner": "Sebastian Ofner",
+      "score": "6–1, 2–6, 6–4, 3–6, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 10,
+      "player1": "Kwon Soon-woo",
+      "player2": "Martín Landaluce",
+      "winner": "Kwon Soon-woo",
+      "score": "6–4, 6–3, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 11,
+      "player1": "Alexandre Müller",
+      "player2": "Tommy Paul",
+      "winner": "Tommy Paul",
+      "score": "1–6, 2–6, 1–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 12,
+      "player1": "Brandon Nakashima",
+      "player2": "Jack Pinnington Jones",
+      "winner": "Brandon Nakashima",
+      "score": "6–3, 7–6(7–5), 7–5",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 13,
+      "player1": "Jan-Lennard Struff",
+      "player2": "Sebastián Báez",
+      "winner": "Jan-Lennard Struff",
+      "score": "6–1, 7–6(7–4), 4–6, 2–6, 7–5",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 14,
+      "player1": "Camilo Ugo Carabelli",
+      "player2": "Daniel Mérida",
+      "winner": "Daniel Mérida",
+      "score": "6–4, 6–3, 2–6, ret.",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 15,
+      "player1": "Marin Čilić",
+      "player2": "Daniil Medvedev",
+      "winner": "Daniil Medvedev",
+      "score": "6–1, 6–2, 6–4",
+      "date": "2026-06-29",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 16,
+      "player1": "Félix Auger-Aliassime",
+      "player2": "Alexander Shevchenko",
+      "winner": "Félix Auger-Aliassime",
+      "score": "6–3, 6–1, 6–4",
+      "date": "2026-06-29",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 17,
+      "player1": "Adam Walton",
+      "player2": "Dino Prižmić",
+      "winner": "Dino Prižmić",
+      "score": "6–4, 6–7(3–7), 4–6, 2–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 18,
+      "player1": "Daniel Vallejo",
+      "player2": "Nicolás Mejía",
+      "winner": "Nicolás Mejía",
+      "score": "6–4, 4–6, 5–7, 6–7(2–7)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 19,
+      "player1": "Michael Zheng",
+      "player2": "Cameron Norrie",
+      "winner": "Michael Zheng",
+      "score": "6–7(7–9), 6–2, 6–7(2–7), 6–3, 7–6(10–4)",
+      "date": "2026-06-29",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 20,
+      "player1": "Alejandro Davidovich Fokina",
+      "player2": "Juan Manuel Cerúndolo",
+      "winner": "Alejandro Davidovich Fokina",
+      "score": "6–4, 6–4, 7–6(7–2)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 21,
+      "player1": "Thiago Agustín Tirante",
+      "player2": "Fábián Marozsán",
+      "winner": "Fábián Marozsán",
+      "score": "5–7, 3–6, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 22,
+      "player1": "Luca Van Assche",
+      "player2": "Márton Fucsovics",
+      "winner": "Márton Fucsovics",
+      "score": "3–6, ret.",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 23,
+      "player1": "Dalibor Svrčina",
+      "player2": "Learner Tien",
+      "winner": "Learner Tien",
+      "score": "1–6, 4–6, 7–6(7–4), 3–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 24,
+      "player1": "Andrey Rublev",
+      "player2": "Roman Safiullin",
+      "winner": "Roman Safiullin",
+      "score": "4–6, 7–6(8–6), 6–3, 3–6, 6–7(12–14)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 25,
+      "player1": "Aleksandar Kovacevic",
+      "player2": "Botic van de Zandschulp",
+      "winner": "Botic van de Zandschulp",
+      "score": "3–6, 7–6(7–2), 4–6, 0–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 26,
+      "player1": "Jesper de Jong",
+      "player2": "Rinky Hijikata",
+      "winner": "Jesper de Jong",
+      "score": "7–6(7–4), 3–6, 5–7, 6–4, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 27,
+      "player1": "Roberto Bautista Agut",
+      "player2": "João Fonseca",
+      "winner": "João Fonseca",
+      "score": "6–7(4–7), 4–6, 3–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 28,
+      "player1": "Arthur Rinderknech",
+      "player2": "Oliver Tarvet",
+      "winner": "Arthur Rinderknech",
+      "score": "7–6(7–4), 7–6(7–4), 4–6, 7–5",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 29,
+      "player1": "Marco Trungelliti",
+      "player2": "Martin Damm",
+      "winner": "Martin Damm",
+      "score": "6–7(5–7), 7–6(7–5), 6–7(2–7), 6–7(5–7)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 30,
+      "player1": "Hugo Gaston",
+      "player2": "Stefanos Tsitsipas",
+      "winner": "Stefanos Tsitsipas",
+      "score": "1–6, 4–6, 2–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 31,
+      "player1": "Wu Yibing",
+      "player2": "Novak Djokovic",
+      "winner": "Novak Djokovic",
+      "score": "6–4, 5–7, 6–4, 6–4",
+      "date": "2026-06-29",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 32,
+      "player1": "Alex de Minaur",
+      "player2": "Román Andrés Burruchaga",
+      "winner": "Alex de Minaur",
+      "score": "7–6(7–5), 6–1, 6–0",
+      "date": "2026-06-30",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 33,
+      "player1": "Adrian Mannarino",
+      "player2": "Titouan Droguet",
+      "winner": "Adrian Mannarino",
+      "score": "6–2, 6–4, 6–1",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 34,
+      "player1": "Pablo Llamas Ruiz",
+      "player2": "Zachary Svajda",
+      "winner": "Zachary Svajda",
+      "score": "1–6, 2–6, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 35,
+      "player1": "Kamil Majchrzak",
+      "player2": "Alejandro Tabilo",
+      "winner": "Kamil Majchrzak",
+      "score": "6–3, 7–5, 7–5",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 36,
+      "player1": "Karen Khachanov",
+      "player2": "Billy Harris",
+      "winner": "Karen Khachanov",
+      "score": "6–3, 5–7, 6–3, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 37,
+      "player1": "Yannick Hanfmann",
+      "player2": "Giovanni Mpetshi Perricard",
+      "winner": "Yannick Hanfmann",
+      "score": "6–7(6–8), 7–6(11–9), 6–2, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 38,
+      "player1": "Tallon Griekspoor",
+      "player2": "James Duckworth",
+      "winner": "James Duckworth",
+      "score": "4–6, 6–4, 5–7, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 39,
+      "player1": "Mariano Navone",
+      "player2": "Flavio Cobolli",
+      "winner": "Flavio Cobolli",
+      "score": "1–6, 7–6(7–5), 6–3, 7–6(10–8)",
+      "date": "2026-07-01",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 40,
+      "player1": "Jakub Menšík",
+      "player2": "Toby Samuel",
+      "winner": "Jakub Menšík",
+      "score": "5–7, 6–3, 6–3, 3–6, 7–6(10–7)",
+      "date": "2026-06-30",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 41,
+      "player1": "Dane Sweeny",
+      "player2": "Grigor Dimitrov",
+      "winner": "Grigor Dimitrov",
+      "score": "6–7(4–7), 3–6, 5–7",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 42,
+      "player1": "Stan Wawrinka",
+      "player2": "Matteo Berrettini",
+      "winner": "Matteo Berrettini",
+      "score": "6–7(7–9), 7–6(18–16), 7–6(9–7), 7–6(7–5)",
+      "date": "2026-06-30",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 43,
+      "player1": "Raphaël Collignon",
+      "player2": "Arthur Fils",
+      "winner": "Arthur Fils",
+      "score": "5–7, 1–6, 3–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 44,
+      "player1": "Ugo Humbert",
+      "player2": "Zizou Bergs",
+      "winner": "Zizou Bergs",
+      "score": "2–6, 5–7, 6–4, 6–3, 3–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 45,
+      "player1": "Sho Shimabukuro",
+      "player2": "Jaime Faria",
+      "winner": "Jaime Faria",
+      "score": "6–7(6–8), 3–6, 7–6(7–2), 3–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 46,
+      "player1": "Damir Džumhur",
+      "player2": "Arthur Fery",
+      "winner": "Arthur Fery",
+      "score": "6–3, 2–6, 2–6, 1–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 47,
+      "player1": "Otto Virtanen",
+      "player2": "Ben Shelton",
+      "winner": "Otto Virtanen",
+      "score": "6–4, 3–6, 6–7(8–10), 6–2, 7–6(11–9)",
+      "date": "2026-06-30",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 48,
+      "player1": "Taylor Fritz",
+      "player2": "Dušan Lajović",
+      "winner": "Taylor Fritz",
+      "score": "6–3, 6–4, 6–3",
+      "date": "2026-06-30",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 49,
+      "player1": "Patrick Kypson",
+      "player2": "Mackenzie McDonald",
+      "winner": "Patrick Kypson",
+      "score": "3–6, 6–1, 6–4, 6–4",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 50,
+      "player1": "Benjamin Bonzi",
+      "player2": "Gabriel Diallo",
+      "winner": "Gabriel Diallo",
+      "score": "6–1, 6–4, 6–7(5–7), 3–6, ret.",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 51,
+      "player1": "Lorenzo Sonego",
+      "player2": "Tomás Martín Etcheverry",
+      "winner": "Lorenzo Sonego",
+      "score": "6–4, 6–4, 6–7(2–7), 7–6(7–4)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 52,
+      "player1": "Frances Tiafoe",
+      "player2": "Térence Atmane",
+      "winner": "Frances Tiafoe",
+      "score": "7–6(8–6), 6–1, 4–6, 6–4",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 53,
+      "player1": "Vít Kopřiva",
+      "player2": "Jan Choinski",
+      "winner": "Jan Choinski",
+      "score": "3–6, 5–7, 2–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 54,
+      "player1": "Kyrian Jacquet",
+      "player2": "Vilius Gaubas",
+      "winner": "Kyrian Jacquet",
+      "score": "6–3, 6–4, 7–6(7–2)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 55,
+      "player1": "Thanasi Kokkinakis",
+      "player2": "Alexander Bublik",
+      "winner": "Alexander Bublik",
+      "score": "6–4, 3–6, 7–6(12–10), 3–6, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 56,
+      "player1": "Jiří Lehečka",
+      "player2": "Alexei Popyrin",
+      "winner": "Jiří Lehečka",
+      "score": "6–4, 6–2, 6–4",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 57,
+      "player1": "Alex Molčan",
+      "player2": "Daniel Altmaier",
+      "winner": "Alex Molčan",
+      "score": "6–4, 3–6, 7–5, 6–2",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 58,
+      "player1": "Alex Michelsen",
+      "player2": "Jacob Fearnley",
+      "winner": "Jacob Fearnley",
+      "score": "6–3, 6–4, 2–6, 3–6, 2–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 59,
+      "player1": "Jaume Munar",
+      "player2": "Francisco Cerúndolo",
+      "winner": "Jaume Munar",
+      "score": "6–1, 6–4, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 60,
+      "player1": "Matteo Arnaldi",
+      "player2": "Quentin Halys",
+      "winner": "Quentin Halys",
+      "score": "6–3, 1–6, 6–7(5–7), 3–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 61,
+      "player1": "Corentin Moutet",
+      "player2": "Marcos Giron",
+      "winner": "Marcos Giron",
+      "score": "6–4, 4–6, 5–7, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 62,
+      "player1": "Valentin Royer",
+      "player2": "Harry Wendelken",
+      "winner": "Valentin Royer",
+      "score": "4–6, 6–3, 6–3, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r128",
+      "round_label": "First round",
+      "index": 63,
+      "player1": "Alexander Blockx",
+      "player2": "Alexander Zverev",
+      "winner": "Alexander Zverev",
+      "score": "6–4, 6–7(8–10), 7−6(7–5), 7−6(7–0)",
+      "date": "2026-06-30",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-06-29",
+        "2026-06-30"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 0,
+      "player1": "Jannik Sinner",
+      "player2": "Nuno Borges",
+      "winner": "Jannik Sinner",
+      "score": "7–6(7–4), 7–6(7–2), 6–4",
+      "date": "2026-07-01",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 1,
+      "player1": "Jenson Brooksby",
+      "player2": "Ignacio Buse",
+      "winner": "Jenson Brooksby",
+      "score": "6–2, 6–2, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 2,
+      "player1": "Rafael Jódar",
+      "player2": "Pablo Carreño Busta",
+      "winner": "Rafael Jódar",
+      "score": "3–6, 6–3, 1–6, 6−3, 6−4",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 3,
+      "player1": "Shintaro Mochizuki",
+      "player2": "Ethan Quinn",
+      "winner": "Shintaro Mochizuki",
+      "score": "6–2, 7–6(8–6), 7–5",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 4,
+      "player1": "Hubert Hurkacz",
+      "player2": "Sebastian Ofner",
+      "winner": "Hubert Hurkacz",
+      "score": "7–6(10–8), 6–4, 6–4",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 5,
+      "player1": "Kwon Soon-woo",
+      "player2": "Tommy Paul",
+      "winner": "Tommy Paul",
+      "score": "6–3, 7–6(7–4), 6–2",
+      "date": "2026-07-01",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 6,
+      "player1": "Brandon Nakashima",
+      "player2": "Jan-Lennard Struff",
+      "winner": "Jan-Lennard Struff",
+      "score": "6–4, 6–7(6–8), 6–7(5–7), 7–6(8–6), 6–7(7–10)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 7,
+      "player1": "Daniel Mérida",
+      "player2": "Daniil Medvedev",
+      "winner": "Daniil Medvedev",
+      "score": "3–6, 6–3, 7–5, 6–2",
+      "date": "2026-07-01",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 8,
+      "player1": "Félix Auger-Aliassime",
+      "player2": "Dino Prižmić",
+      "winner": "Félix Auger-Aliassime",
+      "score": "7–6(7–2), 6−3, 7−5",
+      "date": "2026-07-01",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 9,
+      "player1": "Nicolás Mejía",
+      "player2": "Michael Zheng",
+      "winner": "Michael Zheng",
+      "score": "7–6(7–4), 6–7(8–10), 1–6, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 10,
+      "player1": "Alejandro Davidovich Fokina",
+      "player2": "Fábián Marozsán",
+      "winner": "Alejandro Davidovich Fokina",
+      "score": "6–3, 6–0, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 11,
+      "player1": "Márton Fucsovics",
+      "player2": "Learner Tien",
+      "winner": "Márton Fucsovics",
+      "score": "6–7(6–8), 6–4, 7–6(7–4), 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 12,
+      "player1": "Roman Safiullin",
+      "player2": "Botic van de Zandschulp",
+      "winner": "Roman Safiullin",
+      "score": "6–0, 4–6, 6–3, 3–6, 7–6(10–5)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 13,
+      "player1": "Jesper de Jong",
+      "player2": "João Fonseca",
+      "winner": "João Fonseca",
+      "score": "6–1, 7−5, 6–4",
+      "date": "2026-07-01",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 14,
+      "player1": "Arthur Rinderknech",
+      "player2": "Martin Damm",
+      "winner": "Arthur Rinderknech",
+      "score": "6–4, 7–6(7–1), 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 15,
+      "player1": "Stefanos Tsitsipas",
+      "player2": "Novak Djokovic",
+      "winner": "Novak Djokovic",
+      "score": "6−3, 6−4, 6−2",
+      "date": "2026-07-01",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 16,
+      "player1": "Alex de Minaur",
+      "player2": "Adrian Mannarino",
+      "winner": "Alex de Minaur",
+      "score": "6–3, 6–2, 6–2",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 17,
+      "player1": "Zachary Svajda",
+      "player2": "Kamil Majchrzak",
+      "winner": "Zachary Svajda",
+      "score": "2–6, 6–2, 6–7(5–7), 6–4, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 18,
+      "player1": "Karen Khachanov",
+      "player2": "Yannick Hanfmann",
+      "winner": "Karen Khachanov",
+      "score": "6–3, 6–4, 6–4",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 19,
+      "player1": "James Duckworth",
+      "player2": "Flavio Cobolli",
+      "winner": "Flavio Cobolli",
+      "score": "7−6(7−4), 3–6, 7−6(7−3), 6–1",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 20,
+      "player1": "Jakub Menšík",
+      "player2": "Grigor Dimitrov",
+      "winner": "Grigor Dimitrov",
+      "score": "7−6(7−5), 4–6, 7–5, 6–3",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 21,
+      "player1": "Matteo Berrettini",
+      "player2": "Arthur Fils",
+      "winner": "Matteo Berrettini",
+      "score": "6–4, 7–5, 3–6, 6–3",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 22,
+      "player1": "Zizou Bergs",
+      "player2": "Jaime Faria",
+      "winner": "Zizou Bergs",
+      "score": "7–6(8–6), 4–6, 6–2, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 23,
+      "player1": "Arthur Fery",
+      "player2": "Otto Virtanen",
+      "winner": "Arthur Fery",
+      "score": "5–7, 7–6(7–3), 6–3, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 24,
+      "player1": "Taylor Fritz",
+      "player2": "Patrick Kypson",
+      "winner": "Taylor Fritz",
+      "score": "6–2, 6–2, 7–5",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 25,
+      "player1": "Gabriel Diallo",
+      "player2": "Lorenzo Sonego",
+      "winner": "Lorenzo Sonego",
+      "score": "6–7(4–7), 6–4, 6–7(4–7), 7–6(8–6), 2–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 26,
+      "player1": "Frances Tiafoe",
+      "player2": "Jan Choinski",
+      "winner": "Frances Tiafoe",
+      "score": "4–6, 6–2, 7–5, 6–2",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 27,
+      "player1": "Kyrian Jacquet",
+      "player2": "Alexander Bublik",
+      "winner": "Alexander Bublik",
+      "score": "3–6, 4–6, 6–7(5–7)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 28,
+      "player1": "Jiří Lehečka",
+      "player2": "Alex Molčan",
+      "winner": "Jiří Lehečka",
+      "score": "6–3, 6–2, 6–4",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 29,
+      "player1": "Jacob Fearnley",
+      "player2": "Jaume Munar",
+      "winner": "Jaume Munar",
+      "score": "4–6, 6–7(3–7), 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 30,
+      "player1": "Quentin Halys",
+      "player2": "Marcos Giron",
+      "winner": "Marcos Giron",
+      "score": "6–7(5–7), 3–6, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r64",
+      "round_label": "Second round",
+      "index": 31,
+      "player1": "Valentin Royer",
+      "player2": "Alexander Zverev",
+      "winner": "Alexander Zverev",
+      "score": "6−1, 6−3, 7−6(7−3)",
+      "date": "2026-07-02",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-01",
+        "2026-07-02"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 0,
+      "player1": "Jannik Sinner",
+      "player2": "Jenson Brooksby",
+      "winner": "Jannik Sinner",
+      "score": "6–4, 6–3, 6–4",
+      "date": "2026-07-03",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 1,
+      "player1": "Rafael Jódar",
+      "player2": "Shintaro Mochizuki",
+      "winner": "Shintaro Mochizuki",
+      "score": "6–1, 6–7(5–7), 4–6, 4–6",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 2,
+      "player1": "Hubert Hurkacz",
+      "player2": "Tommy Paul",
+      "winner": "Hubert Hurkacz",
+      "score": "4–6, 7–6(7–5), 7–5, 6–2",
+      "date": "2026-07-03",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 3,
+      "player1": "Jan-Lennard Struff",
+      "player2": "Daniil Medvedev",
+      "winner": "Jan-Lennard Struff",
+      "score": "7–6(7–4), 7–6(7–5), 7−5",
+      "date": "2026-07-03",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 4,
+      "player1": "Félix Auger-Aliassime",
+      "player2": "Michael Zheng",
+      "winner": "Félix Auger-Aliassime",
+      "score": "7–6(7–1), 6–2, 6–1",
+      "date": "2026-07-03",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 5,
+      "player1": "Alejandro Davidovich Fokina",
+      "player2": "Márton Fucsovics",
+      "winner": "Alejandro Davidovich Fokina",
+      "score": "7–6(7–3), 6–2, 6–3",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 6,
+      "player1": "Roman Safiullin",
+      "player2": "João Fonseca",
+      "winner": "Roman Safiullin",
+      "score": "6–3, 6–3, 6–3",
+      "date": "2026-07-03",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 7,
+      "player1": "Arthur Rinderknech",
+      "player2": "Novak Djokovic",
+      "winner": "Novak Djokovic",
+      "score": "7–5, 6–4, 1–6, 7–6(7–4)",
+      "date": "2026-07-03",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 8,
+      "player1": "Alex de Minaur",
+      "player2": "Zachary Svajda",
+      "winner": "Alex de Minaur",
+      "score": "6–2, 5–7, 6–2, 6–4",
+      "date": "2026-07-04",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 9,
+      "player1": "Karen Khachanov",
+      "player2": "Flavio Cobolli",
+      "winner": "Flavio Cobolli",
+      "score": "0–6, 7–6(7−4), 6−7(5−7), 6–2, 6–2",
+      "date": "2026-07-04",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 10,
+      "player1": "Grigor Dimitrov",
+      "player2": "Matteo Berrettini",
+      "winner": "Grigor Dimitrov",
+      "score": "6−3, 6−4, 3−6, 5−7, 6−4",
+      "date": "2026-07-04",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 11,
+      "player1": "Zizou Bergs",
+      "player2": "Arthur Fery",
+      "winner": "Arthur Fery",
+      "score": "6–2, 5–7, 6–2, 6–7(3–7), 6–7(5–10)",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 12,
+      "player1": "Taylor Fritz",
+      "player2": "Lorenzo Sonego",
+      "winner": "Taylor Fritz",
+      "score": "4−6, 6−3, 6−4, 7–6(7−5)",
+      "date": "2026-07-04",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 13,
+      "player1": "Frances Tiafoe",
+      "player2": "Alexander Bublik",
+      "winner": "Alexander Bublik",
+      "score": "4−6, 7–6(7–5), 7–6(13–11), 4−6, 6−3",
+      "date": "2026-07-04",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 14,
+      "player1": "Jiří Lehečka",
+      "player2": "Jaume Munar",
+      "winner": "Jiří Lehečka",
+      "score": "6–4, 6–4, 4–6, 6–4",
+      "date": null,
+      "date_confirmed": false,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r32",
+      "round_label": "Third round",
+      "index": 15,
+      "player1": "Marcos Giron",
+      "player2": "Alexander Zverev",
+      "winner": "Alexander Zverev",
+      "score": "6−2, 7–6(7–4), 6–4",
+      "date": "2026-07-04",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-03",
+        "2026-07-04"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 0,
+      "player1": "Jannik Sinner",
+      "player2": "Shintaro Mochizuki",
+      "winner": "Jannik Sinner",
+      "score": "6–3, 7–6(7–0), 6−3",
+      "date": "2026-07-05",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 1,
+      "player1": "Hubert Hurkacz",
+      "player2": "Jan-Lennard Struff",
+      "winner": "Jan-Lennard Struff",
+      "score": "3–6, 6–7(5–7), 7–6(7–2), 7–5, 4–2, retired",
+      "date": "2026-07-05",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 2,
+      "player1": "Félix Auger-Aliassime",
+      "player2": "Alejandro Davidovich Fokina",
+      "winner": "Félix Auger-Aliassime",
+      "score": "6–7(4–7), 7–6(8–6), 6−3, 6–7(2–7), 6−1",
+      "date": "2026-07-05",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 3,
+      "player1": "Roman Safiullin",
+      "player2": "Novak Djokovic",
+      "winner": "Novak Djokovic",
+      "score": "7–6(8–6), 6–3, 3–6, 6–3",
+      "date": "2026-07-05",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 4,
+      "player1": "Alex de Minaur",
+      "player2": "Flavio Cobolli",
+      "winner": "Flavio Cobolli",
+      "score": "7–5, 7–6(7–4), 6–3",
+      "date": "2026-07-06",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 5,
+      "player1": "Grigor Dimitrov",
+      "player2": "Arthur Fery",
+      "winner": "Arthur Fery",
+      "score": "7–5, 3–6, 4–6, 6–4, 7–6(10–7)",
+      "date": "2026-07-06",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 6,
+      "player1": "Taylor Fritz",
+      "player2": "Alexander Bublik",
+      "winner": "Taylor Fritz",
+      "score": "7–6(7–1), 6−4, 6−4",
+      "date": "2026-07-06",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "r16",
+      "round_label": "Fourth round",
+      "index": 7,
+      "player1": "Jiří Lehečka",
+      "player2": "Alexander Zverev",
+      "winner": "Alexander Zverev",
+      "score": "6–4, 7–5, 3–6, 7–6(8–6)",
+      "date": "2026-07-07",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-05",
+        "2026-07-06"
+      ]
+    },
+    {
+      "round": "qf",
+      "round_label": "Quarterfinals",
+      "index": 0,
+      "player1": "Jannik Sinner",
+      "player2": "Jan-Lennard Struff",
+      "winner": "Jannik Sinner",
+      "score": "7–5, 7–6(7–4), 6–3",
+      "date": "2026-07-07",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-07",
+        "2026-07-08"
+      ]
+    },
+    {
+      "round": "qf",
+      "round_label": "Quarterfinals",
+      "index": 1,
+      "player1": "Félix Auger-Aliassime",
+      "player2": "Novak Djokovic",
+      "winner": "Novak Djokovic",
+      "score": "7–6(12–10), 3–6, 6–3, 6–7(4–7), 7–6(10–4)",
+      "date": "2026-07-07",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-07",
+        "2026-07-08"
+      ]
+    },
+    {
+      "round": "qf",
+      "round_label": "Quarterfinals",
+      "index": 2,
+      "player1": "Flavio Cobolli",
+      "player2": "Arthur Fery",
+      "winner": "Arthur Fery",
+      "score": "6–4, 7–6(7–4), 6–0",
+      "date": "2026-07-08",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-07",
+        "2026-07-08"
+      ]
+    },
+    {
+      "round": "qf",
+      "round_label": "Quarterfinals",
+      "index": 3,
+      "player1": "Taylor Fritz",
+      "player2": "Alexander Zverev",
+      "winner": "Alexander Zverev",
+      "score": "6–4, 6–4, 6–2",
+      "date": "2026-07-08",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-07",
+        "2026-07-08"
+      ]
+    },
+    {
+      "round": "sf",
+      "round_label": "Semifinals",
+      "index": 0,
+      "player1": "Jannik Sinner",
+      "player2": "Novak Djokovic",
+      "winner": "Jannik Sinner",
+      "score": "6–4, 6–4, 6–4",
+      "date": "2026-07-10",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-10",
+        "2026-07-10"
+      ]
+    },
+    {
+      "round": "sf",
+      "round_label": "Semifinals",
+      "index": 1,
+      "player1": "Arthur Fery",
+      "player2": "Alexander Zverev",
+      "winner": "Alexander Zverev",
+      "score": "7–6(7–0), 6–2, 6–4",
+      "date": "2026-07-10",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-10",
+        "2026-07-10"
+      ]
+    },
+    {
+      "round": "final",
+      "round_label": "Final",
+      "index": 0,
+      "player1": "Jannik Sinner",
+      "player2": "Alexander Zverev",
+      "winner": "Jannik Sinner",
+      "score": "6–7(7–9), 7–6(7–2), 6–3, 6–4",
+      "date": "2026-07-12",
+      "date_confirmed": true,
+      "date_range": [
+        "2026-07-12",
+        "2026-07-12"
+      ]
+    }
+  ]
+}

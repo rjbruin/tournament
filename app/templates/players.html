@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Players — {{ tournament.short_name }}{% endblock %}
+{% block content %}
+
+<h2 class="mb-4">Players</h2>
+
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Player</th>
+          <th>Seed</th>
+          <th class="text-end">Rating</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in players %}
+        <tr>
+          <td class="text-muted">{% if p.atp_rank %}#{{ p.atp_rank }}{% else %}&mdash;{% endif %}</td>
+          <td>{{ p.country|flag_ioc }} {{ p.name }}</td>
+          <td class="text-muted">{% if p.seed %}{{ p.seed }}{% else %}&mdash;{% endif %}</td>
+          <td class="text-end">{{ p.elo_grass }}</td>
+          <td>
+            {% if p.status and p.status.result == 'champion' %}
+              <span class="badge bg-warning text-dark">🏆 Champion</span>
+            {% elif p.status %}
+              <span class="text-muted small">Lost {{ p.status.round_label }} to {{ p.status.opponent }}</span>
+            {% else %}
+              <span class="text-muted small">&mdash;</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

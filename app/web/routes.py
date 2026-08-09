@@ -1,3 +1,4 @@
+import json
 import os
 
 from flask import Blueprint, abort, g, render_template, redirect, url_for, request, jsonify, flash, session, Response
@@ -5,7 +6,11 @@ from flask_login import current_user, login_required
 
 import app as app_module
 from app import auth, data_store
-from app.web.view_helpers import normalize_group_match, normalize_bracket_match, compute_group_table, utc_sort_key as _utc_sort_key
+from app.web.view_helpers import (
+    normalize_group_match, normalize_bracket_match, normalize_tennis_match,
+    load_tennis_match_info, build_tennis_player_status, compute_group_table,
+    utc_sort_key as _utc_sort_key, TENNIS_ROUND_LABELS,
+)
 
 # Tournament-scoped pages: groups/bracket/fixtures/team/match/draw/scenarios/
 # retrospective/diagnostics — registered under /t/<slug> (see app/__init__.py).
@@ -1161,11 +1166,15 @@ def _bracket_only_index():
 
 def _bracket_only_bracket():
     results = _bracket_only_results()
+    tournament = g.tournament
+    entry_by_name = {e["name"]: e for e in tournament.engine.data.get("entries", [])}
+    match_info = load_tennis_match_info(tournament.data_paths.get("matches"))
+    normalized = [normalize_tennis_match(m, entry_by_name, match_info) for m in results["matches"]]
     matches_by_round: dict[str, list] = {}
-    for m in results["matches"]:
+    for m in normalized:
         matches_by_round.setdefault(m["round_id"], []).append(m)
     for round_matches in matches_by_round.values():
-        round_matches.sort(key=lambda m: m["extra"].get("index", 0))
+        round_matches.sort(key=lambda m: m["index"] or 0)
     # stage_ids is ["r128", ..., "final", "champion"] — "champion" isn't a
     # round, drop it for display ordering.
     round_order = [s for s in g.tournament.engine.spec.stage_ids if s != "champion"]
@@ -1174,6 +1183,7 @@ def _bracket_only_bracket():
         "bracket_only_bracket.html",
         tournament=g.tournament,
         rounds=rounds,
+        round_labels=TENNIS_ROUND_LABELS,
     )
 
 
@@ -1237,6 +1247,68 @@ def bracket():
     ] + [("Final", [_bracket_match(103)])]
     return render_template("bracket.html", results=results, rounds=rounds_with_scores,
                            scenario_id=scenario_id, knocked_out_teams=_knocked_out_teams(results))
+
+
+def _bracket_only_players():
+    tournament = g.tournament
+    entries = tournament.engine.data.get("entries", [])
+    matches_path = tournament.data_paths.get("matches")
+    status_by_name = {}
+    if matches_path and os.path.exists(matches_path):
+        with open(matches_path) as f:
+            matches_data = json.load(f)
+        status_by_name = build_tennis_player_status(matches_data.get("matches", []))
+
+    players = [{**e, "status": status_by_name.get(e["name"])} for e in entries]
+    players.sort(key=lambda p: (
+        p.get("atp_rank") is None, p.get("atp_rank") or 0,
+        p.get("seed") is None, p.get("seed") or 0,
+        p["name"],
+    ))
+    return render_template("players.html", tournament=tournament, players=players)
+
+
+@web_bp.get("/players")
+def players():
+    if not _is_bracket_only_tournament():
+        abort(404)
+    return _bracket_only_players()
+
+
+def _bracket_only_matches():
+    tournament = g.tournament
+    matches_path = tournament.data_paths.get("matches")
+    matches_by_day: dict = {}
+    if matches_path and os.path.exists(matches_path):
+        with open(matches_path) as f:
+            matches_data = json.load(f)
+        for m in matches_data.get("matches", []):
+            key = m["date"] or f"{m['round']}:range"
+            matches_by_day.setdefault(key, {
+                "date": m["date"], "date_range": m["date_range"],
+                "date_confirmed": m["date_confirmed"], "matches": [],
+            })["matches"].append(m)
+
+    round_order = {rid: i for i, rid in enumerate(TENNIS_ROUND_LABELS)}
+
+    def day_sort_key(entry):
+        d = entry["date"] or entry["date_range"][0]
+        return (d, min(round_order.get(m["round"], 99) for m in entry["matches"]))
+
+    days = sorted(matches_by_day.values(), key=day_sort_key)
+    for day in days:
+        day["matches"].sort(key=lambda m: (round_order.get(m["round"], 99), m["index"]))
+    return render_template(
+        "matches.html", tournament=tournament, days=days,
+        round_labels=TENNIS_ROUND_LABELS,
+    )
+
+
+@web_bp.get("/matches")
+def matches():
+    if not _is_bracket_only_tournament():
+        abort(404)
+    return _bracket_only_matches()
 
 
 @web_bp.get("/fixtures")

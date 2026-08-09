@@ -12,6 +12,11 @@ from zoneinfo import ZoneInfo
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 _LETTERS = "ABCDEFGHIJKL"
 
+TENNIS_ROUND_LABELS = {
+    "r128": "First round", "r64": "Second round", "r32": "Third round",
+    "r16": "Fourth round", "qf": "Quarterfinals", "sf": "Semifinals", "final": "Final",
+}
+
 
 @functools.cache
 def _build_seed_labels() -> dict:
@@ -139,6 +144,84 @@ def normalize_bracket_match(m: dict, ko_scores: dict = None) -> dict:
                     out["home_penalties"] = hp
                     out["away_penalties"] = ap
     return out
+
+
+def normalize_tennis_match(m: dict, entry_by_name: dict, match_info: dict | None = None) -> dict:
+    """Tennis analogue of normalize_bracket_match: takes a generic
+    MatchRecord dict (app.simulation.phases.base, as returned by
+    BracketEngine's to_results()) and produces the shape
+    tennis_knockout_fixture() expects.
+
+    entry_by_name: {player name -> entries.json row} for seed/country lookup.
+    match_info: {"round_id:index" -> matches.json row} for the real
+        score/date of a played match — see load_tennis_match_info().
+    """
+    out = {
+        "round_id": m.get("round_id"),
+        "index": m.get("extra", {}).get("index"),
+        "actual_winner": (m.get("actual") or {}).get("winner"),
+    }
+    home, away = m["side_a"], m["side_b"]
+    if home.get("determined"):
+        out["home_team"] = home["team"]
+        entry = entry_by_name.get(home["team"], {})
+        out["home_seed"] = entry.get("seed")
+        out["home_country"] = entry.get("country")
+    else:
+        out["home_candidates"] = _candidates_dict(home)
+    if away.get("determined"):
+        out["away_team"] = away["team"]
+        entry = entry_by_name.get(away["team"], {})
+        out["away_seed"] = entry.get("seed")
+        out["away_country"] = entry.get("country")
+    else:
+        out["away_candidates"] = _candidates_dict(away)
+
+    outcome = m.get("outcome")
+    if outcome:
+        out["home_prob"] = outcome.get("home_win")
+        out["away_prob"] = outcome.get("away_win")
+
+    if match_info:
+        info = match_info.get(f"{out['round_id']}:{out['index']}")
+        if info:
+            out["score"] = info.get("score")
+            out["date"] = info.get("date")
+            out["date_confirmed"] = info.get("date_confirmed")
+            out["date_range"] = info.get("date_range")
+    return out
+
+
+def load_tennis_match_info(matches_path: str | None) -> dict:
+    """{"round_id:index" -> matches.json row}, or {} if no matches.json is
+    configured for this tournament (e.g. a draw that hasn't been played)."""
+    if not matches_path or not os.path.exists(matches_path):
+        return {}
+    with open(matches_path) as f:
+        data = json.load(f)
+    return {f"{m['round']}:{m['index']}": m for m in data.get("matches", [])}
+
+
+def build_tennis_player_status(matches: list) -> dict:
+    """{player name -> {"result": "champion"|"eliminated", "round_label": str,
+    "opponent": str|None}} derived from a completed matches.json — every
+    non-champion loses exactly once in a single-elimination bracket, so the
+    match they lost IS their tournament result. Players from unplayed
+    matches (no recorded winner) are simply absent."""
+    status = {}
+    for m in matches:
+        winner = m.get("winner")
+        if not winner:
+            continue
+        loser = m["player2"] if winner == m["player1"] else m["player1"]
+        status[loser] = {
+            "result": "eliminated",
+            "round_label": TENNIS_ROUND_LABELS.get(m["round"], m["round"]),
+            "opponent": winner,
+        }
+        if m["round"] == "final":
+            status[winner] = {"result": "champion", "round_label": "Champion", "opponent": None}
+    return status
 
 
 def compute_group_table(group: dict, fixtures: list, teams_by_name: dict, results: dict | None) -> list:

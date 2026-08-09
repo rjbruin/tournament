@@ -4,895 +4,1023 @@
     "country": "ITA",
     "seed": 1,
     "entry_status": null,
-    "elo_grass": 2300
+    "elo_grass": 2300,
+    "atp_rank": 1
   },
   {
     "name": "Miomir Kecmanović",
     "country": "SRB",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Nuno Borges",
     "country": "POR",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Tristan Boyer",
     "country": "USA",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Aleksandar Vukic",
     "country": "AUS",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Jenson Brooksby",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Emilio Nava",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Ignacio Buse",
     "country": "PER",
     "seed": 31,
     "entry_status": null,
-    "elo_grass": 1903
+    "elo_grass": 1903,
+    "atp_rank": 34
   },
   {
     "name": "Rafael Jódar",
     "country": "ESP",
     "seed": 23,
     "entry_status": null,
-    "elo_grass": 1954
+    "elo_grass": 1954,
+    "atp_rank": 26
   },
   {
     "name": "Felix Gill",
     "country": "GBR",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Denis Shapovalov",
     "country": "CAN",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Pablo Carreño Busta",
     "country": "ESP",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Shintaro Mochizuki",
     "country": "JPN",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Max Basing",
     "country": "GBR",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Ethan Quinn",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Luciano Darderi",
     "country": "ITA",
     "seed": 14,
     "entry_status": null,
-    "elo_grass": 1993
+    "elo_grass": 1993,
+    "atp_rank": 16
   },
   {
     "name": "Casper Ruud",
     "country": "NOR",
     "seed": 11,
     "entry_status": null,
-    "elo_grass": 2002
+    "elo_grass": 2002,
+    "atp_rank": 12
   },
   {
     "name": "Hubert Hurkacz",
     "country": "POL",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Hamad Medjedovic",
     "country": "SRB",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Sebastian Ofner",
     "country": "AUT",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Kwon Soon-woo",
     "country": "KOR",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Martín Landaluce",
     "country": "ESP",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Alexandre Müller",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Tommy Paul",
     "country": "USA",
     "seed": 21,
     "entry_status": null,
-    "elo_grass": 1962
+    "elo_grass": 1962,
+    "atp_rank": 25
   },
   {
     "name": "Brandon Nakashima",
     "country": "USA",
     "seed": 28,
     "entry_status": null,
-    "elo_grass": 1917
+    "elo_grass": 1917,
+    "atp_rank": 31
   },
   {
     "name": "Jack Pinnington Jones",
     "country": "GBR",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Jan-Lennard Struff",
     "country": "GER",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Sebastián Báez",
     "country": "ARG",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Camilo Ugo Carabelli",
     "country": "ARG",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Daniel Mérida",
     "country": "ESP",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Marin Čilić",
     "country": "CRO",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Daniil Medvedev",
     "country": "",
     "seed": 8,
     "entry_status": null,
-    "elo_grass": 2070
+    "elo_grass": 2070,
+    "atp_rank": 9
   },
   {
     "name": "Félix Auger-Aliassime",
     "country": "CAN",
     "seed": 3,
     "entry_status": null,
-    "elo_grass": 2105
+    "elo_grass": 2105,
+    "atp_rank": 4
   },
   {
     "name": "Alexander Shevchenko",
     "country": "KAZ",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Adam Walton",
     "country": "AUS",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Dino Prižmić",
     "country": "CRO",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Daniel Vallejo",
     "country": "PAR",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Nicolás Mejía",
     "country": "COL",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Michael Zheng",
     "country": "USA",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Cameron Norrie",
     "country": "GBR",
     "seed": 26,
     "entry_status": null,
-    "elo_grass": 1929
+    "elo_grass": 1929,
+    "atp_rank": 29
   },
   {
     "name": "Alejandro Davidovich Fokina",
     "country": "ESP",
     "seed": 22,
     "entry_status": null,
-    "elo_grass": 1974
+    "elo_grass": 1974,
+    "atp_rank": 23
   },
   {
     "name": "Juan Manuel Cerúndolo",
     "country": "ARG",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Thiago Agustín Tirante",
     "country": "ARG",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Fábián Marozsán",
     "country": "HUN",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Luca Van Assche",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Márton Fucsovics",
     "country": "HUN",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Dalibor Svrčina",
     "country": "CZE",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Learner Tien",
     "country": "USA",
     "seed": 16,
     "entry_status": null,
-    "elo_grass": 1991
+    "elo_grass": 1991,
+    "atp_rank": 17
   },
   {
     "name": "Andrey Rublev",
     "country": "",
     "seed": 12,
     "entry_status": null,
-    "elo_grass": 2002
+    "elo_grass": 2002,
+    "atp_rank": 13
   },
   {
     "name": "Roman Safiullin",
     "country": "",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Aleksandar Kovacevic",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Botic van de Zandschulp",
     "country": "NED",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Jesper de Jong",
     "country": "NED",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Rinky Hijikata",
     "country": "AUS",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Roberto Bautista Agut",
     "country": "ESP",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "João Fonseca",
     "country": "BRA",
     "seed": 24,
     "entry_status": null,
-    "elo_grass": 1941
+    "elo_grass": 1941,
+    "atp_rank": 27
   },
   {
     "name": "Arthur Rinderknech",
     "country": "FRA",
     "seed": 25,
     "entry_status": null,
-    "elo_grass": 1937
+    "elo_grass": 1937,
+    "atp_rank": 28
   },
   {
     "name": "Oliver Tarvet",
     "country": "GBR",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Marco Trungelliti",
     "country": "ARG",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Martin Damm",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Hugo Gaston",
     "country": "FRA",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Stefanos Tsitsipas",
     "country": "GRE",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Wu Yibing",
     "country": "CHN",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Novak Djokovic",
     "country": "SRB",
     "seed": 7,
     "entry_status": null,
-    "elo_grass": 2078
+    "elo_grass": 2078,
+    "atp_rank": 7
   },
   {
     "name": "Alex de Minaur",
     "country": "AUS",
     "seed": 5,
     "entry_status": null,
-    "elo_grass": 2094
+    "elo_grass": 2094,
+    "atp_rank": 6
   },
   {
     "name": "Román Andrés Burruchaga",
     "country": "ARG",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Adrian Mannarino",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Titouan Droguet",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Pablo Llamas Ruiz",
     "country": "ESP",
     "seed": null,
     "entry_status": "LL",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Zachary Svajda",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Kamil Majchrzak",
     "country": "POL",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Alejandro Tabilo",
     "country": "CHI",
     "seed": 30,
     "entry_status": null,
-    "elo_grass": 1910
+    "elo_grass": 1910,
+    "atp_rank": 33
   },
   {
     "name": "Karen Khachanov",
     "country": "",
     "seed": 19,
     "entry_status": null,
-    "elo_grass": 1975
+    "elo_grass": 1975,
+    "atp_rank": 22
   },
   {
     "name": "Billy Harris",
     "country": "GBR",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Yannick Hanfmann",
     "country": "GER",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Giovanni Mpetshi Perricard",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Tallon Griekspoor",
     "country": "NED",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "James Duckworth",
     "country": "AUS",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Mariano Navone",
     "country": "ARG",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Flavio Cobolli",
     "country": "ITA",
     "seed": 9,
     "entry_status": null,
-    "elo_grass": 2064
+    "elo_grass": 2064,
+    "atp_rank": 10
   },
   {
     "name": "Jakub Menšík",
     "country": "CZE",
     "seed": 15,
     "entry_status": null,
-    "elo_grass": 1989
+    "elo_grass": 1989,
+    "atp_rank": 18
   },
   {
     "name": "Toby Samuel",
     "country": "GBR",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Dane Sweeny",
     "country": "AUS",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Grigor Dimitrov",
     "country": "BUL",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Stan Wawrinka",
     "country": "SUI",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Matteo Berrettini",
     "country": "ITA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Raphaël Collignon",
     "country": "BEL",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Arthur Fils",
     "country": "FRA",
     "seed": 20,
     "entry_status": null,
-    "elo_grass": 1963
+    "elo_grass": 1963,
+    "atp_rank": 24
   },
   {
     "name": "Ugo Humbert",
     "country": "FRA",
     "seed": 27,
     "entry_status": null,
-    "elo_grass": 1927
+    "elo_grass": 1927,
+    "atp_rank": 30
   },
   {
     "name": "Zizou Bergs",
     "country": "BEL",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Sho Shimabukuro",
     "country": "JPN",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Jaime Faria",
     "country": "POR",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Damir Džumhur",
     "country": "BIH",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Arthur Fery",
     "country": "GBR",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Otto Virtanen",
     "country": "FIN",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Ben Shelton",
     "country": "USA",
     "seed": 4,
     "entry_status": null,
-    "elo_grass": 2096
+    "elo_grass": 2096,
+    "atp_rank": 5
   },
   {
     "name": "Taylor Fritz",
     "country": "USA",
     "seed": 6,
     "entry_status": null,
-    "elo_grass": 2076
+    "elo_grass": 2076,
+    "atp_rank": 8
   },
   {
     "name": "Dušan Lajović",
     "country": "SRB",
     "seed": null,
     "entry_status": "LL",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Patrick Kypson",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Mackenzie McDonald",
     "country": "USA",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Benjamin Bonzi",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Gabriel Diallo",
     "country": "CAN",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Lorenzo Sonego",
     "country": "ITA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Tomás Martín Etcheverry",
     "country": "ARG",
     "seed": 29,
     "entry_status": null,
-    "elo_grass": 1914
+    "elo_grass": 1914,
+    "atp_rank": 32
   },
   {
     "name": "Frances Tiafoe",
     "country": "USA",
     "seed": 17,
     "entry_status": null,
-    "elo_grass": 1983
+    "elo_grass": 1983,
+    "atp_rank": 19
   },
   {
     "name": "Térence Atmane",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Vít Kopřiva",
     "country": "CZE",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Jan Choinski",
     "country": "GBR",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Kyrian Jacquet",
     "country": "FRA",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Vilius Gaubas",
     "country": "LTU",
     "seed": null,
     "entry_status": "Q",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Thanasi Kokkinakis",
     "country": "AUS",
     "seed": null,
     "entry_status": "PR",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Alexander Bublik",
     "country": "KAZ",
     "seed": 10,
     "entry_status": null,
-    "elo_grass": 2015
+    "elo_grass": 2015,
+    "atp_rank": 11
   },
   {
     "name": "Jiří Lehečka",
     "country": "CZE",
     "seed": 13,
     "entry_status": null,
-    "elo_grass": 1997
+    "elo_grass": 1997,
+    "atp_rank": 14
   },
   {
     "name": "Alexei Popyrin",
     "country": "AUS",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Alex Molčan",
     "country": "SVK",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Daniel Altmaier",
     "country": "GER",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Alex Michelsen",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Jacob Fearnley",
     "country": "GBR",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Jaume Munar",
     "country": "ESP",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Francisco Cerúndolo",
     "country": "ARG",
     "seed": 18,
     "entry_status": null,
-    "elo_grass": 1978
+    "elo_grass": 1978,
+    "atp_rank": 21
   },
   {
     "name": "Matteo Arnaldi",
     "country": "ITA",
     "seed": 32,
     "entry_status": null,
-    "elo_grass": 1900
+    "elo_grass": 1900,
+    "atp_rank": 35
   },
   {
     "name": "Quentin Halys",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Corentin Moutet",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Marcos Giron",
     "country": "USA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Valentin Royer",
     "country": "FRA",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Harry Wendelken",
     "country": "GBR",
     "seed": null,
     "entry_status": "WC",
-    "elo_grass": 1600
+    "elo_grass": 1600,
+    "atp_rank": null
   },
   {
     "name": "Alexander Blockx",
     "country": "BEL",
     "seed": null,
     "entry_status": null,
-    "elo_grass": 1750
+    "elo_grass": 1750,
+    "atp_rank": null
   },
   {
     "name": "Alexander Zverev",
     "country": "GER",
     "seed": 2,
     "entry_status": null,
-    "elo_grass": 2191
+    "elo_grass": 2191,
+    "atp_rank": 3
   }
 ]

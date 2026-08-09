@@ -36,8 +36,17 @@ h1, h2 { color: var(--tournament-primary); }
   font-size: 1.6rem;
   text-transform: uppercase;
   color: #fff !important;
+  max-width: 60vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .navbar-brand .accent { color: var(--tournament-gold); }
+.tournament-switcher {
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.25rem 0.45rem;
+}
 .navbar .nav-link {
   font-weight: 600;
   text-transform: uppercase;

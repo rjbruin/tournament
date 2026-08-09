@@ -13,6 +13,7 @@
 id: wc2026
 slug: world-cup-2026
 name: "FIFA World Cup 2026"
+short_name: "WC 2026"
 template: fifa_world_cup
 sport: football
 year: 2026

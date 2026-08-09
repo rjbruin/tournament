@@ -1,55 +1,235 @@
 {% extends "base.html" %}
+{% import "_fixture_macros.html" as fx with context %}
 {% block title %}Bracket — {{ tournament.name }}{% endblock %}
 {% block content %}
 
-<h2 class="mb-4">{{ tournament.name }} — Bracket</h2>
+<h2 class="mb-4">Knockout Bracket</h2>
 
-{% set round_labels = {
-  "r128": "First round", "r64": "Second round", "r32": "Third round",
-  "r16": "Fourth round", "qf": "Quarterfinals", "sf": "Semifinals", "final": "Final"
-} %}
+{% if not rounds %}
+<div class="alert alert-info">Run a simulation to see the bracket.</div>
+{% else %}
 
-{% for round_id, matches in rounds %}
-<div class="card shadow-sm mb-4">
-  <div class="card-header fw-bold">{{ round_labels.get(round_id, round_id) }}</div>
-  <div class="card-body p-0">
-    <table class="table table-sm table-hover mb-0 align-middle">
-      <tbody>
+<div class="bracket-wrapper">
+  <div class="bracket-shadow bracket-shadow-left" id="bracket-shadow-left"></div>
+  <div class="bracket-shadow bracket-shadow-right" id="bracket-shadow-right"></div>
+  <div class="bracket-scroll">
+    <div class="d-flex align-items-start gap-3 bracket-flex" id="bracket-flex" style="min-width: max-content;">
+      <svg id="bracket-lines"></svg>
+      {% for round_id, matches in rounds %}
+      <div class="bracket-round" id="round-{{ round_id }}">
+        <h5 class="text-center mb-3">{{ round_labels.get(round_id, round_id) }}</h5>
         {% for m in matches %}
-        <tr>
-          <td style="width:40%;">
-            {% if m.side_a.determined %}
-              {{ m.side_a.team }}
-              {% if m.actual and m.actual.winner == m.side_a.team %}<span class="badge bg-success ms-1">W</span>{% endif %}
-            {% elif m.side_a.candidates %}
-              <span class="text-muted small">{{ m.side_a.candidates[0].team }} ({{ (m.side_a.candidates[0].probability * 100) | round(0) }}%)</span>
-            {% else %}
-              <span class="text-muted">TBD</span>
-            {% endif %}
-          </td>
-          <td class="text-center text-muted small" style="width:20%;">
-            {% if m.outcome %}
-              {{ (m.outcome.home_win * 100) | round(0) }}% – {{ (m.outcome.away_win * 100) | round(0) }}%
-            {% else %}
-              vs
-            {% endif %}
-          </td>
-          <td style="width:40%;">
-            {% if m.side_b.determined %}
-              {{ m.side_b.team }}
-              {% if m.actual and m.actual.winner == m.side_b.team %}<span class="badge bg-success ms-1">W</span>{% endif %}
-            {% elif m.side_b.candidates %}
-              <span class="text-muted small">{{ m.side_b.candidates[0].team }} ({{ (m.side_b.candidates[0].probability * 100) | round(0) }}%)</span>
-            {% else %}
-              <span class="text-muted">TBD</span>
-            {% endif %}
-          </td>
-        </tr>
+        <div class="mb-3 bracket-match" style="min-width: 220px;">
+          {{ fx.tennis_knockout_fixture(m) }}
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
-{% endfor %}
 
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Vertically align each round's fixtures so that a match in round N+1 sits
+// centered between the midpoints of the two matches that feed into it.
+// Identical logic to the football bracket (bracket.html) — a generated
+// single-elimination bracket is already in feed order (round r's match i is
+// fed by round r-1's matches 2i/2i+1), so no backward-from-final reordering
+// is needed here the way WC's irregular R32 pairing requires.
+const GAP = 16; // matches the mb-3 bottom margin (1rem)
+
+function getRoundsAndMatches() {
+  const rounds = document.querySelectorAll('.bracket-round');
+  return Array.from(rounds).map(r =>
+    Array.from(r.querySelectorAll(':scope > .bracket-match'))
+  );
+}
+
+function anchorLead() {
+  const scrollEl = document.querySelector('.bracket-scroll');
+  const rounds = document.querySelectorAll('.bracket-round');
+  if (!scrollEl || !rounds.length) return 8;
+  const colW = rounds[0].offsetWidth;
+  const fits = scrollEl.clientWidth / colW;
+  return fits >= 1.8 ? 160 : colW / 2;
+}
+
+function getAnchorIndex(scrollLeft) {
+  const rounds = document.querySelectorAll('.bracket-round');
+  const lead = anchorLead();
+  let anchor = 0;
+  for (let i = 0; i < rounds.length; i++) {
+    if (rounds[i].offsetLeft <= scrollLeft + lead) {
+      anchor = i;
+    } else {
+      break;
+    }
+  }
+  return anchor;
+}
+
+function extendScrollRange() {
+  const flex = document.getElementById('bracket-flex');
+  const scrollEl = document.querySelector('.bracket-scroll');
+  const rounds = document.querySelectorAll('.bracket-round');
+  if (!flex || !scrollEl || rounds.length < 2) return;
+  flex.style.paddingRight = '0px';
+  const last = rounds[rounds.length - 1];
+  const extra = Math.max(0, scrollEl.clientWidth - last.offsetWidth);
+  flex.style.paddingRight = extra + 'px';
+}
+
+function updateShadows() {
+  const scrollEl = document.querySelector('.bracket-scroll');
+  const left = document.getElementById('bracket-shadow-left');
+  const right = document.getElementById('bracket-shadow-right');
+  if (!scrollEl || !left || !right) return;
+  const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
+  left.classList.toggle('visible', scrollEl.scrollLeft > 0);
+  right.classList.toggle('visible', scrollEl.scrollLeft < maxScroll - 1);
+}
+
+function drawConnectors(roundMatches) {
+  const flex = document.getElementById('bracket-flex');
+  const svg = document.getElementById('bracket-lines');
+  if (!flex || !svg) return;
+
+  const flexRect = flex.getBoundingClientRect();
+  svg.setAttribute('width', flex.scrollWidth);
+  svg.setAttribute('height', flex.scrollHeight);
+  svg.innerHTML = '';
+
+  for (let r = 1; r < roundMatches.length; r++) {
+    roundMatches[r].forEach((m, i) => {
+      const mRect = m.getBoundingClientRect();
+      const mX = mRect.left - flexRect.left;
+      const mY = mRect.top - flexRect.top + mRect.height / 2;
+
+      [2 * i, 2 * i + 1].forEach(fi => {
+        const feeder = roundMatches[r - 1][fi];
+        if (!feeder) return;
+        const fRect = feeder.getBoundingClientRect();
+        const fX = fRect.right - flexRect.left;
+        const fY = fRect.top - flexRect.top + fRect.height / 2;
+        const midX = (fX + mX) / 2;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${fX} ${fY} H ${midX} V ${mY} H ${mX}`);
+        path.setAttribute('class', 'bracket-connector');
+        svg.appendChild(path);
+      });
+    });
+  }
+}
+
+function alignBracket() {
+  const roundMatches = getRoundsAndMatches();
+  if (roundMatches.length < 2) return;
+
+  const scrollEl = document.querySelector('.bracket-scroll');
+  const anchor = getAnchorIndex(scrollEl ? scrollEl.scrollLeft : 0);
+  const anchorCards = roundMatches[anchor];
+
+  const viewCenterDoc = window.scrollY + window.innerHeight / 2;
+  let pivotIdx = 0, pivotDist = Infinity;
+  anchorCards.forEach((m, i) => {
+    const r = m.getBoundingClientRect();
+    const d = Math.abs(window.scrollY + r.top + r.height / 2 - viewCenterDoc);
+    if (d < pivotDist) { pivotDist = d; pivotIdx = i; }
+  });
+  const pivotBefore = (() => {
+    const r = anchorCards[pivotIdx].getBoundingClientRect();
+    return window.scrollY + r.top + r.height / 2;
+  })();
+
+  for (let r = anchor; r < roundMatches.length; r++) {
+    roundMatches[r].forEach(m => { m.style.marginTop = ''; });
+  }
+
+  const firstTop = (() => {
+    const r = anchorCards[0].getBoundingClientRect();
+    return window.scrollY + r.top;
+  })();
+  let compactOffset = 0;
+  for (let i = 0; i < pivotIdx; i++) compactOffset += anchorCards[i].offsetHeight + GAP;
+  const compactPivotCenter = firstTop + compactOffset + anchorCards[pivotIdx].offsetHeight / 2;
+
+  const shift = Math.max(0, pivotBefore - compactPivotCenter);
+  if (shift > 0) anchorCards[0].style.marginTop = shift + 'px';
+
+  let cursor = shift;
+  let centers = anchorCards.map(m => {
+    const h = m.offsetHeight;
+    const center = cursor + h / 2;
+    cursor += h + GAP;
+    return center;
+  });
+
+  for (let r = anchor + 1; r < roundMatches.length; r++) {
+    const matches = roundMatches[r];
+    cursor = 0;
+    const newCenters = [];
+    matches.forEach((m, i) => {
+      const h = m.offsetHeight;
+      const c1 = centers[2 * i];
+      const c2 = centers[2 * i + 1] !== undefined ? centers[2 * i + 1] : c1;
+      const target = ((c1 !== undefined ? c1 : 0) + (c2 !== undefined ? c2 : 0)) / 2;
+      let top = target - h / 2;
+      if (top < cursor) top = cursor;
+      const marginTop = top - cursor;
+      m.style.marginTop = marginTop + 'px';
+      cursor = top + h + GAP;
+      newCenters.push(top + h / 2);
+    });
+    centers = newCenters;
+  }
+
+  animateConnectors(roundMatches);
+}
+
+const TRANSITION_MS = 350;
+let connectorAnimId = null;
+function animateConnectors(roundMatches) {
+  if (connectorAnimId) cancelAnimationFrame(connectorAnimId);
+  const start = performance.now();
+  function step(now) {
+    drawConnectors(roundMatches);
+    if (now - start < TRANSITION_MS) {
+      connectorAnimId = requestAnimationFrame(step);
+    } else {
+      connectorAnimId = null;
+    }
+  }
+  connectorAnimId = requestAnimationFrame(step);
+}
+
+let alignPending = false;
+function requestAlign() {
+  if (alignPending) return;
+  alignPending = true;
+  requestAnimationFrame(() => {
+    alignPending = false;
+    alignBracket();
+  });
+}
+
+window.addEventListener('load', () => {
+  extendScrollRange();
+  alignBracket();
+  updateShadows();
+});
+window.addEventListener('resize', () => {
+  extendScrollRange();
+  requestAlign();
+  updateShadows();
+});
+document.querySelector('.bracket-scroll')?.addEventListener('scroll', () => {
+  requestAlign();
+  updateShadows();
+});
+</script>
 {% endblock %}

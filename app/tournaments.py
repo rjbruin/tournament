@@ -49,6 +49,7 @@ class TournamentInstance:
     id: str
     slug: str
     name: str
+    short_name: str
     template: str
     sport: str
     year: int
@@ -101,6 +102,8 @@ def _build_wimbledon_engine(data_cfg: dict) -> tuple:
     )
     engine = BracketEngine(spec)
     data_paths = {"entries": entries_path, "positions": positions_path}
+    if data_cfg.get("matches"):
+        data_paths["matches"] = _resolve_path(data_cfg["matches"])
     return engine, data_paths
 
 
@@ -151,7 +154,8 @@ def _load_instance(config_path: str) -> TournamentInstance:
     }
 
     return TournamentInstance(
-        id=cfg["id"], slug=cfg["slug"], name=cfg["name"], template=cfg["template"],
+        id=cfg["id"], slug=cfg["slug"], name=cfg["name"],
+        short_name=cfg.get("short_name") or cfg["name"], template=cfg["template"],
         sport=cfg["sport"], year=cfg["year"], host_countries=cfg.get("host_countries", []),
         theme=theme, engine=engine, data_paths=data_paths,
         defaults=cfg.get("defaults", {}) or {},

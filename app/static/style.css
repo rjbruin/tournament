@@ -808,6 +808,31 @@ tr.thirds-cutoff { background: rgba(0,0,0,.03); }
 .bracket-team-score--live {
   color: #dc3545;
 }
+.bracket-seed {
+  font-weight: 400;
+  color: #888;
+  font-size: .85em;
+}
+.bracket-set-scores {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.bracket-set-score {
+  display: inline-block;
+  min-width: 1.3rem;
+  text-align: right;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.05rem;
+  color: #888;
+}
+.bracket-set-score sup {
+  font-size: .6em;
+  color: #aaa;
+}
+.bracket-team-row.winner .bracket-set-score {
+  color: var(--tournament-bright);
+}
 @keyframes live-outline-pulse {
   0%, 100% { box-shadow: 0 0 0 1px rgba(220,53,69,.25); border-color: rgba(220,53,69,.35); }
   50%       { box-shadow: 0 0 0 3px rgba(220,53,69,.15); border-color: rgba(220,53,69,.6); }

@@ -129,3 +129,23 @@ def test_wimbledon_matches_page_groups_by_day_with_real_scores(client):
 def test_tennis_only_pages_404_for_wc2026(client, path):
     resp = client.get(path, follow_redirects=False)
     assert resp.status_code == 404, f"{path} -> {resp.status_code}"
+
+
+def test_seeds_shown_inline_as_name_bracket_number(client):
+    resp = client.get("/t/wimbledon-2026/bracket")
+    text = resp.data.decode()
+    assert "Jannik Sinner" in text
+    assert '<span class="bracket-seed">[1]</span>' in text
+    resp = client.get("/t/wimbledon-2026/players")
+    text = resp.data.decode()
+    assert "Jannik Sinner" in text and "[1]" in text
+    assert '<th>Seed</th>' not in text  # folded into the Player column, not a separate column
+
+
+def test_bracket_shows_inline_per_set_scores_with_tiebreak_superscript(client):
+    resp = client.get("/t/wimbledon-2026/bracket")
+    text = resp.data.decode()
+    # Final: Sinner def. Zverev 6-7(7-9), 7-6(7-2), 6-3, 6-4 -- Sinner's own
+    # first-set tiebreak points (7) must render as a <sup>, not inline text.
+    assert '<span class="bracket-set-score">6<sup>7</sup></span>' in text
+    assert '<span class="bracket-set-score">7<sup>9</sup></span>' in text

@@ -189,6 +189,18 @@ def normalize_tennis_match(m: dict, entry_by_name: dict, match_info: dict | None
             out["date"] = info.get("date")
             out["date_confirmed"] = info.get("date_confirmed")
             out["date_range"] = info.get("date_range")
+            out["retired"] = info.get("retired")
+            sets = info.get("sets")
+            if sets:
+                # matches.json's player1/player2 don't necessarily line up
+                # with this MatchRecord's home/away (side_a/side_b) -- match
+                # by name to know which side of each set dict is which.
+                if info.get("player1") == out.get("home_team"):
+                    out["home_sets"] = [{"games": s["p1"], "tb": s["p1_tb"]} for s in sets]
+                    out["away_sets"] = [{"games": s["p2"], "tb": s["p2_tb"]} for s in sets]
+                elif info.get("player2") == out.get("home_team"):
+                    out["home_sets"] = [{"games": s["p2"], "tb": s["p2_tb"]} for s in sets]
+                    out["away_sets"] = [{"games": s["p1"], "tb": s["p1_tb"]} for s in sets]
     return out
 
 

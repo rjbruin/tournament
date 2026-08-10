@@ -11,7 +11,6 @@
         <tr>
           <th>Rank</th>
           <th>Player</th>
-          <th>Seed</th>
           <th class="text-end">Rating</th>
           <th>Result</th>
         </tr>
@@ -20,8 +19,7 @@
         {% for p in players %}
         <tr>
           <td class="text-muted">{% if p.atp_rank %}#{{ p.atp_rank }}{% else %}&mdash;{% endif %}</td>
-          <td>{{ p.country|flag_ioc }} {{ p.name }}</td>
-          <td class="text-muted">{% if p.seed %}{{ p.seed }}{% else %}&mdash;{% endif %}</td>
+          <td>{{ p.country|flag_ioc }} {{ p.name }}{% if p.seed %} <span class="text-muted small">[{{ p.seed }}]</span>{% endif %}</td>
           <td class="text-end">{{ p.elo_grass }}</td>
           <td>
             {% if p.status and p.status.result == 'champion' %}

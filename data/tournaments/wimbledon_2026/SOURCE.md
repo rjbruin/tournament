@@ -26,9 +26,23 @@ exact.
   qualifiers/wildcards/lucky-losers/protected-ranking entrants (consistent
   with usually sitting outside the ATP top ~100).
 
-- `atp_rank` (seeded players only): the real ATP ranking number (distinct
-  from ATP ranking *points*) from the same seeded-players table's "Rank"
-  column. Not available for the other 96 entrants — `null`.
+- `atp_rank`: the real ATP ranking number (distinct from ATP ranking
+  *points*) — **42/128 players, real, sourced, not fabricated for the
+  rest**:
+  - The 32 seeds: from the same seeded-players table's "Rank" column.
+  - 10 more from the draw article's "Other entry information" section —
+    the "Protected ranking" entrant's rank, and 9 replacement players'
+    ranks given alongside the withdrawn player they replaced (e.g.
+    "Carlos Alcaraz (2) → replaced by Jan Choinski (104)").
+  - The remaining 86 (mostly qualifiers, wildcards, and other direct
+    entrants outside the seeds): Wikipedia's draw article doesn't publish
+    individual rankings for them, and a full historical ATP ranking
+    snapshot for 29 June 2026 covering that range (roughly top 100–400)
+    wasn't found — Wikipedia's own "Current tennis rankings" transclusion
+    only goes to No. 20 (checked the archived revision from that date),
+    and the men's singles *qualifying* draw's seed list is ordinal
+    (1–32) rather than absolute rank. These 86 stay `null` rather than
+    guessed.
 
 ## Match results and schedule (`matches.json`, `actuals.json`)
 

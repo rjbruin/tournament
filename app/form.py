@@ -67,10 +67,49 @@ def compute_form(actuals: dict, engine) -> dict[str, float]:
             divergences.setdefault(home, []).append(act_home - exp_home)
             divergences.setdefault(away, []).append(act_away - exp_away)
 
+    return _shrink(divergences)
+
+
+def _shrink(divergences: dict[str, list[float]]) -> dict[str, float]:
+    """Average each entrant's per-match (actual - expected) divergences,
+    shrink towards zero by match count, and scale into an Elo-like modifier."""
     form: dict[str, float] = {}
-    for team, diffs in divergences.items():
+    for name, diffs in divergences.items():
         n = len(diffs)
         avg = sum(diffs) / n
         weight = n / (n + _SHRINKAGE_K)
-        form[team] = round(avg * weight * _SCALE, 1)
+        form[name] = round(avg * weight * _SCALE, 1)
     return form
+
+
+def compute_bracket_form(matches, elo_by_name: dict[str, float],
+                         expected_prob) -> dict[str, float]:
+    """Form for a knockout/bracket format with no draws (e.g. tennis).
+
+    Same shape and scale as ``compute_form`` so the badge thresholds read the
+    same across sports, but driven by decided matches rather than group-stage
+    scorelines: actual is 1 for the winner and 0 for the loser, expected is
+    the sport's analytic win probability from the two Elo ratings.
+
+    Args:
+        matches: iterable of dicts with ``player1``/``player2``/``winner``.
+        elo_by_name: entrant name -> rating.
+        expected_prob: ``(elo_a, elo_b) -> P(a beats b)``.
+    """
+    divergences: dict[str, list[float]] = {}
+    expected_cache: dict[tuple[float, float], float] = {}
+
+    for m in matches or []:
+        a, b, winner = m.get("player1"), m.get("player2"), m.get("winner")
+        if not winner or a not in elo_by_name or b not in elo_by_name:
+            continue
+        key = (round(elo_by_name[a], 1), round(elo_by_name[b], 1))
+        if key not in expected_cache:
+            expected_cache[key] = expected_prob(elo_by_name[a], elo_by_name[b])
+        exp_a = expected_cache[key]
+
+        act_a = 1.0 if winner == a else 0.0
+        divergences.setdefault(a, []).append(act_a - exp_a)
+        divergences.setdefault(b, []).append((1.0 - act_a) - (1.0 - exp_a))
+
+    return _shrink(divergences)

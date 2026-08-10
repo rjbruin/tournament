@@ -637,6 +637,52 @@ def _bracket_only_results(n: int = 50_000):
     return results
 
 
+def _bracket_only_pre_tournament(n: int = 50_000):
+    """The same engine run with NO recorded results — i.e. the projection as
+    it stood before a ball was hit. Used to report "we gave the eventual
+    champion x%" once the tournament is over."""
+    tournament = g.tournament
+    cached = app_module.get_simulation_results("_anon", "pre-tournament", tournament.id)
+    if cached is not None:
+        return cached
+    results = tournament.engine.run(n=n, actuals={"knockout_results": {}, "live_matches": []})
+    app_module.set_simulation_results("_anon", results, "pre-tournament", tournament.id)
+    return results
+
+
+def _bracket_podium(results, stage_ids):
+    """(winner, runner_up, [beaten semifinalists]) for a finished bracket, or
+    None if the deciding match hasn't been played.
+
+    Format-agnostic: the last stage id is the champion marker, so the round
+    before it is the final and the one before that the semifinals — no
+    hardcoded "final"/"sf" round names, and no assumption of a group stage."""
+    rounds = [s for s in stage_ids if s != "champion"]
+    if not rounds:
+        return None
+    by_round: dict[str, list] = {}
+    for m in results["matches"]:
+        by_round.setdefault(m["round_id"], []).append(m)
+
+    def sides(m):
+        return [m["side_a"].get("team"), m["side_b"].get("team")]
+
+    final_matches = by_round.get(rounds[-1]) or []
+    if len(final_matches) != 1:
+        return None
+    final = final_matches[0]
+    winner = (final.get("actual") or {}).get("winner")
+    if not winner:
+        return None
+    runner_up = next((s for s in sides(final) if s and s != winner), None)
+
+    sf_losers = []
+    for m in by_round.get(rounds[-2], []) if len(rounds) >= 2 else []:
+        w = (m.get("actual") or {}).get("winner")
+        sf_losers.extend(s for s in sides(m) if s and s != w)
+    return winner, runner_up, sf_losers
+
+
 @web_bp.get("/")
 def index():
     if _is_bracket_only_tournament():
@@ -1154,13 +1200,27 @@ def team(name: str):
 
 
 def _bracket_only_index():
+    tournament = g.tournament
     results = _bracket_only_results()
     top10 = sorted(results["reach_prob"]["champion"].items(), key=lambda x: -x[1])[:10]
+
+    podium = _bracket_podium(results, tournament.engine.spec.stage_ids)
+    pre_prob = {}
+    if podium:
+        pre_prob = _bracket_only_pre_tournament()["reach_prob"]["champion"]
+
+    entry_by_name = {e["name"]: e for e in tournament.engine.data.get("entries", [])}
     return render_template(
         "bracket_only_index.html",
-        tournament=g.tournament,
+        tournament=tournament,
         top10=top10,
         n_simulations=results["meta"]["n_simulations"],
+        tournament_over=podium is not None,
+        winner=podium[0] if podium else None,
+        runner_up=podium[1] if podium else None,
+        sf_losers=podium[2] if podium else [],
+        pre_prob=pre_prob,
+        entry_by_name=entry_by_name,
     )
 
 

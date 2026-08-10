@@ -5,6 +5,7 @@ differently-shaped tournament being registered.
 """
 
 import os
+import re
 
 import pytest
 
@@ -121,7 +122,9 @@ def test_wimbledon_players_page_ranked_by_atp_rank(client):
 def test_wimbledon_matches_page_groups_by_day_with_real_scores(client):
     resp = client.get("/t/wimbledon-2026/matches")
     assert resp.status_code == 200
-    assert b"2026-07-12" in resp.data  # the real final date
+    # Dates use the same notation as the WC bracket ("Sun 12 Jul"), not raw ISO.
+    assert b"Sun 12 Jul" in resp.data  # the real final date
+    assert b"2026-07-12" not in resp.data
     assert "6–7(7–9)".encode() in resp.data  # real final score, first set
 
 
@@ -149,3 +152,73 @@ def test_bracket_shows_inline_per_set_scores_with_tiebreak_superscript(client):
     # first-set tiebreak points (7) must render as a <sup>, not inline text.
     assert '<span class="bracket-set-score">6<sup>7</sup></span>' in text
     assert '<span class="bracket-set-score">7<sup>9</sup></span>' in text
+
+
+def test_bracket_dates_use_shared_notation_not_iso(client):
+    """Dates read the same on every bracket regardless of sport: the WC
+    bracket renders "Mon 29 Jun, 22:30" via the local_time filter, so a
+    format with no per-match kickoff shows "Mon 29 Jun" — never raw ISO."""
+    text = client.get("/t/wimbledon-2026/bracket").data.decode()
+    assert "Mon 29 Jun" in text
+    assert "Mon 29 Jun – Tue 30 Jun" in text  # round played over two days
+    assert "2026-06-29" not in text
+
+
+def test_tennis_quality_badge_shows_world_rank_not_stars(client):
+    text = client.get("/t/wimbledon-2026/bracket").data.decode()
+    assert 'title="World ranking at the start of the tournament">#1<' in text
+    assert "★" not in text  # the Elo star tier is football's quality measure
+
+
+def test_football_quality_badge_still_shows_stars(client):
+    text = client.get("/t/world-cup-2026/bracket").data.decode()
+    assert "★" in text
+    assert 'title="World ranking at the start of the tournament"' not in text
+
+
+def test_no_rank_badge_invented_for_players_without_a_published_rank(client):
+    """Only 42 of the 128 entrants have a real sourced world ranking; the
+    rest must render no rank pill rather than a made-up number."""
+    import json
+
+    with open("data/tournaments/wimbledon_2026/entries.json") as f:
+        entries = json.load(f)
+    unranked = next(e for e in entries if e.get("atp_rank") is None)
+    text = client.get("/t/wimbledon-2026/players").data.decode()
+    assert unranked["name"] in text
+    ranks = {e["atp_rank"] for e in entries if e.get("atp_rank") is not None}
+    shown = set(re.findall(r'the tournament">#(\d+)<', text))
+    assert shown == {str(r) for r in ranks}
+
+
+def test_tennis_form_badge_reflects_real_over_and_underperformance(client):
+    """Form is computed from actual results vs Elo expectation, the same way
+    it is for football — a wildcard semifinalist should read as strongly up."""
+    from app import _bracket_badge_context, get_registry
+
+    ctx = _bracket_badge_context(get_registry().get("wimbledon-2026"))
+    form = ctx["team_form"]
+    assert form["Arthur Fery"] > 15      # wildcard who reached the semifinals
+    assert form["Ben Shelton"] < -15     # seed 4, lost in the first round
+
+
+def test_completed_tennis_tournament_gets_champion_hero_and_podium(client):
+    resp = client.get("/t/wimbledon-2026/")
+    text = resp.data.decode()
+    assert resp.status_code == 200
+    assert "WIMBLEDON 2026 CHAMPION" in text.upper()
+    assert "Pre-tournament win probability" in text
+    assert "Jannik Sinner" in text        # champion
+    assert "Alexander Zverev" in text     # runner-up on the podium
+    assert "Novak Djokovic" in text       # beaten semifinalist
+    assert "Most Likely Champion" not in text  # projection view is superseded
+
+
+def test_wc2026_completed_front_page_unchanged(client):
+    """The shared podium macros must not regress WC's own finished-tournament
+    home page."""
+    text = client.get("/t/world-cup-2026/").data.decode()
+    assert "2026 FIFA World Cup Champion" in text
+    assert "Pre-tournament win probability" in text
+    assert "World Champion" in text
+    assert "Spain" in text

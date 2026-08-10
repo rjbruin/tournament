@@ -1,0 +1,63 @@
+{# Shared post-tournament presentation, used by every tournament format.
+
+   Callers pass already-rendered display HTML for each entrant (flag + name),
+   because how an entrant is labelled is sport-specific — football teams use
+   the country-name flag filter, individual sports use an IOC country code
+   and may append a seed. Everything else (layout, wording, the probability
+   framing) is identical across tournaments and lives here. #}
+
+{# Full-width winner banner. Extra content (e.g. admin controls) can be
+   passed as a {% call %} body. #}
+{% macro champion_hero(kicker, flag, name, pct) %}
+<div class="hero-banner mb-4" style="text-align:center; padding:2.5rem 2rem 2rem;">
+  <div class="small mb-1" style="color:rgba(255,255,255,.65); text-transform:uppercase; letter-spacing:.18em; font-size:.72rem; font-weight:700;">{{ kicker }}</div>
+  <div style="font-size:4rem; line-height:1.1; margin-bottom:.25rem;">{{ flag }}</div>
+  <h1 class="fw-bold mb-2" style="font-size:2.6rem; letter-spacing:.02em;">{{ name }}</h1>
+  {%- if pct is not none %}
+  <div style="color:rgba(255,255,255,.7); font-size:.9rem;">Pre-tournament win probability: <strong style="color:#fff;">{{ "%.1f"|format(pct) }}%</strong></div>
+  {%- endif %}
+  {%- if caller %}{{ caller() }}{% endif %}
+</div>
+{% endmacro %}
+
+{# Champion card + runner-up + beaten semifinalists, each with the
+   probability we gave them before the tournament started.
+   `winner`/`runner_up` are {"html", "pct"}; `sf_losers` a list of the same. #}
+{% macro final_podium(heading, champion_label, winner, runner_up=none, sf_losers=[]) %}
+<h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 {{ heading }} 🏆</h2>
+
+<div class="row g-3 mb-3 justify-content-center">
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="champion-card">
+      <span class="trophy">🏆</span>
+      <div class="crown-label">{{ champion_label }}</div>
+      <div class="team-name">{{ winner.html }}</div>
+      <div class="team-prob">{{ "%.1f"|format(winner.pct) }}%</div>
+      <div class="text-muted small mt-1">pre-tournament win probability</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-5 justify-content-center">
+  {% if runner_up %}
+  <div class="col-6 col-md-3">
+    <div class="podium-card">
+      <span class="rank-badge rank-2">2nd</span>
+      <div class="team-name">{{ runner_up.html }}</div>
+      <div class="team-prob">{{ "%.1f"|format(runner_up.pct) }}%</div>
+      <div class="text-muted small">win probability</div>
+    </div>
+  </div>
+  {% endif %}
+  {% for sf in sf_losers %}
+  <div class="col-6 col-md-3">
+    <div class="podium-card">
+      <span class="rank-badge rank-{{ loop.index + 2 }}">SF</span>
+      <div class="team-name">{{ sf.html }}</div>
+      <div class="team-prob">{{ "%.1f"|format(sf.pct) }}%</div>
+      <div class="text-muted small">win probability</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}

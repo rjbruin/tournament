@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "_fixture_macros.html" as fx with context %}
-{% block title %}Home — WC 2026{% endblock %}
+{% import "_podium.html" as pod with context %}
+{% block title %}Home — {{ g.tournament.short_name if g.tournament else "Tournament" }}{% endblock %}
 {% block content %}
 
 {% if pending_approvals %}
@@ -12,12 +13,9 @@
 
 {% if tournament_over and retro %}
 {# ---- Post-tournament: winner hero banner ---- #}
-<div class="hero-banner mb-4" style="text-align:center; padding:2.5rem 2rem 2rem;">
-  <div class="small mb-1" style="color:rgba(255,255,255,.65); text-transform:uppercase; letter-spacing:.18em; font-size:.72rem; font-weight:700;">{{ tournament.year }} FIFA World Cup Champion</div>
-  <div style="font-size:4rem; line-height:1.1; margin-bottom:.25rem;">{{ retro.winner|flag }}</div>
-  <h1 class="fw-bold mb-2" style="font-size:2.6rem; letter-spacing:.02em;">{{ retro.winner }}</h1>
-  {%- set _win_pct = retro.pre_tournament.winner_prob.get(retro.winner, 0) * 100 %}
-  <div style="color:rgba(255,255,255,.7); font-size:.9rem;">Pre-tournament win probability: <strong style="color:#fff;">{{ "%.1f"|format(_win_pct) }}%</strong></div>
+{%- set _win_pct = retro.pre_tournament.winner_prob.get(retro.winner, 0) * 100 %}
+{% call pod.champion_hero(tournament.year ~ " FIFA World Cup Champion",
+                          retro.winner|flag, retro.winner, _win_pct) %}
   {% if current_user.is_authenticated %}
   <div class="mt-3 d-flex flex-wrap align-items-center justify-content-center gap-2" style="font-size:.85rem;">
     {% if active_scenario and active_scenario.is_current and last_updated %}
@@ -32,7 +30,7 @@
     {% endif %}
   </div>
   {% endif %}
-</div>
+{% endcall %}
 
 {% elif not current_user.is_authenticated %}
 <div class="hero-banner hero-banner--splash mb-4">
@@ -556,45 +554,17 @@
 {% endif %}
 
 {# ---- Post-tournament podium ---- #}
-<h2 class="text-center mb-4" style="letter-spacing:0.15em;">🏆 {{ tournament.year }} World Cup 🏆</h2>
-
-<div class="row g-3 mb-3 justify-content-center">
-  <div class="col-12 col-md-6 col-lg-4">
-    <div class="champion-card">
-      <span class="trophy">🏆</span>
-      <div class="crown-label">World Champion</div>
-      <div class="team-name">{{ _winner|flag }} {{ _winner }}</div>
-      {%- set _wp = _pre.winner_prob.get(_winner, 0) * 100 %}
-      <div class="team-prob">{{ "%.1f"|format(_wp) }}%</div>
-      <div class="text-muted small mt-1">pre-tournament win probability</div>
-    </div>
-  </div>
-</div>
-
-<div class="row g-3 mb-5 justify-content-center">
-  {% if _runner_up %}
-  <div class="col-6 col-md-3">
-    <div class="podium-card">
-      <span class="rank-badge rank-2">2nd</span>
-      <div class="team-name">{{ _runner_up|flag }} {{ _runner_up }}</div>
-      {%- set _rp = _pre.winner_prob.get(_runner_up, 0) * 100 %}
-      <div class="team-prob">{{ "%.1f"|format(_rp) }}%</div>
-      <div class="text-muted small">win probability</div>
-    </div>
-  </div>
-  {% endif %}
-  {% for _sf in _sf_losers %}
-  <div class="col-6 col-md-3">
-    <div class="podium-card">
-      <span class="rank-badge rank-{{ loop.index + 2 }}">SF</span>
-      <div class="team-name">{{ _sf|flag }} {{ _sf }}</div>
-      {%- set _sfp = _pre.winner_prob.get(_sf, 0) * 100 %}
-      <div class="team-prob">{{ "%.1f"|format(_sfp) }}%</div>
-      <div class="text-muted small">win probability</div>
-    </div>
-  </div>
-  {% endfor %}
-</div>
+{%- macro _entrant(team) %}{{ team|flag }} {{ team }}{% endmacro %}
+{%- set _sf_cards = [] %}
+{%- for _sf in _sf_losers %}
+  {%- set _ = _sf_cards.append({"html": _entrant(_sf), "pct": _pre.winner_prob.get(_sf, 0) * 100}) %}
+{%- endfor %}
+{{ pod.final_podium(
+     tournament.year ~ " World Cup",
+     "World Champion",
+     {"html": _entrant(_winner), "pct": _pre.winner_prob.get(_winner, 0) * 100},
+     {"html": _entrant(_runner_up), "pct": _pre.winner_prob.get(_runner_up, 0) * 100} if _runner_up else none,
+     _sf_cards) }}
 
 {% elif results %}
 {% set top10 = results.winner_prob.items() | selectattr(1, 'gt', 0) | sort(attribute=1, reverse=True) | list %}

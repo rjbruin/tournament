@@ -7,14 +7,27 @@
 {%- if live_teams and team and team in live_teams %}<span class="live-dot" title="Live match in progress"></span>{%- endif %}
 {%- endmacro %}
 
-{# ---------- Combined team quality + form badge (joined pill) ---------- #}
-{# quality tier: grey ≤2.0 ★, bronze ≤3.5 ★, gold >3.5 ★ #}
+{# ---------- Combined entrant quality + form badge (joined pill) ---------- #}
+{# Quality is sport-dependent, chosen by `quality_mode` from the context
+   processor: football has no public per-team ranking worth showing, so it
+   gets an Elo-derived star tier (grey ≤2.0 ★, bronze ≤3.5 ★, gold >3.5 ★);
+   individual sports (tennis) have a real published world ranking, so that
+   is shown instead of a derived number. Form works identically for both. #}
 {% macro team_badge(team=none, elo=none) %}
   {%- set _elo = elo if elo is not none else ((team_elos or {}).get(team)) %}
   {%- set _f   = (team_form or {}).get(team) if team else none %}
-  {%- if _elo is not none or _f is not none %}
+  {%- set _rank = (entry_ranks or {}).get(team) if team else none %}
+  {%- set _by_rank = (quality_mode|default('stars')) == 'rank' %}
+  {%- set _show_quality = (_rank is not none) if _by_rank else (_elo is not none) %}
+  {%- if _show_quality or _f is not none %}
 <span class="team-badge">
-  {%- if _elo is not none %}
+  {%- if _show_quality and _by_rank %}
+    {%- if _rank <= 10 %}{%- set _qcls = 'team-badge__quality--gold' %}
+    {%- elif _rank <= 50 %}{%- set _qcls = 'team-badge__quality--bronze' %}
+    {%- else %}{%- set _qcls = 'team-badge__quality--grey' %}
+    {%- endif %}
+  <span class="team-badge__quality {{ _qcls }}" title="World ranking at the start of the tournament">#{{ _rank }}</span>
+  {%- elif _show_quality %}
     {%- set _stars = [5.0, [1.0, (1 + 4 * (_elo - 1600) / 490)] | max] | min | round(1) %}
     {%- if _stars <= 2.0 %}{%- set _qcls = 'team-badge__quality--grey' %}
     {%- elif _stars <= 3.5 %}{%- set _qcls = 'team-badge__quality--bronze' %}
@@ -636,6 +649,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
             <span class="bracket-team-odds">{{ match.home_prob|pct(0) }}</span>
           {%- endif %}
         </div>
+        <div class="bracket-team-sub">{{ team_badge(team=match.home_team) }}</div>
       </div>
       {% else %}
       {% for cand, p in (match.home_candidates or {}).items() %}
@@ -662,6 +676,7 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
             <span class="bracket-team-odds">{{ match.away_prob|pct(0) }}</span>
           {%- endif %}
         </div>
+        <div class="bracket-team-sub">{{ team_badge(team=match.away_team) }}</div>
       </div>
       {% else %}
       {% for cand, p in (match.away_candidates or {}).items() %}
@@ -679,9 +694,9 @@ qual-row{% if _tc == 'clinched_third_adv' %} qual-secured-third-adv{%- elif row.
       <div class="text-muted small text-center">retired</div>
       {% endif %}
       {% if match.date %}
-      <div class="text-muted small text-center">{{ match.date }}</div>
+      <div class="text-muted small text-center">{{ match.date|match_date }}</div>
       {% elif match.date_range %}
-      <div class="text-muted small text-center">{{ match.date_range[0] }}{% if match.date_range[1] != match.date_range[0] %}–{{ match.date_range[1] }}{% endif %}</div>
+      <div class="text-muted small text-center">{{ match.date_range|match_date }}</div>
       {% endif %}
     </div>
     {% endif %}

@@ -44,6 +44,15 @@ exact.
     (1–32) rather than absolute rank. These 86 stay `null` rather than
     guessed.
 
+  A full-coverage ranking feed was looked for and not found without
+  credentials. Checked: the canonical open dataset (JeffSackmann/tennis_atp
+  — not present), atptour.com's rankings page (403), api-tennis.com and
+  matchstat.com (both require an API key), and the Zyla/RapidAPI/Apify
+  listings (all account-gated). Wiring one of the keyed APIs in is the way
+  to get all 128 — it needs an account and key, which has to come from the
+  repo owner. Until then the UI shows a ranking badge only for the 42
+  entrants whose ranking is actually sourced, and nothing for the rest.
+
 ## Match results and schedule (`matches.json`, `actuals.json`)
 
 Since the real 2026 Championships concluded before this data was added

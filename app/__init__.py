@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 
@@ -218,6 +219,53 @@ class PrefixMiddleware:
         return self.app(environ, start_response)
 
 
+# Per-tournament badge data for groups-less bracket formats. Derived purely
+# from static instance data (entries + the played-match list), so it's the
+# same for every request and every user — cached per tournament id rather
+# than recomputed in the context processor on each page view.
+_BRACKET_BADGE_CACHE: dict[str, dict] = {}
+
+
+def _bracket_badge_context(tournament) -> dict:
+    """{"team_elos", "team_form", "entry_ranks"} for a bracket-only
+    tournament, so the shared team_badge macro can render a quality pill
+    (world ranking) and a form arrow the same way it does for football."""
+    cached = _BRACKET_BADGE_CACHE.get(tournament.id)
+    if cached is not None:
+        return cached
+
+    empty = {"team_elos": {}, "team_form": {}, "entry_ranks": {}}
+    try:
+        from app.form import compute_bracket_form
+        from app.web.view_helpers import load_tennis_match_info
+
+        engine = tournament.engine
+        team_elos = {name: float(elo) for name, elo
+                     in zip(engine.entry_names, engine.entry_elos)}
+        entry_ranks = {e["name"]: e["atp_rank"]
+                       for e in (engine.data.get("entries") or [])
+                       if e.get("atp_rank") is not None}
+
+        # Expected win probability comes from the spec's own sport + rules,
+        # so this stays correct for any future bracket sport, not just tennis.
+        spec = engine.spec
+        rules = spec.phases[-1].rules
+        matches = load_tennis_match_info(tournament.data_paths.get("matches")).values()
+        team_form = compute_bracket_form(
+            matches, team_elos,
+            lambda a, b: spec.sport.outcome_probs(a, b, rules)["home_win"],
+        )
+        result = {"team_elos": team_elos, "team_form": team_form,
+                  "entry_ranks": entry_ranks}
+    except Exception:
+        logging.getLogger(__name__).exception(
+            "bracket badge context failed for %s", tournament.id)
+        result = empty
+
+    _BRACKET_BADGE_CACHE[tournament.id] = result
+    return result
+
+
 def create_app():
     global _registry
 
@@ -404,6 +452,29 @@ def create_app():
             return f"{match['date']} {match['local_time']}"
         return dt.strftime(fmt)
 
+    @app.template_filter("match_date")
+    def match_date(value, fmt="%a %d %b"):
+        """Format a bare ISO date ("2026-06-29") the same way the local_time
+        filter formats a full kickoff — "Mon 29 Jun" — so date notation reads
+        identically across sports, whether or not the format publishes a
+        per-match kickoff time. Accepts a plain date string or a
+        [start, end] range, rendering the latter as "Mon 29 Jun – Tue 30 Jun".
+        """
+        from datetime import date as _date
+
+        def one(d):
+            try:
+                return _date.fromisoformat(d).strftime(fmt)
+            except (TypeError, ValueError):
+                return d or ""
+
+        if isinstance(value, (list, tuple)):
+            if not value:
+                return ""
+            start, end = one(value[0]), one(value[-1])
+            return start if start == end else f"{start} – {end}"
+        return one(value)
+
     @app.template_filter("kickoff_utc_ms")
     def kickoff_utc_ms(match):
         """Return the fixture's kickoff as milliseconds since epoch (for JS),
@@ -446,8 +517,11 @@ def create_app():
         # everything else here.
         tournament = getattr(g, "tournament", None)
         if tournament is not None and tournament.template != "fifa_world_cup":
-            return {"team_form": {}, "active_scenario": None, "team_elos": {},
-                    "team_clinch": {}, "live_teams": set()}
+            badges = _bracket_badge_context(tournament)
+            return {"team_form": badges["team_form"], "active_scenario": None,
+                    "team_elos": badges["team_elos"], "team_clinch": {},
+                    "live_teams": set(), "entry_ranks": badges["entry_ranks"],
+                    "quality_mode": "rank"}
         scenario_id = request.args.get("s") or session.get("scenario_id") or "current"
         username = current_user.username if current_user.is_authenticated else None
         scenario = data_store.load_scenario(scenario_id, username) or data_store.load_scenario("current")
@@ -485,7 +559,8 @@ def create_app():
 
         return {"team_form": team_form, "active_scenario": scenario,
                 "team_elos": team_elos, "team_clinch": team_clinch,
-                "live_teams": live_teams}
+                "live_teams": live_teams, "entry_ranks": {},
+                "quality_mode": "stars"}
 
     return app
 

@@ -12,9 +12,9 @@
 <div class="card shadow-sm mb-4">
   <div class="card-header fw-bold">
     {% if day.date %}
-      {{ day.date }}
+      {{ day.date|match_date }}
     {% else %}
-      {{ day.date_range[0] }}{% if day.date_range[1] != day.date_range[0] %}–{{ day.date_range[1] }}{% endif %}
+      {{ day.date_range|match_date }}
       <span class="text-muted small fw-normal">(exact day not individually confirmed)</span>
     {% endif %}
   </div>

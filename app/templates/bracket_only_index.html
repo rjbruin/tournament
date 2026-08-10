@@ -1,6 +1,36 @@
 {% extends "base.html" %}
+{% import "_podium.html" as pod with context %}
 {% block title %}{{ tournament.name }}{% endblock %}
 {% block content %}
+
+{# How this format labels an entrant everywhere on this page: country flag
+   from the IOC code, name, and the seed if they had one. #}
+{% macro entrant(name) -%}
+{%- set e = entry_by_name.get(name, {}) -%}
+{{ e.country|flag_ioc }} {{ name }}{% if e.seed %} <span class="text-muted small">[{{ e.seed }}]</span>{% endif %}
+{%- endmacro %}
+
+{% if tournament_over %}
+
+{%- set sf_cards = [] %}
+{%- for s in sf_losers %}
+  {%- set _ = sf_cards.append({"html": entrant(s), "pct": pre_prob.get(s, 0) * 100}) %}
+{%- endfor %}
+
+{{ pod.champion_hero(
+     tournament.short_name ~ " Champion",
+     (entry_by_name.get(winner, {}).country)|flag_ioc,
+     winner,
+     pre_prob.get(winner, 0) * 100) }}
+
+{{ pod.final_podium(
+     tournament.short_name,
+     "Champion",
+     {"html": entrant(winner), "pct": pre_prob.get(winner, 0) * 100},
+     {"html": entrant(runner_up), "pct": pre_prob.get(runner_up, 0) * 100} if runner_up else none,
+     sf_cards) }}
+
+{% else %}
 
 <div class="hero-banner mb-4">
   <h1 class="mb-0">{{ tournament.name }}</h1>
@@ -15,7 +45,7 @@
     <div class="champion-card">
       <span class="trophy">🏆</span>
       <div class="crown-label">Most Likely Champion</div>
-      <div class="team-name">{{ name }}</div>
+      <div class="team-name">{{ entrant(name) }}</div>
       <div class="team-prob">{{ (prob * 100) | round(1) }}%</div>
       <div class="text-muted small mt-1">to win the title</div>
     </div>
@@ -28,13 +58,15 @@
   <div class="col-6 col-md-3">
     <div class="podium-card">
       <span class="rank-badge rank-{{ rank }}">{{ rank }}</span>
-      <div class="team-name">{{ name }}</div>
+      <div class="team-name">{{ entrant(name) }}</div>
       <div class="team-prob">{{ (prob * 100) | round(1) }}%</div>
       <div class="text-muted small">title probability</div>
     </div>
   </div>
   {% endfor %}
 </div>
+
+{% endif %}
 
 <div class="text-center mb-5">
   <a href="{{ url_for('web.bracket') }}" class="btn btn-primary btn-lg">View full bracket →</a>

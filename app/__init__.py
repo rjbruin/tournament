@@ -1,6 +1,8 @@
 import logging
 import os
 import secrets
+import threading
+from collections import OrderedDict
 
 from flask import Flask, abort, g, redirect, request, session, url_for
 from flask_login import LoginManager, current_user
@@ -15,7 +17,22 @@ from app.flags import flag_emoji, flag_emoji_ioc, flag_url
 # data_store), but the "current" results only live in memory and are lost
 # on restart — the user can re-run the simulation from their last
 # snapshot's settings.
-_simulation_results: dict[tuple, dict] = {}
+#
+# Bounded (LRU): one entry is ~0.5 MB, and the key includes the account, so an
+# unbounded dict grows with every (user x scenario) combination ever viewed.
+# 256 entries caps this at roughly 130 MB, comfortably above the ~104
+# match-checkpoints the warmer pre-computes plus normal per-user browsing.
+_RESULTS_CACHE_MAX = 256
+_simulation_results: OrderedDict[tuple, dict] = OrderedDict()
+_results_cache_lock = threading.Lock()
+
+# Serializes the actual Monte Carlo runs. A single n=250,000 run transiently
+# needs several hundred MB, and the server is threaded, so N simultaneous
+# cache misses previously meant N simultaneous allocations of that size — on a
+# small VM that is what turns a busy moment into an OOM kill. Runs are queued
+# instead; the double-checked cache read means a queued request usually finds
+# the result already computed and does no work at all.
+_simulation_lock = threading.Lock()
 _registry: TournamentRegistry = None
 
 # Live-results state shared between the background poller and the status API.
@@ -73,13 +90,23 @@ def _cache_key(username: str, scenario_id: str = "current", tournament_id: str =
 
 
 def get_simulation_results(username: str, scenario_id: str = "current", tournament_id: str = None):
-    return _simulation_results.get(_cache_key(username, scenario_id, tournament_id))
+    key = _cache_key(username, scenario_id, tournament_id)
+    with _results_cache_lock:
+        results = _simulation_results.get(key)
+        if results is not None:
+            _simulation_results.move_to_end(key)   # mark as recently used
+        return results
 
 
 def set_simulation_results(
     username: str, results, scenario_id: str = "current", tournament_id: str = None
 ) -> None:
-    _simulation_results[_cache_key(username, scenario_id, tournament_id)] = results
+    key = _cache_key(username, scenario_id, tournament_id)
+    with _results_cache_lock:
+        _simulation_results[key] = results
+        _simulation_results.move_to_end(key)
+        while len(_simulation_results) > _RESULTS_CACHE_MAX:
+            _simulation_results.popitem(last=False)   # evict least recently used
 
 
 def forget_results(username: str, scenario_id: str, tournament_id: str = None) -> None:
@@ -87,7 +114,8 @@ def forget_results(username: str, scenario_id: str, tournament_id: str = None) -
     scenario that should recompute fresh next time it's viewed. Callers
     used to reach into `_simulation_results` directly to do this — go
     through here instead so the cache-key shape stays encapsulated."""
-    _simulation_results.pop(_cache_key(username, scenario_id, tournament_id), None)
+    with _results_cache_lock:
+        _simulation_results.pop(_cache_key(username, scenario_id, tournament_id), None)
 
 
 def invalidate_results(scenario_id: str = "current", tournament_id: str = None) -> None:
@@ -96,9 +124,10 @@ def invalidate_results(scenario_id: str = "current", tournament_id: str = None) 
     load/API call re-runs against the freshly-updated actuals. Used by the
     live poller when a live score changes the real results."""
     tid = tournament_id or default_tournament_id()
-    for key in list(_simulation_results.keys()):
-        if key[1] == tid and key[2] == scenario_id:
-            _simulation_results.pop(key, None)
+    with _results_cache_lock:
+        for key in list(_simulation_results.keys()):
+            if key[1] == tid and key[2] == scenario_id:
+                _simulation_results.pop(key, None)
 
 
 # Number of independent draws to marginalize over for "pre-draw"/partial-draw
@@ -177,21 +206,45 @@ def get_or_run_results(
     draw = scenario.get("draw")
     engine = get_engine(tid)
 
-    if scenario.get("is_pre_draw") or (draw is not None and not is_draw_complete(draw)):
-        # Marginalize over many possible draws (fully random for "pre-draw",
-        # or completing the fixed/partial draw for a partial-draw scenario).
-        n_per_draw = max(100, n // N_DRAWS)
-        draws = simulate_many_draws(N_DRAWS, fixed=draw)
-        per_draw_results = [engine.run(n_per_draw, actuals=scenario["actuals"], groups=d) for d in draws]
-        results = _average_results(per_draw_results)
-    elif draw is not None:
-        # Fully completed custom draw.
-        results = engine.run(n, actuals=scenario["actuals"], groups=draw)
-    else:
-        results = engine.run(n, actuals=scenario["actuals"])
+    # One run at a time (see _simulation_lock). Re-check the cache after
+    # acquiring: while this thread was queued, whoever held the lock may have
+    # computed exactly this entry, in which case there is nothing left to do.
+    with _simulation_lock:
+        cached = get_simulation_results(username, scenario_id, tid)
+        if cached is not None:
+            return cached
 
-    set_simulation_results(username, results, scenario_id, tid)
+        if scenario.get("is_pre_draw") or (draw is not None and not is_draw_complete(draw)):
+            # Marginalize over many possible draws (fully random for "pre-draw",
+            # or completing the fixed/partial draw for a partial-draw scenario).
+            n_per_draw = max(100, n // N_DRAWS)
+            draws = simulate_many_draws(N_DRAWS, fixed=draw)
+            per_draw_results = [engine.run(n_per_draw, actuals=scenario["actuals"], groups=d) for d in draws]
+            results = _average_results(per_draw_results)
+        elif draw is not None:
+            # Fully completed custom draw.
+            results = engine.run(n, actuals=scenario["actuals"], groups=draw)
+        else:
+            results = engine.run(n, actuals=scenario["actuals"])
+
+        set_simulation_results(username, results, scenario_id, tid)
+        release_freed_memory()
     return results
+
+
+def release_freed_memory() -> None:
+    """Ask glibc to return free heap arenas to the OS.
+
+    A simulation allocates (and frees) hundreds of MB of NumPy arrays. Python
+    frees them promptly — there is no object leak — but glibc keeps the pages
+    in its arenas, so process RSS stays at the high-water mark of the largest
+    run forever. On a small VM with no swap, that idle-but-resident footprint
+    is what leaves no headroom for the next request. No-op off glibc."""
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass   # not glibc (macOS/musl) — the allocator handles this itself
 
 
 class PrefixMiddleware:

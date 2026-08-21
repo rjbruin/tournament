@@ -23,6 +23,18 @@ from app.simulation.phases.base import MatchRecord, Phase, PhaseResult, SimConte
 from app.simulation.sports.base import MatchOutcome, MatchRules
 from app.simulation.tiebreak import rank_group_h2h
 
+# Every per-simulation group array below is (n, m) — with n=250,000 the dtype
+# choice dominates the whole run's peak memory, and these arrays are RETAINED
+# in `standings` for all groups until the run ends. int16 is chosen, not int32:
+# the values are entry indices (< 32k entrants), points (≤ 3 per match), and
+# per-team stat totals over m-1 matches (goals: tens) — all far inside
+# int16's ±32,767, while a 128-entrant draw still fits the index range.
+# Accumulating an int64 operand into an int16 array is a "same_kind" cast,
+# which NumPy performs in place without complaint; and `keys.pack_key` casts
+# up to int64 before it multiplies, so the narrower input cannot overflow the
+# packed sort key.
+_GROUP_DTYPE = np.int16
+
 
 class RoundRobinPhase(Phase):
     id = "groups"
@@ -65,7 +77,7 @@ class RoundRobinPhase(Phase):
         for letter in self.group_letters:
             pos_entries = np.stack(
                 [ctx.outputs[("group_slot", letter, pos)].entries for pos in range(m)], axis=1
-            ).astype(np.int64)  # (n, m)
+            ).astype(_GROUP_DTYPE)  # (n, m)
 
             # Name -> local position. Stage 1 only supports a per-run-static
             # group composition (see StaticGroupsSeeding), so position 0's
@@ -84,8 +96,8 @@ class RoundRobinPhase(Phase):
                         continue
                     hg, ag = int(entry["home_goals"]), int(entry["away_goals"])
                     gi_val, gj_val = (hg, ag) if i == hp else (ag, hg)
-                    goals_i = np.full(n, gi_val, dtype=np.int64)
-                    goals_j = np.full(n, gj_val, dtype=np.int64)
+                    goals_i = np.full(n, gi_val, dtype=_GROUP_DTYPE)
+                    goals_j = np.full(n, gj_val, dtype=_GROUP_DTYPE)
                     winner = np.where(
                         goals_i > goals_j, 0, np.where(goals_i < goals_j, 1, -1)
                     ).astype(np.int8)
@@ -96,9 +108,9 @@ class RoundRobinPhase(Phase):
                     actual_by_pair[(i, j)] = entry
                     break
 
-            pts = np.zeros((n, m), dtype=np.int64)
-            stat_for = {s: np.zeros((n, m), dtype=np.int64) for s in stat_names}
-            stat_against = {s: np.zeros((n, m), dtype=np.int64) for s in stat_names}
+            pts = np.zeros((n, m), dtype=_GROUP_DTYPE)
+            stat_for = {s: np.zeros((n, m), dtype=_GROUP_DTYPE) for s in stat_names}
+            stat_against = {s: np.zeros((n, m), dtype=_GROUP_DTYPE) for s in stat_names}
             scorelines: dict[tuple[int, int], tuple[np.ndarray, np.ndarray]] = {}
 
             for (i, j) in self.match_order:
